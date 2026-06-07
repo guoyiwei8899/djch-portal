@@ -21,12 +21,6 @@
       "title": "Kubernetes Architecture",
       "desc": "RKE2 cluster components and traffic topology",
       "path": "viz/k8s-arch.html"
-    },
-    {
-      "domain": "infra", "icon": "server",
-      "title": "Rack & Datacenter Map",
-      "desc": "AIDC rack layout and server placement",
-      "path": "viz/aidc-rack.html"
     }
   ],
   "system": [
