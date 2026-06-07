@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zabbix Hardware Monitoring Architecture</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            letter-spacing: -0.01em;
+        }
+
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle var(--duration) ease-in-out infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(10, 14, 39, 0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 15px 30px; z-index: 100;
+            display: flex; align-items: center; gap: 30px;
+        }
+        .nav-logo {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, #ef4444, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; align-items: center; gap: 0; flex: 1; }
+        .nav-links a {
+            color: #94a3b8; text-decoration: none; margin: 0 15px;
+            font-size: 14px; transition: color 0.3s;
+        }
+        .nav-links a:hover { color: #ef4444; }
+        .nav-links a.active { color: #ef4444; }
+        .lang-switch {
+            margin-left: auto; cursor: pointer; user-select: none;
+            padding: 5px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            border: 1px solid rgba(239,68,68,0.4); color: #fca5a5;
+            background: rgba(239,68,68,0.08); transition: all 0.3s;
+        }
+        .lang-switch:hover { background: rgba(239,68,68,0.18); }
+
+        .hero {
+            position: relative; z-index: 1;
+            text-align: center; padding: 120px 20px 50px;
+        }
+        .hero h1 {
+            font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1;
+            background: linear-gradient(135deg, #ef4444, #f59e0b, #10b981);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        .hero p { font-size: 19px; font-weight: 400; color: #94a3b8; max-width: 700px; margin: 0 auto; line-height: 1.6; letter-spacing: -0.01em; }
+        .hero-badges { margin-top: 25px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+        .badge {
+            padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05);
+        }
+        .badge.red { border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+        .badge.amber { border-color: rgba(245,158,11,0.4); color: #fcd34d; }
+        .badge.green { border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+        .badge.blue { border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+
+        .section {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto; padding: 60px 20px;
+        }
+        .section-title {
+            font-size: 40px; font-weight: 700; text-align: center; margin-bottom: 14px;
+            letter-spacing: -0.03em; line-height: 1.15;
+            background: linear-gradient(135deg, #ef4444, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .section-desc { text-align: center; color: #64748b; margin-bottom: 50px; font-size: 17px; font-weight: 400; letter-spacing: -0.01em; }
+
+        .arch-diagram {
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 16px; padding: 40px; margin-bottom: 40px;
+            position: relative; overflow: hidden;
+        }
+        .arch-diagram::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+        }
+        .arch-flow {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0; flex-wrap: wrap; padding: 20px 0;
+        }
+        .arch-node {
+            background: rgba(15, 23, 42, 0.9); border: 2px solid;
+            border-radius: 14px; padding: 24px 20px; text-align: center;
+            min-width: 180px; transition: all 0.3s; position: relative;
+        }
+        .arch-node:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .arch-node .icon { font-size: 36px; margin-bottom: 10px; }
+        .arch-node h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+        .arch-node p { font-size: 12px; color: #64748b; line-height: 1.5; }
+        .arch-node.hardware { border-color: rgba(59,130,246,0.5); }
+        .arch-node.zabbix { border-color: rgba(239,68,68,0.5); }
+        .arch-node.middle { border-color: rgba(245,158,11,0.5); }
+        .arch-node.alert { border-color: rgba(16,185,129,0.5); }
+        .arch-node.feishu { border-color: rgba(99,102,241,0.5); }
+        .arch-arrow {
+            color: #475569; font-size: 28px; padding: 0 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .arch-arrow .label { font-size: 10px; color: #64748b; white-space: nowrap; }
+
+        .flow-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px; margin-top: 30px;
+        }
+        .flow-card {
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 28px; transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .flow-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .flow-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .flow-card .step-num {
+            width: 36px; height: 36px; border-radius: 10px; display: flex;
+            align-items: center; justify-content: center; font-size: 16px;
+            font-weight: 700; margin-bottom: 16px;
+        }
+        .flow-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.02em; }
+        .flow-card p { font-size: 15px; color: #94a3b8; line-height: 1.7; font-weight: 400; }
+        .flow-card .tag {
+            display: inline-block; padding: 3px 10px; border-radius: 6px;
+            font-size: 12px; margin-top: 12px; font-family: 'Courier New', monospace;
+        }
+        .flow-card.step1::before { background: #3b82f6; }
+        .flow-card.step1 .step-num { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .flow-card.step1 .tag { background: rgba(59,130,246,0.1); color: #60a5fa; }
+        .flow-card.step2::before { background: #f59e0b; }
+        .flow-card.step2 .step-num { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .flow-card.step2 .tag { background: rgba(245,158,11,0.1); color: #fbbf24; }
+        .flow-card.step3::before { background: #ef4444; }
+        .flow-card.step3 .step-num { background: rgba(239,68,68,0.15); color: #f87171; }
+        .flow-card.step3 .tag { background: rgba(239,68,68,0.1); color: #f87171; }
+        .flow-card.step4::before { background: #10b981; }
+        .flow-card.step4 .step-num { background: rgba(16,185,129,0.15); color: #34d399; }
+        .flow-card.step4 .tag { background: rgba(16,185,129,0.1); color: #34d399; }
+
+        .vendor-table-wrap {
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; overflow: hidden; margin-top: 30px;
+        }
+        .vendor-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .vendor-table th {
+            background: rgba(239,68,68,0.1); color: #fca5a5;
+            padding: 14px 16px; text-align: left; font-weight: 600;
+            border-bottom: 1px solid rgba(239,68,68,0.2);
+        }
+        .vendor-table td {
+            padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-family: 'Courier New', monospace; font-size: 13px;
+        }
+        .vendor-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .vendor-table .metric { color: #94a3b8; font-family: inherit; font-weight: 500; }
+
+        .alert-flow {
+            display: flex; align-items: stretch; gap: 24px; margin-top: 30px; flex-wrap: wrap;
+        }
+        .alert-card {
+            flex: 1; min-width: 260px;
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 28px; position: relative; overflow: hidden;
+        }
+        .alert-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .alert-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+        .alert-card p { font-size: 14px; color: #94a3b8; line-height: 1.7; }
+        .alert-card ul { list-style: none; margin-top: 10px; }
+        .alert-card li {
+            padding: 8px 0; font-size: 13px; color: #94a3b8;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .alert-card li:last-child { border: none; }
+        .alert-card .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .alert-card.trigger::before { background: #ef4444; }
+        .alert-card.webhook::before { background: #f59e0b; }
+        .alert-card.feishu::before { background: #6366f1; }
+
+        .feishu-preview {
+            background: #fff; border-radius: 12px; padding: 0; margin-top: 20px;
+            overflow: hidden; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .feishu-header { background: #ef4444; color: #fff; padding: 14px 18px; font-size: 15px; font-weight: 600; }
+        .feishu-body { padding: 16px 18px; color: #333; font-size: 13px; line-height: 1.8; }
+        .feishu-field { display: flex; gap: 20px; margin-bottom: 8px; }
+        .feishu-field span { flex: 1; }
+        .feishu-label { color: #333; font-weight: 600; }
+        .feishu-value { color: #666; }
+        .feishu-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px; margin-top: 30px;
+        }
+        .dash-widget {
+            background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 20px; transition: all 0.3s;
+        }
+        .dash-widget:hover { border-color: rgba(255,255,255,0.15); }
+        .dash-widget h4 { font-size: 13px; color: #64748b; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .dash-bar { height: 24px; border-radius: 6px; margin-bottom: 8px; position: relative; overflow: hidden; background: rgba(255,255,255,0.05); }
+        .dash-bar-fill {
+            height: 100%; border-radius: 6px; transition: width 1.5s ease;
+            display: flex; align-items: center; padding-left: 10px;
+            font-size: 11px; font-weight: 600; color: #fff;
+        }
+        .dash-bar-label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .temp-low { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+        .temp-mid { background: linear-gradient(90deg, #FFC107, #FF9800); }
+        .temp-high { background: linear-gradient(90deg, #FF9800, #F44336); }
+
+        .stats-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px; margin: 40px 0;
+        }
+        .stat-card {
+            text-align: center; padding: 24px 16px;
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+        }
+        .stat-num {
+            font-size: 44px; font-weight: 800; letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ef4444, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 14px; color: #64748b; margin-top: 8px; font-weight: 500; letter-spacing: 0; }
+
+        .footer {
+            position: relative; z-index: 1;
+            text-align: center; padding: 40px 20px;
+            color: #475569; font-size: 13px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .footer a { color: #ef4444; text-decoration: none; }
+
+        /* Glow pulse on hero title */
+        .hero h1 { animation: title-glow 3s ease-in-out infinite; }
+        @keyframes title-glow {
+            0%, 100% { filter: drop-shadow(0 0 0px transparent); }
+            50% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.3)); }
+        }
+
+        /* Gradient border animation on cards */
+        .flow-card, .alert-card, .dash-widget { position: relative; z-index: 1; }
+        .flow-card::after, .alert-card::after {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            background: linear-gradient(45deg, #ef4444, #f59e0b, #10b981, #ef4444);
+            background-size: 300% 300%;
+            border-radius: 15px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s;
+            animation: gradient-spin 4s linear infinite;
+        }
+        .flow-card:hover::after, .alert-card:hover::after { opacity: 1; }
+        @keyframes gradient-spin {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating glow orbs */
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+            animation: orb-float 12s ease-in-out infinite;
+        }
+        @keyframes orb-float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -30px) scale(1.1); }
+            50% { transform: translate(-20px, 40px) scale(0.9); }
+            75% { transform: translate(30px, 20px) scale(1.05); }
+        }
+
+        /* Arch diagram scan line */
+        .arch-diagram::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ef4444, #f59e0b, transparent);
+            animation: scan-line 3s linear infinite;
+        }
+        @keyframes scan-line {
+            0% { transform: translateY(0); opacity: 0.6; }
+            100% { transform: translateY(300px); opacity: 0; }
+        }
+
+        /* Nav link glow */
+        .nav-links a:hover { text-shadow: 0 0 10px rgba(239,68,68,0.3); }
+        .nav-links a.active { text-shadow: 0 0 10px rgba(239,68,68,0.3); }
+
+        /* Arch node pulse on hover */
+        .arch-node:hover { box-shadow: 0 0 25px rgba(239,68,68,0.15); }
+
+        /* Stat number glow */
+        .stat-num { animation: stat-glow 4s ease-in-out infinite; }
+        @keyframes stat-glow {
+            0%, 100% { filter: drop-shadow(0 0 0px transparent); }
+            50% { filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.3)); }
+        }
+
+        /* Dashboard bar shimmer */
+        .dash-bar-fill { position: relative; overflow: hidden; }
+        .dash-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            animation: bar-shimmer 3s ease-in-out infinite;
+        }
+        @keyframes bar-shimmer {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 32px; }
+            .arch-flow { flex-direction: column; }
+            .arch-arrow { transform: rotate(90deg); padding: 8px 0; }
+            .nav-links a { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<!-- Ambient glow orbs -->
+<div class="glow-orb" style="width:300px;height:300px;background:rgba(239,68,68,0.06);top:10%;left:5%;animation-delay:0s"></div>
+<div class="glow-orb" style="width:250px;height:250px;background:rgba(245,158,11,0.05);top:40%;right:10%;animation-delay:3s"></div>
+<div class="glow-orb" style="width:200px;height:200px;background:rgba(16,185,129,0.04);bottom:20%;left:30%;animation-delay:6s"></div>
+
+<nav class="nav">
+    <div class="nav-logo">DJCH Infra</div>
+    <div class="nav-links">
+        <a href="/zabbix" class="active" data-i18n="nav_zabbix">Zabbix Monitoring</a>
+        <a href="/k8s" data-i18n="nav_k8s">K8s Architecture</a>
+        <span class="lang-switch" id="langSwitch" onclick="toggleLang()">EN / CN</span>
+    </div>
+</nav>
+
+<section class="hero">
+    <h1 data-i18n="hero_title">Zabbix Hardware Monitoring Architecture</h1>
+    <p data-i18n="hero_desc">Multi-vendor unified hardware monitoring via IPMI, with a normalization layer to abstract sensor differences, real-time temperature/power monitoring, and Feishu instant alerting</p>
+    <div class="hero-badges">
+        <span class="badge red">Zabbix 7.4</span>
+        <span class="badge amber">IPMI 2.0</span>
+        <span class="badge green">Feishu Webhook</span>
+        <span class="badge blue">25+ Servers</span>
+    </div>
+</section>
+
+<section class="section">
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-num">25</div><div class="stat-label" data-i18n="stat_nodes">Monitored Nodes</div></div>
+        <div class="stat-card"><div class="stat-num">5</div><div class="stat-label" data-i18n="stat_vendors">Server Vendors</div></div>
+        <div class="stat-card"><div class="stat-num">100+</div><div class="stat-label" data-i18n="stat_sensors">IPMI Sensors</div></div>
+        <div class="stat-card"><div class="stat-num">&lt;60s</div><div class="stat-label" data-i18n="stat_latency">Alert Latency</div></div>
+    </div>
+</section>
+
+<section class="section" id="architecture">
+    <h2 class="section-title" data-i18n="arch_title">System Architecture</h2>
+    <p class="section-desc" data-i18n="arch_desc">Complete data flow from hardware sensors to Feishu notifications</p>
+
+    <div class="arch-diagram">
+        <div class="arch-flow">
+            <div class="arch-node hardware">
+                <div class="icon">🖥️</div>
+                <h4 data-i18n="arch_bmc">Server BMC</h4>
+                <p>iDRAC / IPMI / iBMC<br data-i18n-br="arch_bmc_sensors">Temp · Power · Fan · Voltage</p>
+            </div>
+            <div class="arch-arrow"><span>&rarr;</span><span class="label">IPMI LAN+<br>UDP 623</span></div>
+            <div class="arch-node zabbix">
+                <div class="icon">📡</div>
+                <h4>Zabbix Server</h4>
+                <p data-i18n="arch_zabbix_desc">IPMI Poller x5<br>ipmi.get fetches all sensors</p>
+            </div>
+            <div class="arch-arrow"><span>&rarr;</span><span class="label">JSONPath<br data-i18n-br="arch_preprocess">Preprocessing</span></div>
+            <div class="arch-node middle">
+                <div class="icon">🔄</div>
+                <h4 data-i18n="arch_normalize">HW Normalization</h4>
+                <p data-i18n="arch_normalize_desc">Template Macros + Dependent Items<br>Unified metric naming</p>
+            </div>
+            <div class="arch-arrow"><span>&rarr;</span><span class="label" data-i18n="arch_trigger_label">Triggers<br>Threshold Detection</span></div>
+            <div class="arch-node alert">
+                <div class="icon">🚨</div>
+                <h4 data-i18n="arch_alert">Alert Engine</h4>
+                <p data-i18n="arch_alert_desc">Severity-based · Dependency suppression<br>Warning &rarr; Disaster</p>
+            </div>
+            <div class="arch-arrow"><span>&rarr;</span><span class="label">HTTPS<br>HMAC-SHA256</span></div>
+            <div class="arch-node feishu">
+                <div class="icon">💬</div>
+                <h4 data-i18n="arch_feishu">Feishu Notification</h4>
+                <p data-i18n="arch_feishu_desc">Interactive Card<br>Real-time push · Recovery alerts</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="dataflow">
+    <h2 class="section-title" data-i18n="flow_title">Data Pipeline</h2>
+    <p class="section-desc" data-i18n="flow_desc">Four steps from physical sensors to normalized metrics</p>
+
+    <div class="flow-container">
+        <div class="flow-card step1">
+            <div class="step-num">01</div>
+            <h3 data-i18n="flow1_title">IPMI Raw Collection</h3>
+            <p data-i18n="flow1_desc">Zabbix IPMI Poller connects to each server BMC via IPMI 2.0 protocol. The <code>ipmi.get</code> master item fetches all sensor data at once, returning a JSON array.</p>
+            <span class="tag">ipmi.get &rarr; JSON Array</span>
+        </div>
+        <div class="flow-card step2">
+            <div class="step-num">02</div>
+            <h3 data-i18n="flow2_title">Macro Vendor Mapping</h3>
+            <p data-i18n="flow2_desc">Each server has 4 host-level macros mapping vendor-specific sensor names to unified variables. Supermicro's <code>CPU0_Temp</code> and Dell's <code>Temp</code> point to the same metric.</p>
+            <span class="tag">{$HW_CPU_TEMP} = CPU0_Temp</span>
+        </div>
+        <div class="flow-card step3">
+            <div class="step-num">03</div>
+            <h3 data-i18n="flow3_title">JSONPath Extraction</h3>
+            <p data-i18n="flow3_desc">Dependent items use JSONPath expressions to extract target sensor values from the master item. Discard-on-error ensures missing sensors don't cause failures.</p>
+            <span class="tag">$.[?(@.id=="{$HW_CPU_TEMP}")].value</span>
+        </div>
+        <div class="flow-card step4">
+            <div class="step-num">04</div>
+            <h3 data-i18n="flow4_title">Unified Output</h3>
+            <p data-i18n="flow4_desc">All servers output the same 4 standardized metrics, ready for dashboard visualization, trigger alerting, and cross-vendor comparison.</p>
+            <span class="tag">hw.cpu.temp · hw.inlet.temp · hw.power.total</span>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="vendors">
+    <h2 class="section-title" data-i18n="vendor_title">Multi-Vendor Sensor Mapping</h2>
+    <p class="section-desc" data-i18n="vendor_desc">Macro abstraction bridges naming differences across 5 vendors</p>
+
+    <div class="vendor-table-wrap">
+        <table class="vendor-table">
+            <thead>
+                <tr>
+                    <th data-i18n="vendor_th_metric">Unified Metric</th>
+                    <th>Supermicro</th><th>Inspur</th><th>Huawei</th><th>Dell</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="metric">CPU Temperature</td><td>CPU0_Temp</td><td>CPU0_TEMP</td><td>TEMP_CPU1</td><td>Temp</td></tr>
+                <tr><td class="metric">Inlet Temperature</td><td>SysTemp0</td><td>DIMMG0_TEMP</td><td>TEMP_MB1</td><td>Inlet Temp</td></tr>
+                <tr><td class="metric">Total Power</td><td>PSU1_PIN</td><td>SYS_POWER</td><td>PWR_PSU1_PIN</td><td>Pwr Consumption</td></tr>
+                <tr><td class="metric">PSU Temperature</td><td>PSU1_Temp1</td><td>CPU1_TEMP</td><td>TEMP_PSU1</td><td>Inlet Temp</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="section" id="alerting">
+    <h2 class="section-title" data-i18n="alert_title">Feishu Alert Pipeline</h2>
+    <p class="section-desc" data-i18n="alert_desc">Complete chain from threshold trigger to Feishu card notification</p>
+
+    <div class="alert-flow">
+        <div class="alert-card trigger">
+            <h3 data-i18n="alert_trigger_h">🚨 Triggers</h3>
+            <p data-i18n="alert_trigger_p">Template-level thresholds, macro-controlled limits</p>
+            <ul>
+                <li><span class="dot" style="background:#FFC107"></span> CPU > 80°C — Warning</li>
+                <li><span class="dot" style="background:#F44336"></span> CPU > 90°C — High</li>
+                <li><span class="dot" style="background:#FFC107"></span> Inlet > 35°C — Warning</li>
+                <li><span class="dot" style="background:#F44336"></span> Inlet > 45°C — High</li>
+                <li><span class="dot" style="background:#FFC107"></span> PSU > 70°C — Warning</li>
+            </ul>
+        </div>
+        <div class="alert-card webhook">
+            <h3 data-i18n="alert_sign_h">🔐 Webhook Signing</h3>
+            <p data-i18n="alert_sign_p">Feishu Bot security verification</p>
+            <ul>
+                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign1">Generate Unix timestamp</span></li>
+                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign2">Concat timestamp + \n + secret</span></li>
+                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign3">HMAC-SHA256 signature</span></li>
+                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign4">Hex to Base64 encoding</span></li>
+                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign5">Attach to request body</span></li>
+            </ul>
+        </div>
+        <div class="alert-card feishu">
+            <h3 data-i18n="alert_card_h">💬 Feishu Card</h3>
+            <p data-i18n="alert_card_p">Interactive Card rich-text message</p>
+            <div class="feishu-preview">
+                <div class="feishu-header">⚠️ PROBLEM [High]</div>
+                <div class="feishu-body">
+                    <div class="feishu-field">
+                        <span><span class="feishu-label">Host:</span> <span class="feishu-value">research3.djch.one</span></span>
+                        <span><span class="feishu-label">Severity:</span> <span class="feishu-value">High</span></span>
+                    </div>
+                    <hr class="feishu-divider">
+                    <div><span class="feishu-label">Problem:</span> <span class="feishu-value">HW: CPU temperature is critically high (>90)</span></div>
+                    <hr class="feishu-divider">
+                    <div><span class="feishu-label">Time:</span> <span class="feishu-value">2026.04.13 18:34:00</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="dashboard">
+    <h2 class="section-title" data-i18n="dash_title">Dashboard Visualization</h2>
+    <p class="section-desc" data-i18n="dash_desc">DC Infrastructure Monitor — colors gradient from green to red with value</p>
+
+    <div class="dashboard-grid">
+        <div class="dash-widget">
+            <h4>CPU Temperature</h4>
+            <div class="dash-bar-label">research3.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:65%">58°C</div></div>
+            <div class="dash-bar-label">pve0.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:63%">56°C</div></div>
+            <div class="dash-bar-label">research7.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:38%">34°C</div></div>
+            <div class="dash-bar-label">research6.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:27%">24°C</div></div>
+        </div>
+        <div class="dash-widget">
+            <h4>Total Power</h4>
+            <div class="dash-bar-label">research7.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:70%">350W</div></div>
+            <div class="dash-bar-label">lustre02-poc.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:50%">252W</div></div>
+            <div class="dash-bar-label">k8snode01.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:44%">222W</div></div>
+            <div class="dash-bar-label">research1.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:26%">133W</div></div>
+        </div>
+        <div class="dash-widget">
+            <h4>Memory Usage</h4>
+            <div class="dash-bar-label">research8.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-high" style="width:92%">92%</div></div>
+            <div class="dash-bar-label">research3.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:67%">67%</div></div>
+            <div class="dash-bar-label">research7.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:35%">35%</div></div>
+            <div class="dash-bar-label">pve02.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:22%">22%</div></div>
+        </div>
+        <div class="dash-widget">
+            <h4>Inlet Temperature</h4>
+            <div class="dash-bar-label">research1.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:66%">33°C</div></div>
+            <div class="dash-bar-label">research7.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:56%">28°C</div></div>
+            <div class="dash-bar-label">pve0.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:50%">25°C</div></div>
+            <div class="dash-bar-label">lustre01.djch.one</div>
+            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:40%">20°C</div></div>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>DJCH Infrastructure · Zabbix 7.4 + FreeIPA + Feishu · 2026</p>
+    <p style="margin-top:8px"><a href="/k8s" data-i18n="footer_link">&larr; K8s Architecture Overview</a></p>
+</footer>
+
+<script>
+// Stars
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 150; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2 + 1;
+    star.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${Math.random()*3+2}s;animation-delay:${Math.random()*5}s;`;
+    starsEl.appendChild(star);
+}
+
+// Animate bars on scroll
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+            e.target.querySelectorAll('.dash-bar-fill').forEach(bar => {
+                const w = bar.style.width; bar.style.width = '0%';
+                setTimeout(() => bar.style.width = w, 100);
+            });
+        }
+    });
+}, { threshold: 0.3 });
+document.querySelectorAll('.dash-widget').forEach(w => observer.observe(w));
+
+// i18n
+const i18n = {
+  zh: {
+    nav_zabbix: "Zabbix 监控", nav_k8s: "K8s 架构",
+    hero_title: "Zabbix 硬件监控架构",
+    hero_desc: "基于 IPMI 的多厂商硬件统一监控方案，通过归一化中间层抹平传感器差异，实时温度/功耗监控 + 飞书即时告警",
+    stat_nodes: "监控节点", stat_vendors: "服务器厂商", stat_sensors: "IPMI 传感器", stat_latency: "告警延迟",
+    arch_title: "系统架构", arch_desc: "从硬件传感器到飞书通知的完整数据流",
+    arch_bmc: "服务器 BMC", arch_zabbix_desc: "IPMI Poller x5<br>ipmi.get 采集全量传感器",
+    arch_normalize: "HW 归一化层", arch_normalize_desc: "模板宏 + 依赖项<br>统一指标命名",
+    arch_trigger_label: "触发器<br>阈值检测",
+    arch_alert: "告警引擎", arch_alert_desc: "分级告警 · 依赖抑制<br>Warning → Disaster",
+    arch_feishu: "飞书群通知", arch_feishu_desc: "Interactive Card<br>实时推送 · 恢复通知",
+    flow_title: "数据流转", flow_desc: "四步完成从物理传感器到归一化指标的转换",
+    flow1_title: "IPMI 原始采集", flow1_desc: "Zabbix IPMI Poller 通过 IPMI 2.0 协议连接各服务器 BMC，<code>ipmi.get</code> 一次性拉取所有传感器数据，返回 JSON 数组。",
+    flow2_title: "宏映射厂商差异", flow2_desc: "每台服务器配置 4 个主机宏，将厂商特定的传感器名映射到统一变量。Supermicro 的 <code>CPU0_Temp</code> 和 Dell 的 <code>Temp</code> 指向同一指标。",
+    flow3_title: "JSONPath 提取", flow3_desc: "依赖项通过 JSONPath 表达式从 master item 中提取目标传感器值，discard-on-error 保证传感器缺失时不报错。",
+    flow4_title: "统一输出", flow4_desc: "所有服务器输出相同的 4 个标准指标，可直接用于 Dashboard 展示、触发器告警和跨厂商对比。",
+    vendor_title: "多厂商传感器映射", vendor_desc: "通过宏抽象抹平 5 个厂商的命名差异",
+    vendor_th_metric: "统一指标",
+    alert_title: "飞书告警链路", alert_desc: "从阈值触发到飞书卡片通知的完整链路",
+    alert_trigger_h: "🚨 触发器", alert_trigger_p: "模板级阈值，宏控制上下限",
+    alert_sign_h: "🔐 Webhook 签名", alert_sign_p: "飞书 Bot 安全验证",
+    sign1: "生成 Unix 时间戳", sign2: "拼接 timestamp + \\n + secret", sign3: "HMAC-SHA256 签名", sign4: "Hex → Base64 编码", sign5: "附加到请求体发送",
+    alert_card_h: "💬 飞书卡片", alert_card_p: "Interactive Card 富文本消息",
+    dash_title: "Dashboard 可视化", dash_desc: "DC Infrastructure Monitor — 颜色随数值从绿到红渐变",
+    footer_link: "← K8s 架构全景"
+  },
+  en: {
+    nav_zabbix: "Zabbix Monitoring", nav_k8s: "K8s Architecture",
+    hero_title: "Zabbix Hardware Monitoring Architecture",
+    hero_desc: "Multi-vendor unified hardware monitoring via IPMI, with a normalization layer to abstract sensor differences, real-time temperature/power monitoring, and Feishu instant alerting",
+    stat_nodes: "Monitored Nodes", stat_vendors: "Server Vendors", stat_sensors: "IPMI Sensors", stat_latency: "Alert Latency",
+    arch_title: "System Architecture", arch_desc: "Complete data flow from hardware sensors to Feishu notifications",
+    arch_bmc: "Server BMC", arch_zabbix_desc: "IPMI Poller x5<br>ipmi.get fetches all sensors",
+    arch_normalize: "HW Normalization", arch_normalize_desc: "Template Macros + Dependent Items<br>Unified metric naming",
+    arch_trigger_label: "Triggers<br>Threshold Detection",
+    arch_alert: "Alert Engine", arch_alert_desc: "Severity-based · Dependency suppression<br>Warning → Disaster",
+    arch_feishu: "Feishu Notification", arch_feishu_desc: "Interactive Card<br>Real-time push · Recovery alerts",
+    flow_title: "Data Pipeline", flow_desc: "Four steps from physical sensors to normalized metrics",
+    flow1_title: "IPMI Raw Collection", flow1_desc: "Zabbix IPMI Poller connects to each server BMC via IPMI 2.0 protocol. The <code>ipmi.get</code> master item fetches all sensor data at once, returning a JSON array.",
+    flow2_title: "Macro Vendor Mapping", flow2_desc: "Each server has 4 host-level macros mapping vendor-specific sensor names to unified variables. Supermicro's <code>CPU0_Temp</code> and Dell's <code>Temp</code> point to the same metric.",
+    flow3_title: "JSONPath Extraction", flow3_desc: "Dependent items use JSONPath expressions to extract target sensor values from the master item. Discard-on-error ensures missing sensors don't cause failures.",
+    flow4_title: "Unified Output", flow4_desc: "All servers output the same 4 standardized metrics, ready for dashboard visualization, trigger alerting, and cross-vendor comparison.",
+    vendor_title: "Multi-Vendor Sensor Mapping", vendor_desc: "Macro abstraction bridges naming differences across 5 vendors",
+    vendor_th_metric: "Unified Metric",
+    alert_title: "Feishu Alert Pipeline", alert_desc: "Complete chain from threshold trigger to Feishu card notification",
+    alert_trigger_h: "🚨 Triggers", alert_trigger_p: "Template-level thresholds, macro-controlled limits",
+    alert_sign_h: "🔐 Webhook Signing", alert_sign_p: "Feishu Bot security verification",
+    sign1: "Generate Unix timestamp", sign2: "Concat timestamp + \\n + secret", sign3: "HMAC-SHA256 signature", sign4: "Hex to Base64 encoding", sign5: "Attach to request body",
+    alert_card_h: "💬 Feishu Card", alert_card_p: "Interactive Card rich-text message",
+    dash_title: "Dashboard Visualization", dash_desc: "DC Infrastructure Monitor — colors gradient from green to red with value",
+    footer_link: "← K8s Architecture Overview"
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'en';
+function applyLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.getElementById('langSwitch').textContent = lang === 'zh' ? 'EN' : '中文';
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
+    });
+}
+function toggleLang() { applyLang(currentLang === 'zh' ? 'en' : 'zh'); }
+applyLang(currentLang);
+</script>
+
+</body>
+</html>

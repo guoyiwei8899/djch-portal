@@ -7,7 +7,8 @@
     "network":  { "label": "Network · Proxy",        "icon": "globe" },
     "k8s":      { "label": "Platform · K8s",         "icon": "hexagon" },
     "infra":    { "label": "Infrastructure · IaC",   "icon": "server" },
-    "identity": { "label": "Identity · DNS",         "icon": "shield" }
+    "identity":   { "label": "Identity · DNS",             "icon": "shield" },
+    "monitoring": { "label": "Monitoring · Observability", "icon": "activity" }
   },
   "viz": [
     {
@@ -21,6 +22,18 @@
       "title": "Kubernetes Architecture",
       "desc": "RKE2 cluster components and traffic topology",
       "path": "viz/k8s-arch.html"
+    },
+    {
+      "domain": "infra", "icon": "server",
+      "title": "Infrastructure Architecture",
+      "desc": "Network & infrastructure topology",
+      "path": "viz/infra-arch.html"
+    },
+    {
+      "domain": "monitoring", "icon": "bar-chart",
+      "title": "Zabbix Monitoring Architecture",
+      "desc": "Hardware monitoring data flow",
+      "path": "viz/zabbix-arch.html"
     }
   ],
   "system": [
