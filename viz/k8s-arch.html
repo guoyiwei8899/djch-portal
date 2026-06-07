@@ -25,6 +25,22 @@
   --mono:"Roboto Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --sans:"Poppins",ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
 }
+/* dark theme — follows portal toggle (synced via localStorage 'portal-theme') */
+.dark{
+  --bg:#1a1d23; --bg2:#15181d; --surface:#2f3436; --surface2:#272b2f; --surface3:#323a40;
+  --border:#3c4145; --border2:#4a5158;
+  --text:#e5e5e5; --dim:#a3a3a3; --mute:#7e858c;
+  --blue:#5aa2ff; --violet:#c79bff; --cyan:#3fd0e0; --green:#4ad06a; --amber:#fbbf3c; --red:#ff7b7b; --pink:#ff99cc;
+  --teal:#2dd4bf; --emerald:#34d399;
+  --grad:linear-gradient(135deg,#4ad06a 0%,#2dd4bf 100%);
+  --sh:0 10px 30px rgba(0,0,0,.45);
+}
+.dark nav{background:rgba(26,29,35,.82)}
+.dark .nav-links a.active{color:#7ee6a0;background:rgba(74,208,106,.18)}
+.dark body::before{background:
+  radial-gradient(900px 500px at 12% -5%,rgba(74,208,106,.10),transparent 60%),
+  radial-gradient(800px 500px at 95% 8%,rgba(90,162,255,.10),transparent 55%),
+  radial-gradient(700px 600px at 50% 110%,rgba(45,212,191,.08),transparent 60%)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:78px}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;
@@ -195,6 +211,18 @@ footer code{color:var(--dim)}
   .reveal{opacity:1;transform:none}
 }
 </style>
+<script>
+  /* sync theme with portal (same-origin localStorage); runs before paint to avoid flash */
+  (function(){
+    function setDark(v){ document.documentElement.classList.toggle('dark', v); }
+    var t = localStorage.getItem('portal-theme');
+    setDark(t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+    addEventListener('storage', function(e){
+      if (e.key === 'portal-theme')
+        setDark(e.newValue ? e.newValue === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+    });
+  })();
+</script>
 </head>
 <body>
 
