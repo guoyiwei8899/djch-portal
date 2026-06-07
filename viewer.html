@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>djch portal · viewer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
+  <link rel="stylesheet" href="assets/app.css">
+  <style>
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; overflow: hidden; }
+    .vnav {
+      display: flex; align-items: center; gap: 12px; height: 56px; flex: none;
+      padding: 0 16px; background: var(--sidebar); border-bottom: 1px solid var(--sidebar-border);
+    }
+    .back {
+      display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 10px;
+      border-radius: 10px; border: 1px solid var(--border); background: var(--card);
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .back:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); }
+    .back .ic { width: 18px; height: 18px; }
+    .crumb { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .crumb .tile { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; flex: none;
+      background: color-mix(in srgb, var(--dc, var(--primary)) 18%, var(--card)); color: color-mix(in srgb, var(--dc, var(--primary)) 62%, var(--foreground)); }
+    .crumb .tile .ic { width: 18px; height: 18px; }
+    .crumb .t { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .grow { flex: 1; }
+    .switch { position: relative; }
+    .switch select {
+      appearance: none; height: 40px; padding: 0 34px 0 13px; border-radius: 10px; font: inherit; font-size: 13px;
+      background: var(--card); border: 1px solid var(--border); color: var(--foreground); cursor: pointer; max-width: 220px;
+    }
+    .switch::after { content: "▾"; position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: var(--muted-foreground); pointer-events: none; }
+    .frame-wrap { flex: 1; min-height: 0; background: var(--background); }
+    iframe { width: 100%; height: 100%; border: 0; display: block; }
+    @media (max-width: 620px) { .switch, .back span { display: none; } }
+  </style>
+</head>
+<body>
+  <nav class="vnav">
+    <a class="back" href="index.html" id="back"></a>
+    <div class="crumb"><span class="tile" id="crumb-tile"></span><span class="t" id="crumb-title">…</span></div>
+    <div class="grow"></div>
+    <div class="switch"><select id="switch" aria-label="Switch visualization"></select></div>
+    <a class="icon-btn" id="raw" target="_blank" rel="noopener" aria-label="Open raw page in new tab"></a>
+    <button class="icon-btn" id="theme-btn" aria-label="Toggle theme"></button>
+  </nav>
+  <div class="frame-wrap"><iframe id="frame" title="visualization"></iframe></div>
+
+  <script src="assets/portal.js"></script>
+  <script>
+    const $ = s => document.querySelector(s);
+    const qs = new URLSearchParams(location.search);
+    let path = qs.get('p') || '';
+    const title = qs.get('t') || 'Visualization';
+    const domain = qs.get('d') || '';
+
+    // only allow loading pages under viz/ (no external/abs paths)
+    if (!/^viz\/[\w.\-/]+\.html$/.test(path)) path = '';
+
+    $('#back').innerHTML = svgIcon('arrow-left') + '<span>Portal</span>';
+    $('#raw').innerHTML = svgIcon('external');
+    const themeBtn = $('#theme-btn');
+    const paint = () => themeBtn.innerHTML = themeIcon();
+    paint(); themeBtn.onclick = () => { toggleTheme(); paint(); };
+
+    $('#crumb-title').textContent = title;
+    document.title = 'djch portal · ' + title;
+
+    if (path) {
+      $('#frame').src = path;
+      $('#raw').href = path;
+    } else {
+      $('#frame').srcdoc = '<body style="font-family:sans-serif;color:#888;padding:40px">Invalid or missing page.</body>';
+    }
+
+    loadPortal().then(data => {
+      const dom = (data.domains || {})[domain];
+      const tile = $('#crumb-tile');
+      tile.style.setProperty('--dc', 'var(--d-' + (domain || 'network') + ')');
+      tile.innerHTML = svgIcon(dom ? dom.icon : 'grid');
+
+      const sel = $('#switch');
+      (data.viz || []).forEach(v => {
+        const o = document.createElement('option');
+        o.value = 'viewer.html?p=' + encodeURIComponent(v.path) + '&t=' + encodeURIComponent(v.title) + '&d=' + v.domain;
+        o.textContent = v.title;
+        if (v.path === path) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => { location.href = sel.value; };
+    });
+  </script>
+</body>
+</html>

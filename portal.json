@@ -1,0 +1,39 @@
+{
+  "brand": "djch portal",
+  "title": "Internal technical portal",
+  "subtitle": "Visualization library + system directory",
+  "domains": {
+    "storage":  { "label": "Storage · Lustre",      "icon": "hard-drive" },
+    "network":  { "label": "Network · Proxy",        "icon": "globe" },
+    "k8s":      { "label": "Platform · K8s",         "icon": "hexagon" },
+    "infra":    { "label": "Infrastructure · IaC",   "icon": "server" },
+    "identity": { "label": "Identity · DNS",         "icon": "shield" }
+  },
+  "viz": [
+    {
+      "domain": "network", "icon": "globe",
+      "title": "Transparent Proxy Flow",
+      "desc": "DNS / direct / proxy / RouterOS split-routing data path",
+      "path": "viz/proxy-flow-diagram.html"
+    },
+    {
+      "domain": "k8s", "icon": "hexagon",
+      "title": "Kubernetes Architecture",
+      "desc": "RKE2 cluster components and traffic topology",
+      "path": "viz/k8s-arch.html"
+    },
+    {
+      "domain": "infra", "icon": "server",
+      "title": "Rack & Datacenter Map",
+      "desc": "AIDC rack layout and server placement",
+      "path": "viz/aidc-rack.html"
+    }
+  ],
+  "system": [
+    { "icon": "book",      "title": "Wiki",          "desc": "wiki.js knowledge base",        "url": "https://wiki.djch.one" },
+    { "icon": "activity",  "title": "Proxy Monitor", "desc": "sing-box node latency topology", "url": "https://proxy-mon.djch.one" },
+    { "icon": "monitor",   "title": "AIDC Portal",   "desc": "Datacenter asset portal",        "url": "https://aidc.djch.one" },
+    { "icon": "sliders",   "title": "Semaphore",     "desc": "Terraform automation GUI",       "url": "https://semaphore.djch.one" },
+    { "icon": "bar-chart", "title": "Zabbix",        "desc": "Infrastructure monitoring",      "url": "http://192.168.6.13/zabbix/" }
+  ]
+}

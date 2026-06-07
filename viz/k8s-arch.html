@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>djch.one Kubernetes 集群架构</title>
+<style>
+:root{
+  --bg:#08110c; --bg2:#0b1611; --surface:#11201a; --surface2:#172a22; --surface3:#1e352a;
+  --border:#234234; --border2:#2f5843;
+  --text:#e7f3ec; --dim:#a0c2af; --mute:#6c8d79;
+  --blue:#5aa2ff; --violet:#a98bff; --cyan:#22d3ee; --green:#34d399; --amber:#fbbf3c; --red:#ff7b7b; --pink:#ff8ec5;
+  --teal:#2dd4bf; --emerald:#10b981;
+  --grad:linear-gradient(135deg,#34d399 0%,#10b981 52%,#2dd4bf 100%);
+  --r:14px; --r-sm:9px;
+  --sh:0 8px 28px rgba(0,0,0,.45);
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:78px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(900px 500px at 12% -5%,rgba(52,211,153,.14),transparent 60%),
+    radial-gradient(800px 500px at 95% 8%,rgba(16,185,129,.12),transparent 55%),
+    radial-gradient(700px 600px at 50% 110%,rgba(45,212,191,.09),transparent 60%)}
+a{color:inherit;text-decoration:none}
+code,.mono{font-family:var(--mono)}
+
+/* nav */
+nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(14px);
+  background:rgba(10,14,20,.78);border-bottom:1px solid var(--border)}
+.nav-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:18px;
+  padding:14px 24px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:.2px}
+.logo{width:26px;height:26px}
+.nav-links{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.nav-links a{font-size:13px;color:var(--dim);padding:6px 11px;border-radius:8px;
+  transition:color .2s,background .2s}
+.nav-links a:hover{color:var(--text);background:var(--surface2)}
+.nav-links a.active{color:#fff;background:rgba(52,211,153,.18)}
+
+/* hero */
+header{max-width:1180px;margin:0 auto;padding:72px 24px 40px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;
+  letter-spacing:1.4px;text-transform:uppercase;color:var(--cyan);
+  border:1px solid var(--border2);border-radius:999px;padding:6px 14px;background:var(--surface);margin-bottom:22px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(70,214,138,.6);
+  animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(70,214,138,.55)}70%{box-shadow:0 0 0 9px rgba(70,214,138,0)}100%{box-shadow:0 0 0 0 rgba(70,214,138,0)}}
+h1{font-size:clamp(30px,5.4vw,52px);line-height:1.12;font-weight:800;letter-spacing:-.5px}
+h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  background-size:200% auto;animation:shine 7s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+.sub{max-width:680px;margin:18px auto 0;color:var(--dim);font-size:17px}
+.meta-line{margin-top:14px;font-family:var(--mono);font-size:13px;color:var(--mute)}
+
+/* stats */
+.stats{max-width:1180px;margin:34px auto 0;padding:0 24px;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 18px;text-align:left;
+  position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:var(--grad)}
+.stat .num{font-size:30px;font-weight:800;font-family:var(--mono);letter-spacing:-1px}
+.stat .lbl{font-size:12.5px;color:var(--dim);margin-top:3px}
+
+/* sections */
+section{max-width:1180px;margin:0 auto;padding:64px 24px 8px}
+.sec-head{margin-bottom:26px}
+.sec-tag{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:1px}
+.sec-head h2{font-size:27px;font-weight:800;margin-top:6px;letter-spacing:-.3px}
+.sec-head p{color:var(--dim);margin-top:8px;max-width:760px;font-size:15px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* layer stack (overview) */
+.layers{display:flex;flex-direction:column;gap:12px}
+.layer{display:grid;grid-template-columns:160px 1fr;gap:16px;align-items:center;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;
+  transition:border-color .25s,transform .25s}
+.layer:hover{border-color:var(--border2);transform:translateX(4px)}
+.layer-name{display:flex;flex-direction:column;gap:3px}
+.layer-name b{font-size:15px}
+.layer-name span{font-size:11.5px;color:var(--mute);font-family:var(--mono)}
+.layer-name .bar{height:3px;width:38px;border-radius:2px;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:13px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:999px;padding:6px 13px;color:var(--text);
+  transition:transform .2s,border-color .2s,background .2s}
+.chip:hover{transform:translateY(-2px);border-color:var(--border2);background:var(--surface3)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.chip small{color:var(--mute);font-family:var(--mono);font-size:11px}
+
+/* service grid */
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px}
+.card{background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--border);
+  border-radius:var(--r);padding:22px;transition:transform .28s cubic-bezier(.2,.7,.2,1),border-color .28s,box-shadow .28s;
+  position:relative;overflow:hidden}
+.card:hover{transform:translateY(-5px);border-color:var(--border2);box-shadow:var(--sh)}
+.card-head{display:flex;align-items:flex-start;gap:13px;margin-bottom:6px}
+.ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;flex:none;
+  background:var(--surface2);border:1px solid var(--border)}
+.ic svg{width:23px;height:23px}
+.card-head .t{font-size:18px;font-weight:700}
+.card-head .ns{font-family:var(--mono);font-size:11.5px;color:var(--mute)}
+.role{color:var(--dim);font-size:13.5px;margin:4px 0 16px}
+
+/* relationship flow diagram */
+.flow{background:var(--bg);border:1px dashed var(--border2);border-radius:var(--r-sm);
+  padding:16px 14px;margin-bottom:16px}
+.flow-title{font-size:11px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:13px;display:flex;align-items:center;gap:6px}
+.flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.node{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;
+  padding:7px 12px;border-radius:9px;background:var(--surface2);border:1px solid var(--border2);
+  white-space:nowrap;transition:transform .2s,box-shadow .2s}
+.node:hover{transform:scale(1.06)}
+.node .nd{width:7px;height:7px;border-radius:50%;flex:none}
+.node small{font-family:var(--mono);font-weight:400;color:var(--mute);font-size:10.5px}
+.arrow{color:var(--mute);font-size:16px;flex:none;animation:none}
+.branch{display:flex;flex-direction:column;gap:8px;padding-left:6px;border-left:2px solid var(--border2);margin-left:4px}
+
+/* node type tints */
+.t-app{box-shadow:inset 0 0 0 1px rgba(52,211,153,.4)}     .t-app .nd{background:var(--green)}
+.t-data{box-shadow:inset 0 0 0 1px rgba(169,139,255,.35)}  .t-data .nd{background:var(--violet)}
+.t-cache{box-shadow:inset 0 0 0 1px rgba(51,214,196,.35)}  .t-cache .nd{background:var(--cyan)}
+.t-ext{box-shadow:inset 0 0 0 1px rgba(251,191,60,.35)}    .t-ext .nd{background:var(--amber)}
+.t-sec{box-shadow:inset 0 0 0 1px rgba(255,123,123,.35)}   .t-sec .nd{background:var(--red)}
+.t-net{box-shadow:inset 0 0 0 1px rgba(90,162,255,.35)}    .t-net .nd{background:var(--blue)}
+
+/* stack table */
+.stack{width:100%;border-collapse:collapse;margin-bottom:6px}
+.stack td{padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border);vertical-align:top}
+.stack td:first-child{color:var(--dim);width:42%;padding-right:8px}
+.stack td:last-child{font-family:var(--mono);font-size:11.5px;color:var(--text);text-align:right;word-break:break-all}
+.stack tr:last-child td{border-bottom:none}
+.tag{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:5px;
+  background:var(--surface3);color:var(--cyan);margin-left:5px}
+
+/* ops box */
+.ops{margin-top:14px}
+.ops summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+  font-size:13px;font-weight:600;color:var(--green);padding:9px 12px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--r-sm);transition:background .2s}
+.ops summary:hover{background:var(--surface3)}
+.ops summary::-webkit-details-marker{display:none}
+.ops summary .ch{margin-left:auto;transition:transform .25s;color:var(--mute)}
+.ops[open] summary .ch{transform:rotate(90deg)}
+.ops .body{padding:13px 4px 2px}
+pre{background:#070a0f;border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:13px 14px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.7;color:#c9d6e6}
+pre .c{color:var(--mute)}    pre .k{color:var(--violet)}  pre .s{color:var(--green)}
+pre .v{color:var(--amber)}   pre .o{color:var(--cyan)}
+.note{font-size:12.5px;color:var(--dim);margin-top:10px;padding:10px 12px;border-radius:var(--r-sm);
+  background:rgba(251,191,60,.07);border:1px solid rgba(251,191,60,.22)}
+.note b{color:var(--amber)}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin:-8px 0 26px;font-size:12.5px;color:var(--dim)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+
+/* generic update banner */
+.gitops{background:linear-gradient(135deg,rgba(52,211,153,.1),rgba(45,212,191,.06));
+  border:1px solid var(--border2);border-radius:var(--r);padding:22px 24px;margin-top:6px}
+.gitops h3{font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:9px}
+.gitops p{color:var(--dim);font-size:14px;margin-bottom:14px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:15px}
+.step .n{width:24px;height:24px;border-radius:7px;background:var(--grad);color:#06101f;font-weight:800;
+  font-size:13px;display:grid;place-items:center;margin-bottom:9px;font-family:var(--mono)}
+.step b{font-size:13.5px}.step p{font-size:12.5px;color:var(--dim);margin-top:5px;margin-bottom:0}
+
+footer{max-width:1180px;margin:40px auto 0;padding:30px 24px 56px;border-top:1px solid var(--border);
+  color:var(--mute);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+footer code{color:var(--dim)}
+
+@media(max-width:560px){
+  .layer{grid-template-columns:1fr;gap:10px}
+  .stack td:last-child{text-align:left}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-in">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" fill="none"><path d="M12 1.5l9.5 4.2v8.6L12 22.5 2.5 14.3V5.7L12 1.5z" stroke="url(#g)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="#34d399"/><defs><linearGradient id="g" x1="2" y1="2" x2="22" y2="22"><stop stop-color="#34d399"/><stop offset="1" stop-color="#2dd4bf"/></linearGradient></defs></svg>
+      djch.one <span style="color:var(--mute);font-weight:500">/ k8s</span>
+    </div>
+    <div class="nav-links">
+      <a href="#overview">总览</a>
+      <a href="#layers">组件分层</a>
+      <a href="#services">服务架构</a>
+      <a href="#update">更新流程</a>
+      <a href="#cheat">命令速查</a>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div class="eyebrow reveal"><span class="pulse"></span>RKE2 v1.33.5 · 3-node HA · Rocky Linux 9</div>
+  <h1 class="reveal">djch.one <span class="g">Kubernetes</span> 集群架构</h1>
+  <div class="meta-line reveal">k8snode01-03 · 192.168.6.131-133 · control-plane + etcd + master</div>
+</header>
+
+<div class="stats">
+  <div class="stat reveal"><div class="num" data-to="3">0</div><div class="lbl">控制平面节点 (HA)</div></div>
+  <div class="stat reveal"><div class="num" data-to="12">0</div><div class="lbl">ArgoCD Applications</div></div>
+  <div class="stat reveal"><div class="num" data-to="10">0</div><div class="lbl">业务 / 平台服务</div></div>
+  <div class="stat reveal"><div class="num" data-to="3">0</div><div class="lbl">流量入口 (三种)</div></div>
+  <div class="stat reveal"><div class="num">SSH</div><div class="lbl">入口 yiwei@.131</div></div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="sec-head reveal">
+    <div class="sec-tag">// 01 · TOPOLOGY</div>
+    <h2>整体拓扑:一切从 Git 流入</h2>
+    <p>ArgoCD 从 GitHub <code>guoyiwei8899/k8s-gitops</code> 把声明式清单持续同步进集群;流量经三种入口进出;数据落在 Longhorn / Lustre;机密由 sealed-secrets 治理。</p>
+  </div>
+  <div class="layers">
+    <div class="layer reveal">
+      <div class="layer-name"><b>Git (真相源)</b><span>k8s-gitops</span><div class="bar" style="background:var(--green)"></div></div>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:var(--green)"></span>GitHub repo<small>guoyiwei8899/k8s-gitops</small></span>
+        <span class="arrow">→</span>
+        <span class="chip"><span class="dot" style="background:var(--blue)"></span>ArgoCD<small>192.168.6.241</small></span>
+        <span class="chip"><span class="dot" style="background:var(--blue)"></span>Rancher + Fleet</span>
+      </div>
+    </div>
+    <div class="layer reveal">
+      <div class="layer-name"><b>流量入口</b><span>ingress</span><div class="bar" style="background:var(--pink)"></div></div>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:var(--pink)"></span>Traefik<small>LB .240 · infra-nt</small></span>
+        <span class="chip"><span class="dot" style="background:var(--pink)"></span>ingress-nginx<small>uyuni/rancher</small></span>
+        <span class="chip"><span class="dot" style="background:var(--pink)"></span>cloudflared<small>immich 公网隧道</small></span>
+        <span class="chip"><span class="dot" style="background:var(--pink)"></span>MetalLB<small>.240–.250</small></span>
+        <span class="chip"><span class="dot" style="background:var(--pink)"></span>CoreDNS</span>
+      </div>
+    </div>
+    <div class="layer reveal">
+      <div class="layer-name"><b>存储</b><span>storage</span><div class="bar" style="background:var(--violet)"></div></div>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:var(--violet)"></span>Longhorn<small>默认 SC · 多副本</small></span>
+        <span class="chip"><span class="dot" style="background:var(--violet)"></span>lustre-csi<small>HPE · 生产 Lustre</small></span>
+        <span class="chip"><span class="dot" style="background:var(--violet)"></span>local-netbox</span>
+      </div>
+    </div>
+    <div class="layer reveal">
+      <div class="layer-name"><b>机密 / 证书</b><span>security</span><div class="bar" style="background:var(--red)"></div></div>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:var(--red)"></span>sealed-secrets<small>0.37.0</small></span>
+        <span class="chip"><span class="dot" style="background:var(--red)"></span>cert-manager<small>letsencrypt-dns01</small></span>
+        <span class="chip"><span class="dot" style="background:var(--amber)"></span>Authentik<small>SSO / OIDC</small></span>
+      </div>
+    </div>
+    <div class="layer reveal">
+      <div class="layer-name"><b>可观测</b><span>observability</span><div class="bar" style="background:var(--cyan)"></div></div>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>Prometheus</span>
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>Grafana</span>
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>Loki + promtail</span>
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>exporters<small>node/blackbox/snmp/ipmi</small></span>
+        <span class="chip"><span class="dot" style="background:var(--green)"></span>feishu 告警桥</span>
+      </div>
+    </div>
+    <div class="layer reveal">
+      <div class="layer-name"><b>共享数据</b><span>data</span><div class="bar" style="background:var(--violet)"></div></div>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:var(--violet)"></span>PostgreSQL-HA<small>repmgr ×3 + pgpool</small></span>
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>Valkey<small>缓存 / 队列</small></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="sec-head reveal">
+    <div class="sec-tag">// 02 · SERVICE ARCHITECTURE</div>
+    <h2>各服务用了哪些组件</h2>
+    <p>每张卡 = 一个服务的关系图(它依赖谁)+ 技术栈(镜像/版本)+ 配置更新流程。点开「更新流程」看该服务怎么改 ConfigMap 才生效。</p>
+  </div>
+  <div class="legend reveal">
+    <span><span class="dot" style="background:var(--green)"></span>应用 App</span>
+    <span><span class="dot" style="background:var(--violet)"></span>数据库 DB</span>
+    <span><span class="dot" style="background:var(--cyan)"></span>缓存 Cache</span>
+    <span><span class="dot" style="background:var(--amber)"></span>外部依赖</span>
+    <span><span class="dot" style="background:var(--red)"></span>机密 Secret</span>
+    <span><span class="dot" style="background:var(--blue)"></span>网络入口</span>
+  </div>
+
+  <div class="svc-grid">
+
+    <!-- AIDC -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5aa2ff" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        <div><div class="t">aidc</div><div class="ns">ns: aidc</div></div>
+      </div>
+      <div class="role">自研前后端 · 硬件大屏数据来自 Zabbix</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-net"><span class="nd"></span>Traefik</span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>frontend<small>×2</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>backend<small>×2</small></span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-ext"><span class="nd"></span>Zabbix API<small>aidc.hw.snapshot</small></span>
+            <span class="node t-sec"><span class="nd"></span>aidc-secrets<small>sealed</small></span>
+          </span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>前端</td><td>registry.djch.one/aidc-frontend<span class="tag">latest</span></td></tr>
+        <tr><td>后端</td><td>registry.djch.one/aidc-backend<span class="tag">latest</span></td></tr>
+        <tr><td>外部数据</td><td>Zabbix item aidc.hw.snapshot</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>更新流程 / 改 ConfigMap<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="c"># 改后端配置(ConfigMap 在 git 仓库)</span>
+<span class="k">vim</span> apps/aidc/<span class="o">configmap.yaml</span>
+git commit -am <span class="s">"aidc: tweak config"</span> && git push
+<span class="c"># ArgoCD 自动同步,然后让 Pod 重新加载 env</span>
+kubectl rollout restart <span class="o">deploy/aidc-backend</span> -n aidc
+<span class="c"># 改了代码 → 重建镜像(:latest 必须手动滚更)</span>
+docker build -t registry.djch.one/aidc-backend:latest . && docker push ...
+kubectl rollout restart deploy/aidc-backend deploy/aidc-frontend -n aidc</pre>
+          <div class="note"><b>⚠ env 型 ConfigMap</b> 改了不会自动生效,必须 <code>rollout restart</code>;改密码走 sealed-secrets(见底部)。</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- IMMICH -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#46d68a" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 17l-5-5L5 19"/></svg></div>
+        <div><div class="t">immich</div><div class="ns">ns: home-media</div></div>
+      </div>
+      <div class="role">自托管相册 · 公网经 Cloudflare Tunnel</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-net"><span class="nd"></span>cloudflared</span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>immich-server</span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-app"><span class="nd"></span>machine-learning</span>
+            <span class="node t-cache"><span class="nd"></span>valkey</span>
+            <span class="node t-data"><span class="nd"></span>PG-HA<small>共享 pgpool</small></span>
+          </span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>Server</td><td>immich-server<span class="tag">v2.7.5</span></td></tr>
+        <tr><td>ML 识图</td><td>immich-machine-learning<span class="tag">v2.7.5</span></td></tr>
+        <tr><td>缓存</td><td>valkey<span class="tag">9.1</span></td></tr>
+        <tr><td>数据库</td><td>→ 共享 PostgreSQL-HA</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>更新流程 / 改 ConfigMap<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="c"># immich 配置 / 隧道路由在 git 仓库</span>
+<span class="k">vim</span> apps/home-media/immich/<span class="o">values.yaml</span>
+git commit -am <span class="s">"immich: bump v2.7.x"</span> && git push
+<span class="c"># 同步 + 重启 server 让新配置生效</span>
+kubectl rollout restart deploy/immich-server -n home-media</pre>
+          <div class="note"><b>⚠</b> 升级跨大版本前看 immich release notes(DB migration 不可逆),先确保 PG-HA 已备份到 nfs01。</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- PG-HA -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#a98bff" stroke-width="1.7"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
+        <div><div class="t">PostgreSQL-HA</div><div class="ns">ns: home-media</div></div>
+      </div>
+      <div class="role">多应用共享的高可用数据库(immich / semaphore 都连它)</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 拓扑</div>
+        <div class="flow-row">
+          <span class="node t-app"><span class="nd"></span>消费者<small>immich / semaphore</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-data"><span class="nd"></span>pgpool<small>读写路由</small></span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-data"><span class="nd"></span>postgresql-0<small>primary</small></span>
+            <span class="node t-data"><span class="nd"></span>postgresql-1 / 2<small>repmgr 副本</small></span>
+          </span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>主从 (repmgr)</td><td>postgresql-repmgr<span class="tag">17.6 ×3</span></td></tr>
+        <tr><td>连接池</td><td>pgpool<span class="tag">4.6.3</span></td></tr>
+        <tr><td>管理界面</td><td>pgadmin4<span class="tag">9.8</span></td></tr>
+        <tr><td>连接点</td><td>…pgpool.home-media.svc:5432</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>关键约束 / 备份<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="c"># 应用连接必须用 postgres 用户(pgpool SCRAM 不认新角色)</span>
+host=…pgpool.home-media.svc  user=<span class="v">postgres</span>  sslmode=<span class="v">disable</span>
+<span class="c"># 备份(双保险,均→ nfs01 192.168.6.135)</span>
+CronJob pg-dumpall-nfs   <span class="c"># 每日02:00 逻辑备份,留14天</span>
+Longhorn RecurringJob    <span class="c"># 每日03:00 卷级快照</span></pre>
+          <div class="note"><b>⚠</b> 镜像是 <code>bitnamilegacy</code>(Bitnami 2025 后迁移),升级前确认镜像来源仍可拉取。</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- NETBOX -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#33d6c4" stroke-width="1.7"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg></div>
+        <div><div class="t">netbox</div><div class="ns">ns: infra-nt</div></div>
+      </div>
+      <div class="role">IPAM / DCIM · 网络与机房资产真相源</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-net"><span class="nd"></span>Traefik</span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>netbox</span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-app"><span class="nd"></span>worker<small>RQ 任务</small></span>
+            <span class="node t-cache"><span class="nd"></span>valkey<small>primary +3 副本</small></span>
+            <span class="node t-data"><span class="nd"></span>PostgreSQL<small>local-netbox SC</small></span>
+          </span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>App + Worker</td><td>netbox-community/netbox<span class="tag">v4.5.7</span></td></tr>
+        <tr><td>缓存</td><td>valkey (主 + 3 副本)</td></tr>
+        <tr><td>清理任务</td><td>housekeeping CronJob</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>更新流程 / 改 ConfigMap<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="k">vim</span> apps/infra-nt/netbox/<span class="o">values.yaml</span>   <span class="c"># 插件/配置</span>
+git commit -am <span class="s">"netbox: ..."</span> && git push
+kubectl rollout restart deploy/my-netbox deploy/my-netbox-worker -n infra-nt</pre>
+        </div>
+      </details>
+    </div>
+
+    <!-- WIKIJS -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5aa2ff" stroke-width="1.7"><path d="M4 4h11l5 5v11a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M14 4v6h6M8 13h8M8 17h5"/></svg></div>
+        <div><div class="t">Wiki.js</div><div class="ns">ns: infra-nt</div></div>
+      </div>
+      <div class="role">文档 Wiki · 本文档及基础设施手册都在这</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-net"><span class="nd"></span>Traefik</span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>wikijs<small>Node.js</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-data"><span class="nd"></span>wikijs-postgresql<small>专用</small></span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>应用</td><td>requarks/wiki<span class="tag">2</span></td></tr>
+        <tr><td>数据库</td><td>postgres<span class="tag">18</span></td></tr>
+        <tr><td>内容源</td><td>github djch-wiki(Git 同步)</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>更新内容 / 推文档<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="c"># 文档源在 wiki-docs 仓库,推到 wiki.js</span>
+cd ~/git-ops/wiki-docs
+git add infra/xxx.md && git commit -m <span class="s">"..."</span> && git push
+python3 push-to-wiki.py infra/xxx.md infra/xxx <span class="s">"标题"</span>  <span class="c"># .env 自动给 token</span></pre>
+        </div>
+      </details>
+    </div>
+
+    <!-- UYUNI -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fbbf3c" stroke-width="1.7"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg></div>
+        <div><div class="t">Uyuni</div><div class="ns">ns: uyuni</div></div>
+      </div>
+      <div class="role">Linux 机群补丁 / 配置管理(SUSE Manager 开源版)</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-net"><span class="nd"></span>ingress-nginx<small>uyuni.djch.one</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>uyuni server<small>Salt master</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-data"><span class="nd"></span>server-postgresql</span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>Server</td><td>uyuni/server<span class="tag">latest</span></td></tr>
+        <tr><td>数据库</td><td>uyuni/server-postgresql<span class="tag">latest</span></td></tr>
+        <tr><td>入口</td><td>uyuni.djch.one (ssl/nossl/redirect)</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>更新流程<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="k">vim</span> apps/uyuni/<span class="o">deployment.yaml</span>
+git commit -am <span class="s">"uyuni: ..."</span> && git push
+kubectl rollout restart deploy/uyuni -n uyuni</pre>
+          <div class="note"><b>⚠</b> 与 Foreman/Katello 功能重叠(并行方案);ArgoCD 里 uyuni 部分 OutOfSync 属已知。</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- SEMAPHORE -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#a98bff" stroke-width="1.7"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></div>
+        <div><div class="t">Semaphore</div><div class="ns">ns: semaphore</div></div>
+      </div>
+      <div class="role">Terraform / Ansible 的 Web GUI(管 infra-terraform)</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-net"><span class="nd"></span>Traefik<small>semaphore.djch.one</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>semaphore</span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-data"><span class="nd"></span>PG-HA<small>state backend</small></span>
+            <span class="node t-sec"><span class="nd"></span>semaphore-secrets<small>sealed</small></span>
+          </span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>应用</td><td>semaphoreui/semaphore<span class="tag">v2.18.3</span></td></tr>
+        <tr><td>数据库</td><td>→ 共享 PG-HA (pgpool)</td></tr>
+        <tr><td>chart</td><td>semaphoreui/semaphore 16.2.2</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>更新流程 / 坑<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="k">vim</span> apps/semaphore/<span class="o">values.yaml</span>
+git commit -am <span class="s">"semaphore: ..."</span> && git push
+kubectl rollout restart deploy/semaphore -n semaphore</pre>
+          <div class="note"><b>⚠ 坑</b>:Terraform workspace 必须设 <code>default</code> 才对上迁移来的 state;confirm 接口传 false <b>也会</b>触发 apply,plan-only 别调 confirm。</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- AUTHENTIK -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#46d68a" stroke-width="1.7"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div><div class="t">Authentik</div><div class="ns">ns: authentik</div></div>
+      </div>
+      <div class="role">统一登录 SSO / OIDC 身份提供方(Web 应用层)</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 依赖链</div>
+        <div class="flow-row">
+          <span class="node t-app"><span class="nd"></span>authentik-server</span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-app"><span class="nd"></span>worker</span>
+            <span class="node t-data"><span class="nd"></span>postgresql<small>17.9</small></span>
+            <span class="node t-ext"><span class="nd"></span>FreeIPA<small>LDAP 用户源</small></span>
+          </span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>Server + Worker</td><td>goauthentik/server<span class="tag">2026.2.2</span></td></tr>
+        <tr><td>数据库</td><td>postgres<span class="tag">17.9</span></td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>分工说明<span class="ch">›</span></summary>
+        <div class="body">
+          <div class="note" style="background:rgba(70,214,138,.07);border-color:rgba(70,214,138,.22)"><b style="color:var(--green)">Authentik vs FreeIPA</b> —— Authentik 管 <b>Web 应用 SSO</b>(OIDC/SAML),FreeIPA 管 <b>主机 SSH / sudo</b> 身份。两套并存、各司其职。</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- MONITORING -->
+    <div class="card reveal">
+      <div class="card-head">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#33d6c4" stroke-width="1.7"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+        <div><div class="t">监控栈</div><div class="ns">ns: monitoring</div></div>
+      </div>
+      <div class="role">Prometheus 全家桶 + 飞书告警</div>
+      <div class="flow">
+        <div class="flow-title">关系图 · 数据流</div>
+        <div class="flow-row">
+          <span class="node t-ext"><span class="nd"></span>exporters<small>node/snmp/ipmi/blackbox</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>Prometheus</span>
+          <span class="arrow">→</span>
+          <span class="branch">
+            <span class="node t-app"><span class="nd"></span>Grafana<small>看板</small></span>
+            <span class="node t-app"><span class="nd"></span>feishu 告警桥</span>
+          </span>
+        </div>
+        <div class="flow-row" style="margin-top:9px">
+          <span class="node t-app"><span class="nd"></span>promtail</span>
+          <span class="arrow">→</span>
+          <span class="node t-data"><span class="nd"></span>Loki<small>日志</small></span>
+          <span class="arrow">→</span>
+          <span class="node t-app"><span class="nd"></span>Grafana</span>
+        </div>
+      </div>
+      <table class="stack">
+        <tr><td>指标</td><td>prometheus<span class="tag">v2.51.2</span></td></tr>
+        <tr><td>看板</td><td>grafana<span class="tag">12.3.1</span></td></tr>
+        <tr><td>日志</td><td>loki<span class="tag">3.6.7</span> + promtail</td></tr>
+        <tr><td>告警</td><td>feishu-bot / webhook-bridge</td></tr>
+      </table>
+      <details class="ops">
+        <summary><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg>改告警规则 / ConfigMap<span class="ch">›</span></summary>
+        <div class="body">
+<pre><span class="c"># Prometheus 规则就在 ConfigMap 里</span>
+<span class="k">vim</span> apps/monitoring/<span class="o">prometheus-rules.yaml</span>
+git commit -am <span class="s">"alert: ..."</span> && git push</pre>
+          <div class="note"><b>✓ 例外</b>:Prometheus 带 <code>configmap-reload</code> sidecar —— 规则 ConfigMap 改了会<b>自动热加载</b>,无需重启 Pod。</div>
+        </div>
+      </details>
+    </div>
+
+  </div>
+</section>
+
+<!-- UPDATE FLOW -->
+<section id="update">
+  <div class="sec-head reveal">
+    <div class="sec-tag">// 03 · GITOPS WORKFLOW</div>
+    <h2>通用更新流程:为什么改了 ConfigMap 不生效?</h2>
+    <p>所有服务都由 ArgoCD 从 Git 管理。改配置 = 改 Git,不要直接 <code>kubectl edit</code>(会被 ArgoCD 同步回去)。</p>
+  </div>
+  <div class="gitops reveal">
+    <h3><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7"/></svg> 四步:Git → ArgoCD → ConfigMap → 重启</h3>
+    <p>关键认知:<b>env 型</b> ConfigMap 改完 Pod 不会感知,必须重启;<b>volume 挂载型</b> kubelet 约 1 分钟更新文件,但应用通常仍需重启才重读。</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><b>改 Git</b><p>在 <code>k8s-gitops</code> 仓库改 manifest / values,commit + push。</p></div>
+      <div class="step"><div class="n">2</div><b>ArgoCD 同步</b><p>自动检测漂移并 Sync(或 UI 手动 Sync / <code>argocd app sync</code>)。</p></div>
+      <div class="step"><div class="n">3</div><b>ConfigMap 生效</b><p>新 ConfigMap 已下发,但运行中的 Pod 还拿着旧值。</p></div>
+      <div class="step"><div class="n">4</div><b>滚动重启</b><p><code>kubectl rollout restart deploy/&lt;x&gt; -n &lt;ns&gt;</code> 让 Pod 重读。</p></div>
+    </div>
+    <div class="note" style="margin-top:16px"><b>🔐 改机密(密码/token)</b>:不走 ConfigMap,改 <code>k8s-gitops/sealed-secrets/seal.sh</code> 重新封 SealedSecret → push → controller 自动解密成 Secret。接管已有 Secret 需加注解 <code>sealedsecrets.bitnami.com/managed=true</code>。</div>
+  </div>
+</section>
+
+<!-- CHEATSHEET -->
+<section id="cheat">
+  <div class="sec-head reveal">
+    <div class="sec-tag">// 04 · CHEATSHEET</div>
+    <h2>高频命令速查</h2>
+    <p>本机无 kubeconfig,统一走 k8snode01。先设别名,后续命令用 <code>k</code>。</p>
+  </div>
+  <div class="reveal">
+<pre><span class="c"># 入口 + 别名(在节点上)</span>
+ssh yiwei@192.168.6.131
+<span class="k">alias</span> k=<span class="s">'sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml'</span>
+
+k get pods -A | grep -v Running        <span class="c"># 找异常 Pod</span>
+k get applications -A                   <span class="c"># ArgoCD 同步状态</span>
+k -n &lt;ns&gt; logs &lt;pod&gt; -f                  <span class="c"># 跟日志</span>
+k -n &lt;ns&gt; describe pod &lt;pod&gt;             <span class="c"># 排查启动失败(看 Events)</span>
+k rollout restart deploy/&lt;x&gt; -n &lt;ns&gt;    <span class="c"># 改 ConfigMap 后让其生效</span>
+k get svc -A | grep LoadBalancer        <span class="c"># 谁占了 MetalLB IP</span>
+k get pvc -A ; k get certificate -A     <span class="c"># 存储卷 / 证书</span>
+k get sealedsecrets -A                  <span class="c"># 封装的机密</span>
+k top nodes ; k top pods -A             <span class="c"># 资源占用</span></pre>
+  </div>
+</section>
+
+<footer>
+  <span>djch.one Kubernetes 架构 · 实地巡查 <code>2026-05-31</code></span>
+  <span>RKE2 v1.33.5 · ArgoCD GitOps · 来源 <code>guoyiwei8899/k8s-gitops</code></span>
+</footer>
+
+<script>
+// scroll reveal (staggered)
+const io=new IntersectionObserver((es)=>{
+  es.forEach((e,i)=>{ if(e.isIntersecting){ const el=e.target;
+    const sibs=[...el.parentElement.children].filter(c=>c.classList.contains('reveal'));
+    el.style.transitionDelay=(sibs.indexOf(el)%6*55)+'ms';
+    el.classList.add('in'); io.unobserve(el);} });
+},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// count-up stats
+const cio=new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(!e.isIntersecting) return; const el=e.target;
+    const to=+el.dataset.to; if(isNaN(to)){cio.unobserve(el);return;}
+    let n=0; const step=Math.max(1,Math.ceil(to/24));
+    const t=setInterval(()=>{ n+=step; if(n>=to){n=to;clearInterval(t);} el.textContent=n; },28);
+    cio.unobserve(el); });
+},{threshold:.5});
+document.querySelectorAll('.stat .num[data-to]').forEach(el=>cio.observe(el));
+
+// nav active highlight
+const secs=[...document.querySelectorAll('section[id]')];
+const links=new Map([...document.querySelectorAll('.nav-links a')].map(a=>[a.getAttribute('href').slice(1),a]));
+const nio=new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ links.forEach(a=>a.classList.remove('active'));
+    links.get(e.target.id)?.classList.add('active'); } });
+},{rootMargin:'-45% 0px -50% 0px'});
+secs.forEach(s=>nio.observe(s));
+</script>
+</body>
+</html>
