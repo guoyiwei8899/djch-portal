@@ -27,7 +27,7 @@
       "domain": "infra", "icon": "server",
       "title": "Infrastructure Architecture",
       "desc": "Network & infrastructure topology",
-      "path": "viz/infra-arch.html"
+      "path": "viz/djch-infra.html"
     },
     {
       "domain": "monitoring", "icon": "bar-chart",
