@@ -56,8 +56,10 @@
     const title = qs.get('t') || 'Visualization';
     const domain = qs.get('d') || '';
 
-    // only allow loading pages under viz/ (no external/abs paths)
-    if (!/^viz\/[\w.\-/]+\.html$/.test(path)) path = '';
+    // allow internal viz/ pages OR allowlisted live external pages (money.djch.one)
+    const okInternal = /^viz\/[\w.\-/]+\.html$/.test(path);
+    const okExternal = /^https:\/\/money\.djch\.one\/[\w.\-/?=&%]*$/.test(path);
+    if (!okInternal && !okExternal) path = '';
 
     $('#back').innerHTML = svgIcon('arrow-left') + '<span>Portal</span>';
     $('#raw').innerHTML = svgIcon('external');

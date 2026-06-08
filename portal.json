@@ -21,7 +21,7 @@
       "domain": "k8s", "icon": "hexagon",
       "title": "Kubernetes Architecture",
       "desc": "RKE2 cluster components and traffic topology",
-      "path": "viz/k8s-arch.html"
+      "path": "https://money.djch.one/k8s/"
     },
     {
       "domain": "infra", "icon": "server",
