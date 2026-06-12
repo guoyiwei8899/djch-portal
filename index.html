@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>djch portal</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
-  <link rel="stylesheet" href="assets/app.css?v=3">
+  <link rel="stylesheet" href="assets/app.css?v=4">
   <style>
     .layout { display: grid; grid-template-columns: 264px 1fr; min-height: 100dvh; }
 
@@ -91,8 +91,8 @@
     }
     .hero .kicker::before { content: ""; width: 26px; height: 1px; background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
     .hero h2 {
-      margin: 10px 0 0; font-family: var(--font-display); font-size: clamp(30px, 4.4vw, 46px);
-      font-weight: 700; letter-spacing: .005em; line-height: 1.06;
+      margin: 10px 0 0; font-family: var(--font-sans); font-size: clamp(30px, 4.4vw, 46px);
+      font-weight: 700; letter-spacing: -.01em; line-height: 1.06;
     }
     .hero h2 .grad {
       background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -150,7 +150,6 @@
     <main class="main">
       <div class="topbar">
         <button class="icon-btn menu-btn" id="menu-btn" aria-label="Menu"></button>
-        <span class="path">~/djch/<b>console</b></span>
         <div class="grow"></div>
         <div class="search">
           <span id="search-ic"></span>
@@ -181,7 +180,7 @@
     </main>
   </div>
 
-  <script src="assets/portal.js?v=3"></script>
+  <script src="assets/portal.js?v=4"></script>
   <script>
     const $ = s => document.querySelector(s);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;

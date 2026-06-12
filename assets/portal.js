@@ -237,7 +237,111 @@ window.loadPortal = function () {
     return function () { run = false; removeEventListener('resize', size); var e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); };
   }
 
-  var MODES = [['Drift', bgDrift], ['Flow', bgFlow], ['Lines', bgLines], ['Aurora', bgAurora], ['Off', null]];
+  /* — Topo: signature design — infrastructure network topology.
+     drifting server nodes, proximity links, data-packet pulses traveling edges,
+     arrival ping rings, cursor proximity highlight. canvas 2d, theme-aware. */
+  function bgTopo(host) {
+    var c = mkCanvas(host), ctx = c.getContext('2d');
+    var W, H, nodes = [], packets = [], rings = [], run = true;
+    var mx = -1e4, my = -1e4;
+    var LINK = 150, LINK2 = LINK * LINK;
+    function resize() {
+      W = c.width = innerWidth; H = c.height = innerHeight;
+      var n = Math.min(90, Math.round(W * H / 16000));
+      nodes = [];
+      for (var i = 0; i < n; i++) nodes.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35,
+        r: 1.4 + Math.random() * 1.4, hub: Math.random() < .12
+      });
+      packets = []; rings = [];
+    }
+    function move(e) { mx = e.clientX; my = e.clientY; }
+    function leave() { mx = -1e4; my = -1e4; }
+    function spawnPacket() {
+      // pick a random connected pair to ride
+      for (var tries = 0; tries < 12; tries++) {
+        var a = nodes[Math.random() * nodes.length | 0], b = nodes[Math.random() * nodes.length | 0];
+        if (a === b) continue;
+        var dx = a.x - b.x, dy = a.y - b.y;
+        if (dx * dx + dy * dy < LINK2) { packets.push({ a, b, t: 0, sp: .008 + Math.random() * .012 }); return; }
+      }
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      var dark = isDark();
+      var nodeCol  = dark ? '#38bdf8' : '#5b6cf2';
+      var hubCol   = dark ? '#ff5da2' : '#e8347f';
+      var pktCol   = dark ? '#21d4fd' : '#8b4fe8';
+      var linkRGB  = dark ? '146,168,255' : '70,90,150';
+      var linkBase = dark ? .17 : .13;
+      // move nodes
+      for (var nd of nodes) {
+        nd.x += nd.vx; nd.y += nd.vy;
+        if (nd.x < 0 || nd.x > W) nd.vx *= -1;
+        if (nd.y < 0 || nd.y > H) nd.vy *= -1;
+      }
+      // links (+ cursor proximity boost)
+      ctx.lineWidth = 1;
+      for (var i = 0; i < nodes.length; i++) for (var j = i + 1; j < nodes.length; j++) {
+        var a = nodes[i], b = nodes[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
+        if (d2 > LINK2) continue;
+        var w = 1 - d2 / LINK2;
+        var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+        var md = Math.hypot(cx - mx, cy - my);
+        var boost = md < 160 ? (1 - md / 160) * .5 : 0;
+        ctx.strokeStyle = 'rgba(' + linkRGB + ',' + (w * linkBase + boost).toFixed(3) + ')';
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      // nodes
+      for (var nd of nodes) {
+        var col = nd.hub ? hubCol : nodeCol;
+        ctx.globalAlpha = dark ? .9 : .75;
+        if (nd.hub) { ctx.shadowColor = col; ctx.shadowBlur = 10; }
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(nd.x, nd.y, nd.hub ? nd.r + 1.2 : nd.r, 0, 6.2832); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+      // packets
+      if (packets.length < 9 && Math.random() < .06) spawnPacket();
+      for (var k = packets.length - 1; k >= 0; k--) {
+        var p = packets[k]; p.t += p.sp;
+        if (p.t >= 1) {
+          if (Math.random() < .5) rings.push({ x: p.b.x, y: p.b.y, r: 2, a: dark ? .5 : .4 });
+          packets.splice(k, 1); continue;
+        }
+        var px = p.a.x + (p.b.x - p.a.x) * p.t, py = p.a.y + (p.b.y - p.a.y) * p.t;
+        ctx.shadowColor = pktCol; ctx.shadowBlur = 12; ctx.fillStyle = pktCol;
+        ctx.globalAlpha = .95;
+        ctx.beginPath(); ctx.arc(px, py, 2.2, 0, 6.2832); ctx.fill();
+        // short trail
+        ctx.globalAlpha = .3;
+        var tx = p.a.x + (p.b.x - p.a.x) * Math.max(0, p.t - .06), ty = p.a.y + (p.b.y - p.a.y) * Math.max(0, p.t - .06);
+        ctx.strokeStyle = pktCol; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      }
+      // arrival ping rings
+      for (var k2 = rings.length - 1; k2 >= 0; k2--) {
+        var rg = rings[k2]; rg.r += .8; rg.a -= .012;
+        if (rg.a <= 0) { rings.splice(k2, 1); continue; }
+        ctx.strokeStyle = 'rgba(' + (dark ? '33,212,253' : '139,79,232') + ',' + rg.a.toFixed(3) + ')';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(rg.x, rg.y, rg.r, 0, 6.2832); ctx.stroke();
+      }
+    }
+    function fr() { if (!run) return; draw(); if (!reduced) requestAnimationFrame(fr); }
+    resize(); addEventListener('resize', resize);
+    addEventListener('pointermove', move); addEventListener('pointerleave', leave);
+    requestAnimationFrame(fr);
+    return function () {
+      run = false; removeEventListener('resize', resize);
+      removeEventListener('pointermove', move); removeEventListener('pointerleave', leave);
+    };
+  }
+
+  var MODES = [['Topo', bgTopo], ['Drift', bgDrift], ['Flow', bgFlow], ['Lines', bgLines], ['Aurora', bgAurora], ['Off', null]];
   window.initBackground = function () {
     var host = document.createElement('div'); host.className = 'bg-host'; document.body.prepend(host);
     var btn = document.createElement('button'); btn.className = 'bg-btn'; btn.type = 'button';
