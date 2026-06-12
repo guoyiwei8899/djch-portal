@@ -1,5 +1,6 @@
 /* ===== djch portal — shared: icons, theme, data ===== */
 window.ICONS = {
+  cpu: '<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>',
   "hard-drive": '<rect x="3" y="13" width="18" height="7" rx="2"/><path d="M5.5 13 8 4.5h8L18.5 13"/><circle cx="8" cy="16.5" r="1"/><line x1="12" y1="16.5" x2="16" y2="16.5"/>',
   globe: '<circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9S14.5 18.5 12 21"/><path d="M12 3C9.5 5.5 8.2 8.7 8.2 12S9.5 18.5 12 21"/>',
   hexagon: '<path d="M12 2.5l7.5 4.3v8.4L12 19.5 4.5 15.2V6.8z"/><circle cx="12" cy="11" r="2.4"/>',

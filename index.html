@@ -266,18 +266,12 @@
       let ci = 0;
       keys.forEach(k => {
         const items = viz.filter(v => v.domain === k);
+        if (!items.length) return;   // skip empty domains — no placeholder clutter in the main column
         const head = document.createElement('div');
         head.className = 'domain-head'; head.id = 'dom-' + k; head.style.setProperty('--dc', 'var(--d-' + k + ')');
         head.innerHTML = '<span class="di">' + svgIcon(dom[k].icon) + '</span><h3>' + dom[k].label +
           '</h3><span class="count">' + items.length + '</span>';
         groups.appendChild(head);
-        if (!items.length) {
-          const ph = document.createElement('div');
-          ph.className = 'domain-empty';
-          ph.textContent = '// no pages yet — drop html into viz/ + register in portal.json';
-          groups.appendChild(ph);
-          return;
-        }
         const grid = document.createElement('div'); grid.className = 'grid';
         items.forEach(v => {
           const a = document.createElement('a');

@@ -10,7 +10,7 @@
     "terraform_iac":  { "label": "Terraform · IaC", "icon": "box" },
     "ansible":        { "label": "Ansible · Roles", "icon": "terminal" },
     "monitoring":     { "label": "Monitoring",      "icon": "activity" },
-    "aidc":           { "label": "AIDC",            "icon": "server" }
+    "aidc":           { "label": "AIDC",            "icon": "cpu" }
   },
   "viz": [
     {

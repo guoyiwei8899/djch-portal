@@ -49,6 +49,7 @@
   --d-terraform_iac: #8b4fe8;
   --d-ansible: #d63a3a;
   --d-monitoring: #d98b00;
+  --d-aidc: #0d9488;
 }
 
 /* ---------- dark (default, applied by portal.js before paint) ---------- */
@@ -83,6 +84,7 @@
   --d-terraform_iac: #b07cff;
   --d-ansible: #ff6b6b;
   --d-monitoring: #ffb224;
+  --d-aidc: #2dd4bf;
 }
 
 * { box-sizing: border-box; }
