@@ -36,11 +36,11 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 .nav-links a:hover,.nav-links a.active{color:#b07cff;}
 .nav-links a.active{position:relative;}
 .nav-links a.active::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff4d9d,#8b5cf6);border-radius:2px;}
-.lang-btn{margin-left:auto;cursor:pointer;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;border:1px solid rgba(139,92,246,.5);color:#c5b2fd;background:rgba(139,92,246,.1);transition:all .3s;letter-spacing:.1em;}
+.lang-btn{position:fixed;top:14px;right:16px;z-index:100;cursor:pointer;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;border:1px solid rgba(139,92,246,.5);color:#c5b2fd;background:rgba(139,92,246,.1);transition:all .3s;letter-spacing:.1em;}
 .lang-btn:hover{background:rgba(139,92,246,.22);border-color:#8b5cf6;color:#dcccff;}
 
 /* ─── Hero ─── */
-.hero{position:relative;z-index:1;text-align:center;padding:108px 20px 36px;}
+.hero{position:relative;z-index:1;text-align:center;padding:44px 20px 36px;}
 .hero h1{font-family:'Chakra Petch','Poppins',sans-serif;font-size:40px;font-weight:700;letter-spacing:-.04em;line-height:1.1;background:linear-gradient(135deg,#ff4d9d 0%,#8b5cf6 40%,#21d4fd 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:14px;animation:glitch 6s ease-in-out infinite;}
 @keyframes glitch{0%,88%,100%{filter:none;transform:none}90%{filter:drop-shadow(-2px 0 #ff5da2) drop-shadow(2px 0 #21d4fd);transform:skewX(-.5deg)}92%{filter:drop-shadow(2px 0 #ff5da2) drop-shadow(-2px 0 #21d4fd);transform:skewX(.5deg)}94%{filter:none;transform:none}96%{filter:drop-shadow(-1px 0 #b07cff);transform:skewX(-.3deg)}}
 .hero-sub{font-size:15px;color:#69749b;max-width:720px;margin:0 auto 22px;line-height:1.65;font-weight:400;}
@@ -97,15 +97,7 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 <div class="orb" style="width:350px;height:350px;background:rgba(176,124,255,.08);bottom:50px;right:-80px;animation-delay:-6s"></div>
 <div class="orb" style="width:280px;height:280px;background:rgba(33,212,253,.06);top:40%;left:35%;animation-delay:-10s"></div>
 
-<nav class="nav">
-  <div class="nav-logo">[ DJCH.ONE INFRA ]</div>
-  <div class="nav-links">
-    <a href="https://money.djch.one/zabbix" id="n-zabbix">Zabbix Monitoring</a>
-    <a href="https://money.djch.one/k8s" id="n-k8s">K8s Architecture</a>
-    <a href="https://portal.djch.one" class="active" id="n-portal">Network Portal</a>
-  </div>
-  <button class="lang-btn" onclick="toggleLang()" id="langBtn">[ EN ]</button>
-</nav>
+<button class="lang-btn" onclick="toggleLang()" id="langBtn">[ EN ]</button>
 
 <section class="hero">
   <h1 id="hero-title">djch.one 企业网络架构</h1>
@@ -158,7 +150,6 @@ const T={
   zh:{
     'hero-title':'djch.one 企业网络架构',
     'hero-desc':'多站点专线互联 · 零信任网络访问 · 混合云代理矩阵 · 容器化微服务平台 · 全栈可观测性',
-    'n-zabbix':'Zabbix 监控','n-k8s':'K8s 架构','n-portal':'网络门户',
     'sec-title':'基础设施架构','sec-desc':'// 完整网络拓扑 · 悬停节点查看详情',
     'l1':'IPsec 隧道','l2':'OpenVPN','l3':'vless / trojan','l4':'CF Tunnel','l5':'DNS 查询','l6':'内部网络','l7':'100G IB 链路','l8':'10G SSH 网络','l9':'1G MGMT 带外',
     'langBtn':'[ EN ]',
@@ -166,7 +157,6 @@ const T={
   en:{
     'hero-title':'djch.one Enterprise Network',
     'hero-desc':'Multi-site VPN mesh · Zero Trust Access · Hybrid cloud proxy matrix · Containerized microservices · Full-stack observability',
-    'n-zabbix':'Zabbix Monitoring','n-k8s':'K8s Architecture','n-portal':'Network Portal',
     'sec-title':'Infrastructure Architecture','sec-desc':'// FULL NETWORK TOPOLOGY · HOVER NODES FOR DETAILS',
     'l1':'IPsec Tunnel','l2':'OpenVPN','l3':'vless / trojan','l4':'CF Tunnel','l5':'DNS Query','l6':'Internal LAN','l7':'100G IB Link','l8':'10G SSH Network','l9':'1G MGMT OOB',
     'langBtn':'[ 中文 ]',
