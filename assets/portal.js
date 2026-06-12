@@ -45,7 +45,11 @@ window.themeIcon = function () {
 };
 
 window.loadPortal = function () {
-  return fetch('portal.json?_=' + Date.now()).then(r => r.json());
+  // portal.json sits behind SSO while the shell is public: any failure here
+  // (302→auth blocked by CORS, expired session, non-200) means "not signed in"
+  return fetch('portal.json?_=' + Date.now())
+    .then(r => { if (!r.ok) throw 0; return r.json(); })
+    .catch(() => { location.replace('login.html'); return new Promise(() => {}); });
 };
 
 /* ---- animated background engine: Drift / Flow / Lines / Aurora / Off ----

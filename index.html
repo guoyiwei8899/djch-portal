@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>djch portal</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
-  <link rel="stylesheet" href="assets/app.css?v=4">
+  <link rel="stylesheet" href="assets/app.css?v=5">
   <style>
     .layout { display: grid; grid-template-columns: 264px 1fr; min-height: 100dvh; }
 
@@ -56,6 +56,7 @@
     }
     .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--d-virtualization); box-shadow: 0 0 9px var(--d-virtualization); flex: none; animation: pulse 2.4s ease-in-out infinite; }
     @keyframes pulse { 50% { opacity: .45; } }
+    #logout-btn:hover { border-color: var(--destructive); color: var(--destructive); box-shadow: 0 0 14px color-mix(in srgb, var(--destructive) 35%, transparent); }
 
     /* main */
     .main { min-width: 0; }
@@ -180,7 +181,7 @@
     </main>
   </div>
 
-  <script src="assets/portal.js?v=4"></script>
+  <script src="assets/portal.js?v=5"></script>
   <script>
     const $ = s => document.querySelector(s);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;

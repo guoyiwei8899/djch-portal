@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Djch Portal · Sign in</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
-  <link rel="stylesheet" href="assets/app.css?v=4">
+  <link rel="stylesheet" href="assets/app.css?v=5">
   <style>
     html, body { height: 100%; }
     body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -59,14 +59,14 @@
     <div class="login-card">
       <h2>Sign in</h2>
       <p>Authentication is handled by Authentik SSO.</p>
-      <a class="sso-btn" href="/" id="sso"></a>
+      <a class="sso-btn" href="/sso" id="sso"></a>
       <div class="hint">// you will be redirected to auth.djch.one</div>
     </div>
 
     <div class="page-foot">portal.djch.one · internal ops deck</div>
   </main>
 
-  <script src="assets/portal.js?v=4"></script>
+  <script src="assets/portal.js?v=5"></script>
   <script>
     document.getElementById('logo').innerHTML = svgIcon('sparkle');
     document.getElementById('sso').innerHTML = svgIcon('shield') + 'Sign in with SSO';
