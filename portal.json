@@ -31,8 +31,8 @@
     },
     {
       "domain": "monitoring", "icon": "bar-chart",
-      "title": "Zabbix Monitoring Architecture",
-      "desc": "Hardware monitoring data flow",
+      "title": "Zabbix × AIDC Hardware Pipeline",
+      "desc": "Custom agent → Zabbix → AIDC rack: snapshot, temps/power, locate LED flows",
       "path": "viz/zabbix-arch.html"
     }
   ],

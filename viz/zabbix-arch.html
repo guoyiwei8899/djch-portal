@@ -1,675 +1,380 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zabbix Hardware Monitoring Architecture</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
-            background: #0a0e27;
-            color: #e0e0e0;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
-            letter-spacing: -0.01em;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zabbix × AIDC 硬件监控联动</title>
+<style>
+/* portal-unified self-hosted fonts */
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
 
-        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle var(--duration) ease-in-out infinite; }
-        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --vio2:#b07cff; --cyan:#21d4fd;
+  --blue:#38bdf8; --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b;
+  --grad:linear-gradient(100deg,#ff4d9d,#8b5cf6,#21d4fd);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(255,77,157,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(139,92,246,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(33,212,253,.07),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
 
-        .nav {
-            position: fixed; top: 0; left: 0; right: 0;
-            background: rgba(10, 14, 39, 0.95); backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 15px 30px; z-index: 100;
-            display: flex; align-items: center; gap: 30px;
-        }
-        .nav-logo {
-            font-size: 20px; font-weight: 700;
-            background: linear-gradient(135deg, #ef4444, #f59e0b);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .nav-links { display: flex; align-items: center; gap: 0; flex: 1; }
-        .nav-links a {
-            color: #94a3b8; text-decoration: none; margin: 0 15px;
-            font-size: 14px; transition: color 0.3s;
-        }
-        .nav-links a:hover { color: #ef4444; }
-        .nav-links a.active { color: #ef4444; }
-        .lang-switch {
-            margin-left: auto; cursor: pointer; user-select: none;
-            padding: 5px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
-            border: 1px solid rgba(239,68,68,0.4); color: #fca5a5;
-            background: rgba(239,68,68,0.08); transition: all 0.3s;
-        }
-        .lang-switch:hover { background: rgba(239,68,68,0.18); }
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--cyan);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,77,157,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:760px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
 
-        .hero {
-            position: relative; z-index: 1;
-            text-align: center; padding: 120px 20px 50px;
-        }
-        .hero h1 {
-            font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1;
-            background: linear-gradient(135deg, #ef4444, #f59e0b, #10b981);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-        }
-        .hero p { font-size: 19px; font-weight: 400; color: #94a3b8; max-width: 700px; margin: 0 auto; line-height: 1.6; letter-spacing: -0.01em; }
-        .hero-badges { margin-top: 25px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-        .badge {
-            padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
-            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05);
-        }
-        .badge.red { border-color: rgba(239,68,68,0.4); color: #fca5a5; }
-        .badge.amber { border-color: rgba(245,158,11,0.4); color: #fcd34d; }
-        .badge.green { border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
-        .badge.blue { border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:18px 16px 70px}
 
-        .section {
-            position: relative; z-index: 1;
-            max-width: 1200px; margin: 0 auto; padding: 60px 20px;
-        }
-        .section-title {
-            font-size: 40px; font-weight: 700; text-align: center; margin-bottom: 14px;
-            letter-spacing: -0.03em; line-height: 1.15;
-            background: linear-gradient(135deg, #ef4444, #f59e0b);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .section-desc { text-align: center; color: #64748b; margin-bottom: 50px; font-size: 17px; font-weight: 400; letter-spacing: -0.01em; }
+/* ---- flow tabs ---- */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
+  display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--cyan));box-shadow:0 0 8px var(--fc,var(--cyan))}
+.tab:hover{border-color:var(--fc,var(--cyan));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--cyan));color:var(--ink);
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 10%,var(--card));
+  box-shadow:0 0 18px color-mix(in srgb,var(--fc,var(--cyan)) 28%,transparent)}
+.steps{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;min-height:30px;
+  margin:10px auto 4px;max-width:1280px;font-size:12px;color:var(--muted)}
+.steps .st{display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(4px);transition:all .35s}
+.steps .st.in{opacity:1;transform:none}
+.steps .st i{font-style:normal;font-family:var(--mono);font-size:10px;width:17px;height:17px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 22%,transparent);color:var(--fc,var(--cyan));
+  border:1px solid color-mix(in srgb,var(--fc,var(--cyan)) 45%,transparent)}
 
-        .arch-diagram {
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(239,68,68,0.2);
-            border-radius: 16px; padding: 40px; margin-bottom: 40px;
-            position: relative; overflow: hidden;
-        }
-        .arch-diagram::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
-        }
-        .arch-flow {
-            display: flex; align-items: center; justify-content: center;
-            gap: 0; flex-wrap: wrap; padding: 20px 0;
-        }
-        .arch-node {
-            background: rgba(15, 23, 42, 0.9); border: 2px solid;
-            border-radius: 14px; padding: 24px 20px; text-align: center;
-            min-width: 180px; transition: all 0.3s; position: relative;
-        }
-        .arch-node:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
-        .arch-node .icon { font-size: 36px; margin-bottom: 10px; }
-        .arch-node h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-        .arch-node p { font-size: 12px; color: #64748b; line-height: 1.5; }
-        .arch-node.hardware { border-color: rgba(59,130,246,0.5); }
-        .arch-node.zabbix { border-color: rgba(239,68,68,0.5); }
-        .arch-node.middle { border-color: rgba(245,158,11,0.5); }
-        .arch-node.alert { border-color: rgba(16,185,129,0.5); }
-        .arch-node.feishu { border-color: rgba(99,102,241,0.5); }
-        .arch-arrow {
-            color: #475569; font-size: 28px; padding: 0 8px;
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
-        }
-        .arch-arrow .label { font-size: 10px; color: #64748b; white-space: nowrap; }
+/* ---- diagram ---- */
+.dia{position:relative;background:rgba(6,9,20,.7);border:1px solid var(--bd);border-radius:16px;
+  padding:6px;margin-top:10px;overflow:hidden}
+.dia::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pink),var(--violet),var(--cyan),transparent);opacity:.8}
+svg{display:block;width:100%;height:auto}
+.node rect{fill:var(--card);stroke:var(--bd2);stroke-width:1}
+.node.grp>rect{fill:rgba(13,19,36,.5);stroke:var(--bd);stroke-dasharray:4 4}
+.node text{fill:var(--ink);font-family:'Poppins',sans-serif}
+.node .ttl{font-size:12.5px;font-weight:600}
+.node .sub{font-size:9.5px;fill:var(--muted);font-family:var(--mono)}
+.node .tag{font-size:9px;fill:var(--faint);font-family:var(--mono)}
+.node.dim{opacity:.30}
+.node.lit>rect{stroke:var(--fc);filter:drop-shadow(0 0 9px color-mix(in srgb,var(--fc) 55%,transparent))}
+.gt{font-family:var(--disp);font-size:11px;letter-spacing:.18em;fill:var(--faint)}
+.edge{fill:none;stroke:rgba(146,168,255,.18);stroke-width:1.6;transition:opacity .3s}
+.edge.lit{stroke-width:2;stroke-dasharray:7 5;animation:dash 1s linear infinite}
+.edge.dim{opacity:.15}
+@keyframes dash{to{stroke-dashoffset:-12}}
+.elabel{font-family:var(--mono);font-size:9.5px;fill:var(--muted);opacity:0;transition:opacity .3s}
+.elabel.lit{opacity:1}
+.pkt{opacity:0}
+.pkt.lit{opacity:1}
 
-        .flow-container {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px; margin-top: 30px;
-        }
-        .flow-card {
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px; padding: 28px; transition: all 0.3s;
-            position: relative; overflow: hidden;
-        }
-        .flow-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-        .flow-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
-        .flow-card .step-num {
-            width: 36px; height: 36px; border-radius: 10px; display: flex;
-            align-items: center; justify-content: center; font-size: 16px;
-            font-weight: 700; margin-bottom: 16px;
-        }
-        .flow-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.02em; }
-        .flow-card p { font-size: 15px; color: #94a3b8; line-height: 1.7; font-weight: 400; }
-        .flow-card .tag {
-            display: inline-block; padding: 3px 10px; border-radius: 6px;
-            font-size: 12px; margin-top: 12px; font-family: 'Courier New', monospace;
-        }
-        .flow-card.step1::before { background: #3b82f6; }
-        .flow-card.step1 .step-num { background: rgba(59,130,246,0.15); color: #60a5fa; }
-        .flow-card.step1 .tag { background: rgba(59,130,246,0.1); color: #60a5fa; }
-        .flow-card.step2::before { background: #f59e0b; }
-        .flow-card.step2 .step-num { background: rgba(245,158,11,0.15); color: #fbbf24; }
-        .flow-card.step2 .tag { background: rgba(245,158,11,0.1); color: #fbbf24; }
-        .flow-card.step3::before { background: #ef4444; }
-        .flow-card.step3 .step-num { background: rgba(239,68,68,0.15); color: #f87171; }
-        .flow-card.step3 .tag { background: rgba(239,68,68,0.1); color: #f87171; }
-        .flow-card.step4::before { background: #10b981; }
-        .flow-card.step4 .step-num { background: rgba(16,185,129,0.15); color: #34d399; }
-        .flow-card.step4 .tag { background: rgba(16,185,129,0.1); color: #34d399; }
-
-        .vendor-table-wrap {
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px; overflow: hidden; margin-top: 30px;
-        }
-        .vendor-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .vendor-table th {
-            background: rgba(239,68,68,0.1); color: #fca5a5;
-            padding: 14px 16px; text-align: left; font-weight: 600;
-            border-bottom: 1px solid rgba(239,68,68,0.2);
-        }
-        .vendor-table td {
-            padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
-            font-family: 'Courier New', monospace; font-size: 13px;
-        }
-        .vendor-table tr:hover td { background: rgba(255,255,255,0.02); }
-        .vendor-table .metric { color: #94a3b8; font-family: inherit; font-weight: 500; }
-
-        .alert-flow {
-            display: flex; align-items: stretch; gap: 24px; margin-top: 30px; flex-wrap: wrap;
-        }
-        .alert-card {
-            flex: 1; min-width: 260px;
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px; padding: 28px; position: relative; overflow: hidden;
-        }
-        .alert-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-        .alert-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
-        .alert-card p { font-size: 14px; color: #94a3b8; line-height: 1.7; }
-        .alert-card ul { list-style: none; margin-top: 10px; }
-        .alert-card li {
-            padding: 8px 0; font-size: 13px; color: #94a3b8;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            display: flex; align-items: center; gap: 8px;
-        }
-        .alert-card li:last-child { border: none; }
-        .alert-card .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .alert-card.trigger::before { background: #ef4444; }
-        .alert-card.webhook::before { background: #f59e0b; }
-        .alert-card.feishu::before { background: #6366f1; }
-
-        .feishu-preview {
-            background: #fff; border-radius: 12px; padding: 0; margin-top: 20px;
-            overflow: hidden; max-width: 380px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .feishu-header { background: #ef4444; color: #fff; padding: 14px 18px; font-size: 15px; font-weight: 600; }
-        .feishu-body { padding: 16px 18px; color: #333; font-size: 13px; line-height: 1.8; }
-        .feishu-field { display: flex; gap: 20px; margin-bottom: 8px; }
-        .feishu-field span { flex: 1; }
-        .feishu-label { color: #333; font-weight: 600; }
-        .feishu-value { color: #666; }
-        .feishu-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
-
-        .dashboard-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px; margin-top: 30px;
-        }
-        .dash-widget {
-            background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px; padding: 20px; transition: all 0.3s;
-        }
-        .dash-widget:hover { border-color: rgba(255,255,255,0.15); }
-        .dash-widget h4 { font-size: 13px; color: #64748b; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .dash-bar { height: 24px; border-radius: 6px; margin-bottom: 8px; position: relative; overflow: hidden; background: rgba(255,255,255,0.05); }
-        .dash-bar-fill {
-            height: 100%; border-radius: 6px; transition: width 1.5s ease;
-            display: flex; align-items: center; padding-left: 10px;
-            font-size: 11px; font-weight: 600; color: #fff;
-        }
-        .dash-bar-label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-        .temp-low { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
-        .temp-mid { background: linear-gradient(90deg, #FFC107, #FF9800); }
-        .temp-high { background: linear-gradient(90deg, #FF9800, #F44336); }
-
-        .stats-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px; margin: 40px 0;
-        }
-        .stat-card {
-            text-align: center; padding: 24px 16px;
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-        }
-        .stat-num {
-            font-size: 44px; font-weight: 800; letter-spacing: -0.03em;
-            background: linear-gradient(135deg, #ef4444, #f59e0b);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .stat-label { font-size: 14px; color: #64748b; margin-top: 8px; font-weight: 500; letter-spacing: 0; }
-
-        .footer {
-            position: relative; z-index: 1;
-            text-align: center; padding: 40px 20px;
-            color: #475569; font-size: 13px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .footer a { color: #ef4444; text-decoration: none; }
-
-        /* Glow pulse on hero title */
-        .hero h1 { animation: title-glow 3s ease-in-out infinite; }
-        @keyframes title-glow {
-            0%, 100% { filter: drop-shadow(0 0 0px transparent); }
-            50% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.3)); }
-        }
-
-        /* Gradient border animation on cards */
-        .flow-card, .alert-card, .dash-widget { position: relative; z-index: 1; }
-        .flow-card::after, .alert-card::after {
-            content: '';
-            position: absolute;
-            top: -1px; left: -1px; right: -1px; bottom: -1px;
-            background: linear-gradient(45deg, #ef4444, #f59e0b, #10b981, #ef4444);
-            background-size: 300% 300%;
-            border-radius: 15px;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.4s;
-            animation: gradient-spin 4s linear infinite;
-        }
-        .flow-card:hover::after, .alert-card:hover::after { opacity: 1; }
-        @keyframes gradient-spin {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Floating glow orbs */
-        .glow-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            pointer-events: none;
-            z-index: 0;
-            animation: orb-float 12s ease-in-out infinite;
-        }
-        @keyframes orb-float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(50px, -30px) scale(1.1); }
-            50% { transform: translate(-20px, 40px) scale(0.9); }
-            75% { transform: translate(30px, 20px) scale(1.05); }
-        }
-
-        /* Arch diagram scan line */
-        .arch-diagram::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ef4444, #f59e0b, transparent);
-            animation: scan-line 3s linear infinite;
-        }
-        @keyframes scan-line {
-            0% { transform: translateY(0); opacity: 0.6; }
-            100% { transform: translateY(300px); opacity: 0; }
-        }
-
-        /* Nav link glow */
-        .nav-links a:hover { text-shadow: 0 0 10px rgba(239,68,68,0.3); }
-        .nav-links a.active { text-shadow: 0 0 10px rgba(239,68,68,0.3); }
-
-        /* Arch node pulse on hover */
-        .arch-node:hover { box-shadow: 0 0 25px rgba(239,68,68,0.15); }
-
-        /* Stat number glow */
-        .stat-num { animation: stat-glow 4s ease-in-out infinite; }
-        @keyframes stat-glow {
-            0%, 100% { filter: drop-shadow(0 0 0px transparent); }
-            50% { filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.3)); }
-        }
-
-        /* Dashboard bar shimmer */
-        .dash-bar-fill { position: relative; overflow: hidden; }
-        .dash-bar-fill::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            animation: bar-shimmer 3s ease-in-out infinite;
-        }
-        @keyframes bar-shimmer {
-            0% { left: -100%; }
-            100% { left: 200%; }
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 32px; }
-            .arch-flow { flex-direction: column; }
-            .arch-arrow { transform: rotate(90deg); padding: 8px 0; }
-            .nav-links a { display: none; }
-        }
-    </style>
+/* ---- detail sections ---- */
+.sec{margin-top:46px}
+.sec h2{font-family:var(--disp);font-size:20px;font-weight:600;text-align:center;
+  background:linear-gradient(100deg,#ff4d9d,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;margin:4px 0 18px;letter-spacing:.08em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:16px 17px;backdrop-filter:blur(10px);
+  position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ac,var(--cyan)),transparent);opacity:.7}
+.card h3{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ac,var(--cyan));margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--cyan));box-shadow:0 0 8px var(--ac,var(--cyan));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--cyan))}
+.card code,td code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);
+  padding:1px 6px;border-radius:5px;border:1px solid rgba(33,212,253,.18)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10.5px;text-align:left;color:var(--faint);letter-spacing:.08em;
+  padding:7px 10px;border-bottom:1px solid var(--bd2);text-transform:uppercase}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--muted);vertical-align:top}
+td b{color:var(--ink);font-weight:500}
+.tcard{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:6px 6px 2px;backdrop-filter:blur(10px);overflow-x:auto}
+footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
+<div class="grid-bg"></div>
 
-<div class="stars" id="stars"></div>
+<header class="hero">
+  <div class="kick">/// hardware observability pipeline</div>
+  <h1>Zabbix × AIDC 硬件监控联动</h1>
+  <p>定制 Zabbix agent 采集 RAID / 内存 / PCIe / 网卡 / SMART → Zabbix Server 汇聚 → AIDC 门户 Rack 视图展示温度·功耗·硬件明细,并可反向点亮磁盘定位灯</p>
+  <div class="badges">
+    <span class="bdg">采集间隔 <b>5 min</b></span>
+    <span class="bdg">被监控机 <b>24 台</b></span>
+    <span class="bdg">item <b>aidc.hw.snapshot</b></span>
+    <span class="bdg">agent <b>active mode</b></span>
+    <span class="bdg">反向控制 <b>locate LED</b></span>
+  </div>
+</header>
 
-<!-- Ambient glow orbs -->
-<div class="glow-orb" style="width:300px;height:300px;background:rgba(239,68,68,0.06);top:10%;left:5%;animation-delay:0s"></div>
-<div class="glow-orb" style="width:250px;height:250px;background:rgba(245,158,11,0.05);top:40%;right:10%;animation-delay:3s"></div>
-<div class="glow-orb" style="width:200px;height:200px;background:rgba(16,185,129,0.04);bottom:20%;left:30%;animation-delay:6s"></div>
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="steps" id="steps"></div>
+  <div class="dia"><svg id="svg" viewBox="0 0 1640 700" preserveAspectRatio="xMidYMid meet"></svg></div>
 
-<nav class="nav">
-    <div class="nav-logo">DJCH Infra</div>
-    <div class="nav-links">
-        <a href="/zabbix" class="active" data-i18n="nav_zabbix">Zabbix Monitoring</a>
-        <a href="/k8s" data-i18n="nav_k8s">K8s Architecture</a>
-        <span class="lang-switch" id="langSwitch" onclick="toggleLang()">EN / CN</span>
+  <!-- ════ 采集明细 ════ -->
+  <section class="sec">
+    <h2>定制 Agent 采集明细</h2>
+    <div class="sd">// aidc-hardware-collector · systemd timer 5min · 原子写 /var/lib/aidc/hardware-snapshot.json</div>
+    <div class="tcard"><table>
+      <tr><th>类别</th><th>采集命令</th><th>快照 JSON 字段</th><th>AIDC 展示位置</th></tr>
+      <tr><td><b>内存 DIMM</b></td><td><code>dmidecode -t memory</code></td><td><code>memory_dimms[]</code> slot/size/type/speed/厂商/料号</td><td>硬件 Tab · 内存表 + 总容量</td></tr>
+      <tr><td><b>网卡 / PCIe</b></td><td><code>lspci -Dnn</code> + <code>lspci -vv</code>(Mellanox/Solarflare…)</td><td><code>network_cards[]</code> bdf/型号/接口/<b>PCIe 实际速率×宽度</b>/降级标记</td><td>硬件 Tab · NIC 表(降级琥珀警告)</td></tr>
+      <tr><td><b>RAID 控制器/卷</b></td><td><code>perccli64/storcli64</code> → <code>megacli</code> → <code>mdadm</code> 多层探测</td><td><code>raid_controllers[]</code> <code>raid_volumes[]</code> 级别/容量/状态</td><td>硬件 Tab · RAID 卷健康</td></tr>
+      <tr><td><b>磁盘 + SMART</b></td><td><code>smartctl -a -j</code> / <code>-d megaraid,N</code> / <code>lsblk -J</code></td><td><code>disks[]</code> 槽位/型号/介质/SMART 错误计数/MegaRAID 盘温</td><td>硬件 Tab · 磁盘表 + 定位灯按钮</td></tr>
+      <tr><td><b>整机温度/功耗</b></td><td>BMC/IPMI 传感器(带外,非 collector)</td><td>Zabbix 数值 item:<code>hw.cpu.temp</code> <code>hw.inlet.temp</code> <code>hw.power.total</code></td><td>Rack 悬停卡 + PDU 侧栏功率累加</td></tr>
+      <tr><td><b>带外存活/SEL</b></td><td>Prometheus ipmi exporter</td><td><code>ipmi_up</code> <code>ipmi_sel_logs_count</code></td><td>Rack 状态灯(在线绿/离线红/SEL 琥珀)</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ item keys ════ -->
+  <section class="sec">
+    <h2>Zabbix Item / 接口清单</h2>
+    <div class="sd">// UserParameter 定义于 zabbix_agentd.d · item 必须 type=7 (agent active) · value_type=text</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>UserParameter(agent 侧)</h3><ul>
+        <li><code>aidc.hw.snapshot</code> — 读快照 JSON(text · 5m · history 30d)</li>
+        <li><code>aidc.hw.locate[ref,mode]</code> — 磁盘定位灯 on/off(反向控制)</li>
+        <li><code>net.if.ip[if]</code> / <code>net.if.ip.list[*]</code> — 网卡 IP 查询(ib0/ib1 等)</li>
+        <li>agent 配置:<code>ServerActive=192.168.6.13</code> · <code>RefreshActiveChecks=5</code></li>
+      </ul></div>
+      <div class="card" style="--ac:var(--vio2)"><h3><span class="ic"></span>AIDC 后端调用(FastAPI)</h3><ul>
+        <li><code>integrations/zabbix.py</code> — JSON-RPC <code>item.get</code>,<code>Authorization: Bearer</code></li>
+        <li><code>integrations/hardware.py</code> — 解析 lastvalue JSON → 入库缓存</li>
+        <li>缓存表 <code>ServerHardwareSnapshot</code>,支持 <code>force_refresh=true</code> 强刷</li>
+        <li>温度/功耗走 <code>get_host_metrics()</code> 实时 item.get,不落缓存</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>REST 端点(前端消费)</h3><ul>
+        <li><code>/servers/{id}/hardware</code> — DIMM/NIC/RAID/磁盘全量</li>
+        <li><code>/servers/{id}/hover-detail</code> — CPU温/进风温/功耗 + 网卡 IP</li>
+        <li><code>/racks/{id}/detail</code> — U位占用/状态灯/活动告警/PDU</li>
+        <li>状态灯优先级:Prometheus <code>ipmi_up</code> → Zabbix 兜底</li>
+      </ul></div>
     </div>
-</nav>
+  </section>
 
-<section class="hero">
-    <h1 data-i18n="hero_title">Zabbix Hardware Monitoring Architecture</h1>
-    <p data-i18n="hero_desc">Multi-vendor unified hardware monitoring via IPMI, with a normalization layer to abstract sensor differences, real-time temperature/power monitoring, and Feishu instant alerting</p>
-    <div class="hero-badges">
-        <span class="badge red">Zabbix 7.4</span>
-        <span class="badge amber">IPMI 2.0</span>
-        <span class="badge green">Feishu Webhook</span>
-        <span class="badge blue">25+ Servers</span>
+  <!-- ════ 排障速查 ════ -->
+  <section class="sec">
+    <h2>「No hardware snapshot」排障速查</h2>
+    <div class="sd">// 完整手册:wiki-docs/infra/aidc-hardware-snapshot-troubleshooting.md · 6 类根因</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--pink)"><h3><span class="ic"></span>采集端(机上)</h3><ul>
+        <li>没装:跑 <code>zabbix_client</code> role 补齐(gpu01 案例)</li>
+        <li>自测:<code>zabbix_agentd -t aidc.hw.snapshot</code> 返回 JSON 才算好</li>
+        <li><b>SELinux 大坑</b>:快照目录须 <code>zabbix_var_lib_t</code> 标签,拒绝被 dontaudit 静默</li>
+        <li>UserParameter 别带 sudo;<code>Hostname=</code> 必须与 Zabbix host 名一致(pve00 案例)</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>服务端(Zabbix)</h3><ul>
+        <li><b>item 类型必须 7</b>(agent active);建成 trapper(2) 则永远 never(nfs01 案例)</li>
+        <li>host 被禁用 status=1 → 该机所有 active item 全 never(k8snode03 案例)</li>
+        <li>排查:<code>item.get</code> 看 type/state/lastclock;同机 agent.ping 也 never 先查 host status</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>消费端(AIDC)</h3><ul>
+        <li>提示 "No hardware snapshot has been reported" = item lastvalue 为空</li>
+        <li>硬件 Tab 点 <code>force_refresh</code> 可绕缓存直拉 Zabbix 验证</li>
+        <li>悬停卡无温度/功耗 = <code>hw.*</code> 数值 item 缺失(独立于快照链路)</li>
+      </ul></div>
     </div>
-</section>
+  </section>
 
-<section class="section">
-    <div class="stats-row">
-        <div class="stat-card"><div class="stat-num">25</div><div class="stat-label" data-i18n="stat_nodes">Monitored Nodes</div></div>
-        <div class="stat-card"><div class="stat-num">5</div><div class="stat-label" data-i18n="stat_vendors">Server Vendors</div></div>
-        <div class="stat-card"><div class="stat-num">100+</div><div class="stat-label" data-i18n="stat_sensors">IPMI Sensors</div></div>
-        <div class="stat-card"><div class="stat-num">&lt;60s</div><div class="stat-label" data-i18n="stat_latency">Alert Latency</div></div>
-    </div>
-</section>
-
-<section class="section" id="architecture">
-    <h2 class="section-title" data-i18n="arch_title">System Architecture</h2>
-    <p class="section-desc" data-i18n="arch_desc">Complete data flow from hardware sensors to Feishu notifications</p>
-
-    <div class="arch-diagram">
-        <div class="arch-flow">
-            <div class="arch-node hardware">
-                <div class="icon">🖥️</div>
-                <h4 data-i18n="arch_bmc">Server BMC</h4>
-                <p>iDRAC / IPMI / iBMC<br data-i18n-br="arch_bmc_sensors">Temp · Power · Fan · Voltage</p>
-            </div>
-            <div class="arch-arrow"><span>&rarr;</span><span class="label">IPMI LAN+<br>UDP 623</span></div>
-            <div class="arch-node zabbix">
-                <div class="icon">📡</div>
-                <h4>Zabbix Server</h4>
-                <p data-i18n="arch_zabbix_desc">IPMI Poller x5<br>ipmi.get fetches all sensors</p>
-            </div>
-            <div class="arch-arrow"><span>&rarr;</span><span class="label">JSONPath<br data-i18n-br="arch_preprocess">Preprocessing</span></div>
-            <div class="arch-node middle">
-                <div class="icon">🔄</div>
-                <h4 data-i18n="arch_normalize">HW Normalization</h4>
-                <p data-i18n="arch_normalize_desc">Template Macros + Dependent Items<br>Unified metric naming</p>
-            </div>
-            <div class="arch-arrow"><span>&rarr;</span><span class="label" data-i18n="arch_trigger_label">Triggers<br>Threshold Detection</span></div>
-            <div class="arch-node alert">
-                <div class="icon">🚨</div>
-                <h4 data-i18n="arch_alert">Alert Engine</h4>
-                <p data-i18n="arch_alert_desc">Severity-based · Dependency suppression<br>Warning &rarr; Disaster</p>
-            </div>
-            <div class="arch-arrow"><span>&rarr;</span><span class="label">HTTPS<br>HMAC-SHA256</span></div>
-            <div class="arch-node feishu">
-                <div class="icon">💬</div>
-                <h4 data-i18n="arch_feishu">Feishu Notification</h4>
-                <p data-i18n="arch_feishu_desc">Interactive Card<br>Real-time push · Recovery alerts</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section" id="dataflow">
-    <h2 class="section-title" data-i18n="flow_title">Data Pipeline</h2>
-    <p class="section-desc" data-i18n="flow_desc">Four steps from physical sensors to normalized metrics</p>
-
-    <div class="flow-container">
-        <div class="flow-card step1">
-            <div class="step-num">01</div>
-            <h3 data-i18n="flow1_title">IPMI Raw Collection</h3>
-            <p data-i18n="flow1_desc">Zabbix IPMI Poller connects to each server BMC via IPMI 2.0 protocol. The <code>ipmi.get</code> master item fetches all sensor data at once, returning a JSON array.</p>
-            <span class="tag">ipmi.get &rarr; JSON Array</span>
-        </div>
-        <div class="flow-card step2">
-            <div class="step-num">02</div>
-            <h3 data-i18n="flow2_title">Macro Vendor Mapping</h3>
-            <p data-i18n="flow2_desc">Each server has 4 host-level macros mapping vendor-specific sensor names to unified variables. Supermicro's <code>CPU0_Temp</code> and Dell's <code>Temp</code> point to the same metric.</p>
-            <span class="tag">{$HW_CPU_TEMP} = CPU0_Temp</span>
-        </div>
-        <div class="flow-card step3">
-            <div class="step-num">03</div>
-            <h3 data-i18n="flow3_title">JSONPath Extraction</h3>
-            <p data-i18n="flow3_desc">Dependent items use JSONPath expressions to extract target sensor values from the master item. Discard-on-error ensures missing sensors don't cause failures.</p>
-            <span class="tag">$.[?(@.id=="{$HW_CPU_TEMP}")].value</span>
-        </div>
-        <div class="flow-card step4">
-            <div class="step-num">04</div>
-            <h3 data-i18n="flow4_title">Unified Output</h3>
-            <p data-i18n="flow4_desc">All servers output the same 4 standardized metrics, ready for dashboard visualization, trigger alerting, and cross-vendor comparison.</p>
-            <span class="tag">hw.cpu.temp · hw.inlet.temp · hw.power.total</span>
-        </div>
-    </div>
-</section>
-
-<section class="section" id="vendors">
-    <h2 class="section-title" data-i18n="vendor_title">Multi-Vendor Sensor Mapping</h2>
-    <p class="section-desc" data-i18n="vendor_desc">Macro abstraction bridges naming differences across 5 vendors</p>
-
-    <div class="vendor-table-wrap">
-        <table class="vendor-table">
-            <thead>
-                <tr>
-                    <th data-i18n="vendor_th_metric">Unified Metric</th>
-                    <th>Supermicro</th><th>Inspur</th><th>Huawei</th><th>Dell</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td class="metric">CPU Temperature</td><td>CPU0_Temp</td><td>CPU0_TEMP</td><td>TEMP_CPU1</td><td>Temp</td></tr>
-                <tr><td class="metric">Inlet Temperature</td><td>SysTemp0</td><td>DIMMG0_TEMP</td><td>TEMP_MB1</td><td>Inlet Temp</td></tr>
-                <tr><td class="metric">Total Power</td><td>PSU1_PIN</td><td>SYS_POWER</td><td>PWR_PSU1_PIN</td><td>Pwr Consumption</td></tr>
-                <tr><td class="metric">PSU Temperature</td><td>PSU1_Temp1</td><td>CPU1_TEMP</td><td>TEMP_PSU1</td><td>Inlet Temp</td></tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<section class="section" id="alerting">
-    <h2 class="section-title" data-i18n="alert_title">Feishu Alert Pipeline</h2>
-    <p class="section-desc" data-i18n="alert_desc">Complete chain from threshold trigger to Feishu card notification</p>
-
-    <div class="alert-flow">
-        <div class="alert-card trigger">
-            <h3 data-i18n="alert_trigger_h">🚨 Triggers</h3>
-            <p data-i18n="alert_trigger_p">Template-level thresholds, macro-controlled limits</p>
-            <ul>
-                <li><span class="dot" style="background:#FFC107"></span> CPU > 80°C — Warning</li>
-                <li><span class="dot" style="background:#F44336"></span> CPU > 90°C — High</li>
-                <li><span class="dot" style="background:#FFC107"></span> Inlet > 35°C — Warning</li>
-                <li><span class="dot" style="background:#F44336"></span> Inlet > 45°C — High</li>
-                <li><span class="dot" style="background:#FFC107"></span> PSU > 70°C — Warning</li>
-            </ul>
-        </div>
-        <div class="alert-card webhook">
-            <h3 data-i18n="alert_sign_h">🔐 Webhook Signing</h3>
-            <p data-i18n="alert_sign_p">Feishu Bot security verification</p>
-            <ul>
-                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign1">Generate Unix timestamp</span></li>
-                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign2">Concat timestamp + \n + secret</span></li>
-                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign3">HMAC-SHA256 signature</span></li>
-                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign4">Hex to Base64 encoding</span></li>
-                <li><span class="dot" style="background:#f59e0b"></span> <span data-i18n="sign5">Attach to request body</span></li>
-            </ul>
-        </div>
-        <div class="alert-card feishu">
-            <h3 data-i18n="alert_card_h">💬 Feishu Card</h3>
-            <p data-i18n="alert_card_p">Interactive Card rich-text message</p>
-            <div class="feishu-preview">
-                <div class="feishu-header">⚠️ PROBLEM [High]</div>
-                <div class="feishu-body">
-                    <div class="feishu-field">
-                        <span><span class="feishu-label">Host:</span> <span class="feishu-value">research3.djch.one</span></span>
-                        <span><span class="feishu-label">Severity:</span> <span class="feishu-value">High</span></span>
-                    </div>
-                    <hr class="feishu-divider">
-                    <div><span class="feishu-label">Problem:</span> <span class="feishu-value">HW: CPU temperature is critically high (>90)</span></div>
-                    <hr class="feishu-divider">
-                    <div><span class="feishu-label">Time:</span> <span class="feishu-value">2026.04.13 18:34:00</span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section" id="dashboard">
-    <h2 class="section-title" data-i18n="dash_title">Dashboard Visualization</h2>
-    <p class="section-desc" data-i18n="dash_desc">DC Infrastructure Monitor — colors gradient from green to red with value</p>
-
-    <div class="dashboard-grid">
-        <div class="dash-widget">
-            <h4>CPU Temperature</h4>
-            <div class="dash-bar-label">research3.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:65%">58°C</div></div>
-            <div class="dash-bar-label">pve0.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:63%">56°C</div></div>
-            <div class="dash-bar-label">research7.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:38%">34°C</div></div>
-            <div class="dash-bar-label">research6.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:27%">24°C</div></div>
-        </div>
-        <div class="dash-widget">
-            <h4>Total Power</h4>
-            <div class="dash-bar-label">research7.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:70%">350W</div></div>
-            <div class="dash-bar-label">lustre02-poc.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:50%">252W</div></div>
-            <div class="dash-bar-label">k8snode01.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:44%">222W</div></div>
-            <div class="dash-bar-label">research1.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:26%">133W</div></div>
-        </div>
-        <div class="dash-widget">
-            <h4>Memory Usage</h4>
-            <div class="dash-bar-label">research8.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-high" style="width:92%">92%</div></div>
-            <div class="dash-bar-label">research3.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:67%">67%</div></div>
-            <div class="dash-bar-label">research7.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:35%">35%</div></div>
-            <div class="dash-bar-label">pve02.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:22%">22%</div></div>
-        </div>
-        <div class="dash-widget">
-            <h4>Inlet Temperature</h4>
-            <div class="dash-bar-label">research1.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:66%">33°C</div></div>
-            <div class="dash-bar-label">research7.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-mid" style="width:56%">28°C</div></div>
-            <div class="dash-bar-label">pve0.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:50%">25°C</div></div>
-            <div class="dash-bar-label">lustre01.djch.one</div>
-            <div class="dash-bar"><div class="dash-bar-fill temp-low" style="width:40%">20°C</div></div>
-        </div>
-    </div>
-</section>
-
-<footer class="footer">
-    <p>DJCH Infrastructure · Zabbix 7.4 + FreeIPA + Feishu · 2026</p>
-    <p style="margin-top:8px"><a href="/k8s" data-i18n="footer_link">&larr; K8s Architecture Overview</a></p>
-</footer>
+  <footer>portal.djch.one · zabbix × aidc hardware pipeline · 事实核对 2026-06-12</footer>
+</main>
 
 <script>
-// Stars
-const starsEl = document.getElementById('stars');
-for (let i = 0; i < 150; i++) {
-    const star = document.createElement('div');
-    star.className = 'star';
-    const size = Math.random() * 2 + 1;
-    star.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${Math.random()*3+2}s;animation-delay:${Math.random()*5}s;`;
-    starsEl.appendChild(star);
-}
+/* ═══════════ data-driven SVG diagram ═══════════ */
+const C={pink:'#ff4d9d',violet:'#8b5cf6',vio2:'#b07cff',cyan:'#21d4fd',blue:'#38bdf8',green:'#2fe39a',amber:'#ffb224'};
 
-// Animate bars on scroll
-const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-        if (e.isIntersecting) {
-            e.target.querySelectorAll('.dash-bar-fill').forEach(bar => {
-                const w = bar.style.width; bar.style.width = '0%';
-                setTimeout(() => bar.style.width = w, 100);
-            });
-        }
-    });
-}, { threshold: 0.3 });
-document.querySelectorAll('.dash-widget').forEach(w => observer.observe(w));
+const NODES=[
+  {id:'srvgrp',x:20,y:50,w:330,h:474,grp:1,title:'被监控服务器 × 24',sub:'rocky / ubuntu · zabbix_client role 下发'},
+  {id:'hw',x:44,y:106,w:282,h:92,title:'硬件层',sub:'DIMM · RAID · PCIe/NIC · 磁盘 SMART',tag:'dmidecode / storcli64 / lspci -vv / smartctl'},
+  {id:'col',x:44,y:228,w:282,h:60,title:'aidc-hardware-collector',sub:'systemd timer · 每 5min',tag:'/usr/local/bin'},
+  {id:'snap',x:44,y:318,w:282,h:54,title:'hardware-snapshot.json',sub:'/var/lib/aidc/ · 原子写入',tag:''},
+  {id:'agent',x:44,y:402,w:282,h:96,title:'zabbix_agentd (active)',sub:'UserParameter: aidc.hw.snapshot',tag:'aidc.hw.locate[*] · net.if.ip[*] · →.13'},
+  {id:'bmc',x:20,y:560,w:330,h:86,title:'BMC / IPMI(带外)',sub:'温度 · 功耗 · SEL 传感器',tag:'独立于 OS,掉电仍可达'},
 
-// i18n
-const i18n = {
-  zh: {
-    nav_zabbix: "Zabbix 监控", nav_k8s: "K8s 架构",
-    hero_title: "Zabbix 硬件监控架构",
-    hero_desc: "基于 IPMI 的多厂商硬件统一监控方案，通过归一化中间层抹平传感器差异，实时温度/功耗监控 + 飞书即时告警",
-    stat_nodes: "监控节点", stat_vendors: "服务器厂商", stat_sensors: "IPMI 传感器", stat_latency: "告警延迟",
-    arch_title: "系统架构", arch_desc: "从硬件传感器到飞书通知的完整数据流",
-    arch_bmc: "服务器 BMC", arch_zabbix_desc: "IPMI Poller x5<br>ipmi.get 采集全量传感器",
-    arch_normalize: "HW 归一化层", arch_normalize_desc: "模板宏 + 依赖项<br>统一指标命名",
-    arch_trigger_label: "触发器<br>阈值检测",
-    arch_alert: "告警引擎", arch_alert_desc: "分级告警 · 依赖抑制<br>Warning → Disaster",
-    arch_feishu: "飞书群通知", arch_feishu_desc: "Interactive Card<br>实时推送 · 恢复通知",
-    flow_title: "数据流转", flow_desc: "四步完成从物理传感器到归一化指标的转换",
-    flow1_title: "IPMI 原始采集", flow1_desc: "Zabbix IPMI Poller 通过 IPMI 2.0 协议连接各服务器 BMC，<code>ipmi.get</code> 一次性拉取所有传感器数据，返回 JSON 数组。",
-    flow2_title: "宏映射厂商差异", flow2_desc: "每台服务器配置 4 个主机宏，将厂商特定的传感器名映射到统一变量。Supermicro 的 <code>CPU0_Temp</code> 和 Dell 的 <code>Temp</code> 指向同一指标。",
-    flow3_title: "JSONPath 提取", flow3_desc: "依赖项通过 JSONPath 表达式从 master item 中提取目标传感器值，discard-on-error 保证传感器缺失时不报错。",
-    flow4_title: "统一输出", flow4_desc: "所有服务器输出相同的 4 个标准指标，可直接用于 Dashboard 展示、触发器告警和跨厂商对比。",
-    vendor_title: "多厂商传感器映射", vendor_desc: "通过宏抽象抹平 5 个厂商的命名差异",
-    vendor_th_metric: "统一指标",
-    alert_title: "飞书告警链路", alert_desc: "从阈值触发到飞书卡片通知的完整链路",
-    alert_trigger_h: "🚨 触发器", alert_trigger_p: "模板级阈值，宏控制上下限",
-    alert_sign_h: "🔐 Webhook 签名", alert_sign_p: "飞书 Bot 安全验证",
-    sign1: "生成 Unix 时间戳", sign2: "拼接 timestamp + \\n + secret", sign3: "HMAC-SHA256 签名", sign4: "Hex → Base64 编码", sign5: "附加到请求体发送",
-    alert_card_h: "💬 飞书卡片", alert_card_p: "Interactive Card 富文本消息",
-    dash_title: "Dashboard 可视化", dash_desc: "DC Infrastructure Monitor — 颜色随数值从绿到红渐变",
-    footer_link: "← K8s 架构全景"
-  },
-  en: {
-    nav_zabbix: "Zabbix Monitoring", nav_k8s: "K8s Architecture",
-    hero_title: "Zabbix Hardware Monitoring Architecture",
-    hero_desc: "Multi-vendor unified hardware monitoring via IPMI, with a normalization layer to abstract sensor differences, real-time temperature/power monitoring, and Feishu instant alerting",
-    stat_nodes: "Monitored Nodes", stat_vendors: "Server Vendors", stat_sensors: "IPMI Sensors", stat_latency: "Alert Latency",
-    arch_title: "System Architecture", arch_desc: "Complete data flow from hardware sensors to Feishu notifications",
-    arch_bmc: "Server BMC", arch_zabbix_desc: "IPMI Poller x5<br>ipmi.get fetches all sensors",
-    arch_normalize: "HW Normalization", arch_normalize_desc: "Template Macros + Dependent Items<br>Unified metric naming",
-    arch_trigger_label: "Triggers<br>Threshold Detection",
-    arch_alert: "Alert Engine", arch_alert_desc: "Severity-based · Dependency suppression<br>Warning → Disaster",
-    arch_feishu: "Feishu Notification", arch_feishu_desc: "Interactive Card<br>Real-time push · Recovery alerts",
-    flow_title: "Data Pipeline", flow_desc: "Four steps from physical sensors to normalized metrics",
-    flow1_title: "IPMI Raw Collection", flow1_desc: "Zabbix IPMI Poller connects to each server BMC via IPMI 2.0 protocol. The <code>ipmi.get</code> master item fetches all sensor data at once, returning a JSON array.",
-    flow2_title: "Macro Vendor Mapping", flow2_desc: "Each server has 4 host-level macros mapping vendor-specific sensor names to unified variables. Supermicro's <code>CPU0_Temp</code> and Dell's <code>Temp</code> point to the same metric.",
-    flow3_title: "JSONPath Extraction", flow3_desc: "Dependent items use JSONPath expressions to extract target sensor values from the master item. Discard-on-error ensures missing sensors don't cause failures.",
-    flow4_title: "Unified Output", flow4_desc: "All servers output the same 4 standardized metrics, ready for dashboard visualization, trigger alerting, and cross-vendor comparison.",
-    vendor_title: "Multi-Vendor Sensor Mapping", vendor_desc: "Macro abstraction bridges naming differences across 5 vendors",
-    vendor_th_metric: "Unified Metric",
-    alert_title: "Feishu Alert Pipeline", alert_desc: "Complete chain from threshold trigger to Feishu card notification",
-    alert_trigger_h: "🚨 Triggers", alert_trigger_p: "Template-level thresholds, macro-controlled limits",
-    alert_sign_h: "🔐 Webhook Signing", alert_sign_p: "Feishu Bot security verification",
-    sign1: "Generate Unix timestamp", sign2: "Concat timestamp + \\n + secret", sign3: "HMAC-SHA256 signature", sign4: "Hex to Base64 encoding", sign5: "Attach to request body",
-    alert_card_h: "💬 Feishu Card", alert_card_p: "Interactive Card rich-text message",
-    dash_title: "Dashboard Visualization", dash_desc: "DC Infrastructure Monitor — colors gradient from green to red with value",
-    footer_link: "← K8s Architecture Overview"
+  {id:'zbx',x:470,y:50,w:300,h:336,grp:1,title:'Zabbix Server',sub:'192.168.6.13 · Zabbix 7.x'},
+  {id:'item',x:492,y:106,w:256,h:96,title:'item: aidc.hw.snapshot',sub:'type=7 agent-active · text · 5m',tag:'lastvalue = 完整硬件 JSON'},
+  {id:'hwit',x:492,y:232,w:256,h:62,title:'hw.cpu.temp / hw.inlet.temp',sub:'hw.power.total · problem.get',tag:''},
+  {id:'api',x:492,y:322,w:256,h:46,title:'JSON-RPC API',sub:'Bearer token 认证',tag:''},
+  {id:'prom',x:470,y:560,w:300,h:86,title:'Prometheus',sub:'ipmi exporter: ipmi_up · sel_logs_count',tag:'状态灯首选数据源'},
+
+  {id:'begrp',x:890,y:50,w:320,h:474,grp:1,title:'AIDC 后端(FastAPI)',sub:'aidc.djch.one · backend/app'},
+  {id:'zpy',x:912,y:106,w:276,h:56,title:'integrations/zabbix.py',sub:'item.get · Bearer · webitems',tag:''},
+  {id:'hpy',x:912,y:192,w:276,h:52,title:'integrations/hardware.py',sub:'json.loads(lastvalue) 解析',tag:''},
+  {id:'cache',x:912,y:274,w:276,h:56,title:'DB 缓存',sub:'ServerHardwareSnapshot · 可 force_refresh',tag:''},
+  {id:'rest',x:912,y:382,w:276,h:118,title:'REST 端点',sub:'/servers/{id}/hardware · /hover-detail',tag:'/racks/{id}/detail · 聚合 health'},
+
+  {id:'fegrp',x:1330,y:50,w:290,h:596,grp:1,title:'AIDC 前端 · Rack 视图',sub:'racks/[id] · SVG 渲染'},
+  {id:'rack',x:1352,y:106,w:246,h:88,title:'Rack SVG',sub:'U 位 28px/U · 前后视图 · PDU',tag:'状态灯: 绿在线/红离线/琥珀SEL'},
+  {id:'hover',x:1352,y:228,w:246,h:76,title:'悬停卡',sub:'CPU温 · 进风温 · 功耗W · 网卡IP',tag:'悬停时异步实时拉取'},
+  {id:'hwtab',x:1352,y:340,w:246,h:88,title:'硬件 Tab',sub:'内存 / NIC·PCIe降级 / RAID / 磁盘',tag:'force_refresh 按钮'},
+  {id:'loc',x:1352,y:462,w:246,h:62,title:'磁盘定位灯按钮',sub:'点亮机房里那块盘的 LED',tag:'aidc.hw.locate[ref,on]'},
+];
+
+const EDGES=[
+  {id:'e1',f:'hw',t:'col',v:1,lbl:'枚举硬件'},
+  {id:'e2',f:'col',t:'snap',v:1,lbl:'原子写 JSON'},
+  {id:'e3',f:'snap',t:'agent',v:1,lbl:'snapshot-read'},
+  {id:'e4',f:'agent',t:'item',lbl:'active 上报 · 5m'},
+  {id:'e5',f:'item',t:'api',v:1},
+  {id:'e6',f:'api',t:'zpy',lbl:'item.get'},
+  {id:'e7',f:'zpy',t:'hpy',v:1},
+  {id:'e8',f:'hpy',t:'cache',v:1},
+  {id:'e9',f:'cache',t:'rest',v:1},
+  {id:'e10',f:'rest',t:'hwtab',lbl:'GET /hardware'},
+  {id:'e11',f:'bmc',t:'hwit',lbl:'IPMI 轮询'},
+  {id:'e12',f:'bmc',t:'prom',lbl:'exporter 抓取'},
+  {id:'e13',f:'prom',t:'rest',lbl:'lamp / sel_count'},
+  {id:'e14',f:'hwit',t:'api',v:1},
+  {id:'e15',f:'zpy',t:'rest',lbl:'get_host_metrics 实时',curve:90},
+  {id:'e16',f:'rest',t:'hover',lbl:'/hover-detail'},
+  {id:'e17',f:'rest',t:'rack',lbl:'/racks/{id}/detail'},
+  {id:'e18',f:'loc',t:'rest',lbl:'POST locate'},
+  {id:'e19',f:'rest',t:'api',lbl:'下发 locate',curve:120},
+  {id:'e20',f:'api',t:'agent',lbl:'aidc.hw.locate[on]'},
+  {id:'e21',f:'agent',t:'hw',v:1,lbl:'storcli 点 LED'},
+];
+
+const FLOWS=[
+  {name:'① 硬件快照采集流',color:C.cyan,
+   edges:['e1','e2','e3','e4','e5','e6','e7','e8','e9','e10'],
+   nodes:['srvgrp','hw','col','snap','agent','zbx','item','api','begrp','zpy','hpy','cache','rest','fegrp','hwtab'],
+   steps:['collector 每 5min 枚举 RAID/内存/PCIe/SMART','原子写快照 JSON','agent active 上报 item','后端 item.get 取 lastvalue','解析入库缓存','硬件 Tab 渲染明细']},
+  {name:'② 温度·功耗·状态灯流',color:C.amber,
+   edges:['e11','e14','e6','e15','e16','e12','e13','e17'],
+   nodes:['bmc','zbx','hwit','api','begrp','zpy','rest','prom','fegrp','hover','rack'],
+   steps:['BMC/IPMI 带外采温度功耗','Zabbix hw.* 数值 item','悬停时 get_host_metrics 实时拉','Prometheus ipmi_up / SEL','悬停卡显温·功耗·网卡 / 状态灯着色']},
+  {name:'③ Rack 查询与缓存流',color:C.green,
+   edges:['e10','e9','e8','e7','e6','e5'],
+   nodes:['fegrp','hwtab','begrp','rest','cache','hpy','zpy','api','zbx','item'],
+   steps:['前端 GET /servers/{id}/hardware','命中 DB 缓存直接返回','force_refresh=true 绕缓存','重新 item.get → 解析 → 回写缓存']},
+  {name:'④ 定位灯反向控制流',color:C.pink,
+   edges:['e18','e19','e20','e21'],
+   nodes:['fegrp','loc','begrp','rest','zbx','api','srvgrp','agent','hw'],
+   steps:['硬件 Tab 点「定位」','后端经 Zabbix 下发 locate','agent 执行 locate-client','storcli 点亮机房盘位 LED']},
+];
+
+const svg=document.getElementById('svg');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},parent=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);parent.appendChild(e);return e;};
+const byId={};NODES.forEach(n=>byId[n.id]=n);
+
+const edgeEls={},pktEls={},lblEls={};
+function anchors(e){
+  const a=byId[e.f],b=byId[e.t];
+  if(e.v){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
   }
-};
-
-let currentLang = localStorage.getItem('lang') || 'en';
-function applyLang(lang) {
-    currentLang = lang;
-    localStorage.setItem('lang', lang);
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-    document.getElementById('langSwitch').textContent = lang === 'zh' ? 'EN' : '中文';
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
-    });
+  const fwd=b.x+b.w/2>a.x+a.w/2;
+  return fwd?[a.x+a.w,a.y+a.h/2,b.x,b.y+b.h/2,'h']:[a.x,a.y+a.h/2,b.x+b.w,b.y+b.h/2,'h'];
 }
-function toggleLang() { applyLang(currentLang === 'zh' ? 'en' : 'zh'); }
-applyLang(currentLang);
-</script>
+EDGES.forEach(e=>{
+  const[x1,y1,x2,y2,dir]=anchors(e);
+  let d;
+  if(dir==='v'){d=`M${x1},${y1} C${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`;}
+  else{
+    const c=e.curve||0,mx=(x1+x2)/2;
+    d=c?`M${x1},${y1} C${mx},${y1+c} ${mx},${y2+c} ${x2},${y2}`
+       :`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  }
+  edgeEls[e.id]=el('path',{d,class:'edge',id:'p-'+e.id});
+  const pk=el('circle',{r:3.4,class:'pkt'});
+  const mo=el('animateMotion',{dur:'1.5s',repeatCount:'indefinite'},pk);
+  el('mpath',{href:'#p-'+e.id},mo);
+  pktEls[e.id]=pk;
+  if(e.lbl){
+    const midx=(x1+x2)/2,midy=(y1+y2)/2+(dir==='h'&&e.curve?e.curve*0.72:0)-6;
+    const t=el('text',{x:midx,y:midy,class:'elabel','text-anchor':'middle'});
+    t.textContent=e.lbl;lblEls[e.id]=t;
+  }
+});
 
+const nodeEls={};
+NODES.forEach(n=>{
+  const g=el('g',{class:'node'+(n.grp?' grp':'')});
+  el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:10},g);
+  if(n.grp){
+    const t=el('text',{x:n.x+14,y:n.y+24,class:'gt'},g);t.textContent=n.title.toUpperCase();
+    const s=el('text',{x:n.x+14,y:n.y+41,class:'sub'},g);s.textContent=n.sub;
+  }else{
+    const t=el('text',{x:n.x+14,y:n.y+23,class:'ttl'},g);t.textContent=n.title;
+    const s=el('text',{x:n.x+14,y:n.y+40,class:'sub'},g);s.textContent=n.sub;
+    if(n.tag){const k=el('text',{x:n.x+14,y:n.y+56,class:'tag'},g);k.textContent=n.tag;}
+  }
+  nodeEls[n.id]=g;
+});
+
+const tabsBox=document.getElementById('tabs'),stepsBox=document.getElementById('steps');
+FLOWS.forEach((f,i)=>{
+  const b=document.createElement('button');
+  b.className='tab';b.style.setProperty('--fc',f.color);
+  b.innerHTML='<span class="dot"></span>'+f.name;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  const f=FLOWS[i];
+  document.documentElement.style.setProperty('--fc',f.color);
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  EDGES.forEach(e=>{
+    const on=f.edges.includes(e.id);
+    edgeEls[e.id].setAttribute('class','edge'+(on?' lit':' dim'));
+    edgeEls[e.id].style.stroke=on?f.color:'';
+    edgeEls[e.id].style.filter=on?`drop-shadow(0 0 5px ${f.color})`:'';
+    pktEls[e.id].setAttribute('class','pkt'+(on?' lit':''));
+    pktEls[e.id].setAttribute('fill',f.color);
+    if(lblEls[e.id]){lblEls[e.id].setAttribute('class','elabel'+(on?' lit':''));lblEls[e.id].style.fill=on?f.color:'';}
+  });
+  f.edges.forEach((id,k)=>{
+    const mo=pktEls[id].querySelector('animateMotion');
+    mo.setAttribute('begin',(k*0.2)+'s');
+    const node=pktEls[id];node.remove();svg.appendChild(node); // restart SMIL
+  });
+  NODES.forEach(n=>{
+    const on=f.nodes.includes(n.id);
+    nodeEls[n.id].setAttribute('class','node'+(n.grp?' grp':'')+(on?' lit':' dim'));
+    nodeEls[n.id].style.setProperty('--fc',f.color);
+  });
+  stepsBox.innerHTML='';
+  stepsBox.style.setProperty('--fc',f.color);
+  f.steps.forEach((s,k)=>{
+    const d=document.createElement('span');
+    d.className='st';d.innerHTML='<i>'+(k+1)+'</i>'+s;
+    stepsBox.appendChild(d);
+    setTimeout(()=>d.classList.add('in'),110*k+60);
+  });
+}
+activate(0);
+</script>
 </body>
 </html>
