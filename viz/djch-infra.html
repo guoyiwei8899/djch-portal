@@ -3,12 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mana Trading Network Portal</title>
+<title>djch.one Infrastructure</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+/* portal-unified self-hosted fonts */
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0e27;color:#e2e8f0;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,sans-serif;background:#060a14;color:#e9edf8;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 
 /* ─── Stars ─── */
 .stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
@@ -23,56 +29,56 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:1000;}
 
 /* ─── Nav ─── */
-.nav{position:fixed;top:0;left:0;right:0;background:rgba(2,6,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(99,102,241,.25);padding:14px 28px;z-index:100;display:flex;align-items:center;gap:24px;}
-.nav-logo{font-size:18px;font-weight:800;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#6366f1,#a855f7,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em;}
+.nav{position:fixed;top:0;left:0;right:0;background:rgba(2,6,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(139,92,246,.25);padding:14px 28px;z-index:100;display:flex;align-items:center;gap:24px;}
+.nav-logo{font-size:18px;font-weight:800;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#ff4d9d,#8b5cf6,#21d4fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em;}
 .nav-links{display:flex;align-items:center;flex:1;}
-.nav-links a{color:#64748b;text-decoration:none;margin:0 14px;font-size:13px;font-weight:500;transition:color .3s;letter-spacing:.02em;}
-.nav-links a:hover,.nav-links a.active{color:#a855f7;}
+.nav-links a{color:#69749b;text-decoration:none;margin:0 14px;font-size:13px;font-weight:500;transition:color .3s;letter-spacing:.02em;}
+.nav-links a:hover,.nav-links a.active{color:#b07cff;}
 .nav-links a.active{position:relative;}
-.nav-links a.active::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:2px;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:2px;}
-.lang-btn{margin-left:auto;cursor:pointer;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;border:1px solid rgba(99,102,241,.5);color:#a5b4fc;background:rgba(99,102,241,.1);transition:all .3s;letter-spacing:.1em;}
-.lang-btn:hover{background:rgba(99,102,241,.22);border-color:#6366f1;color:#c7d2fe;}
+.nav-links a.active::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff4d9d,#8b5cf6);border-radius:2px;}
+.lang-btn{margin-left:auto;cursor:pointer;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;border:1px solid rgba(139,92,246,.5);color:#c5b2fd;background:rgba(139,92,246,.1);transition:all .3s;letter-spacing:.1em;}
+.lang-btn:hover{background:rgba(139,92,246,.22);border-color:#8b5cf6;color:#dcccff;}
 
 /* ─── Hero ─── */
 .hero{position:relative;z-index:1;text-align:center;padding:108px 20px 36px;}
-.hero h1{font-size:40px;font-weight:900;letter-spacing:-.04em;line-height:1.1;background:linear-gradient(135deg,#6366f1 0%,#a855f7 40%,#22d3ee 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:14px;animation:glitch 6s ease-in-out infinite;}
-@keyframes glitch{0%,88%,100%{filter:none;transform:none}90%{filter:drop-shadow(-2px 0 #f0abfc) drop-shadow(2px 0 #22d3ee);transform:skewX(-.5deg)}92%{filter:drop-shadow(2px 0 #f0abfc) drop-shadow(-2px 0 #22d3ee);transform:skewX(.5deg)}94%{filter:none;transform:none}96%{filter:drop-shadow(-1px 0 #a855f7);transform:skewX(-.3deg)}}
-.hero-sub{font-size:15px;color:#64748b;max-width:720px;margin:0 auto 22px;line-height:1.65;font-weight:400;}
+.hero h1{font-family:'Chakra Petch','Poppins',sans-serif;font-size:40px;font-weight:700;letter-spacing:-.04em;line-height:1.1;background:linear-gradient(135deg,#ff4d9d 0%,#8b5cf6 40%,#21d4fd 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:14px;animation:glitch 6s ease-in-out infinite;}
+@keyframes glitch{0%,88%,100%{filter:none;transform:none}90%{filter:drop-shadow(-2px 0 #ff5da2) drop-shadow(2px 0 #21d4fd);transform:skewX(-.5deg)}92%{filter:drop-shadow(2px 0 #ff5da2) drop-shadow(-2px 0 #21d4fd);transform:skewX(.5deg)}94%{filter:none;transform:none}96%{filter:drop-shadow(-1px 0 #b07cff);transform:skewX(-.3deg)}}
+.hero-sub{font-size:15px;color:#69749b;max-width:720px;margin:0 auto 22px;line-height:1.65;font-weight:400;}
 .badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;}
-.badge{padding:4px 13px;border-radius:20px;font-size:11.5px;font-weight:600;font-family:'Inter',sans-serif;letter-spacing:.04em;}
-.badge.bl{border:1px solid rgba(59,130,246,.45);color:#93c5fd;background:rgba(59,130,246,.08);}
-.badge.pu{border:1px solid rgba(168,85,247,.45);color:#d8b4fe;background:rgba(168,85,247,.08);}
-.badge.gr{border:1px solid rgba(34,197,94,.45);color:#86efac;background:rgba(34,197,94,.08);}
-.badge.am{border:1px solid rgba(245,158,11,.45);color:#fcd34d;background:rgba(245,158,11,.08);}
+.badge{padding:4px 13px;border-radius:20px;font-size:11.5px;font-weight:600;font-family:'Poppins',sans-serif;letter-spacing:.04em;}
+.badge.bl{border:1px solid rgba(56,189,248,.45);color:#9bd6fb;background:rgba(56,189,248,.08);}
+.badge.pu{border:1px solid rgba(176,124,255,.45);color:#cdb2ff;background:rgba(176,124,255,.08);}
+.badge.gr{border:1px solid rgba(47,227,154,.45);color:#9af0c8;background:rgba(47,227,154,.08);}
+.badge.am{border:1px solid rgba(255,178,36,.45);color:#ffd089;background:rgba(255,178,36,.08);}
 .badge.re{border:1px solid rgba(239,68,68,.45);color:#fca5a5;background:rgba(239,68,68,.08);}
-.badge.cy{border:1px solid rgba(34,211,238,.45);color:#67e8f9;background:rgba(34,211,238,.08);}
+.badge.cy{border:1px solid rgba(33,212,253,.45);color:#7ce4ff;background:rgba(33,212,253,.08);}
 
 
 /* ─── Section ─── */
 .section{position:relative;z-index:1;max-width:1820px;margin:0 auto;padding:44px 14px;}
-.sec-title{font-size:34px;font-weight:800;text-align:center;margin-bottom:10px;letter-spacing:-.03em;background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.sec-desc{text-align:center;color:#334155;margin-bottom:24px;font-size:13px;font-family:'Inter',sans-serif;letter-spacing:.05em;}
+.sec-title{font-family:'Chakra Petch','Poppins',sans-serif;font-size:34px;font-weight:700;text-align:center;margin-bottom:10px;letter-spacing:-.03em;background:linear-gradient(135deg,#ff4d9d,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sec-desc{text-align:center;color:#2a3354;margin-bottom:24px;font-size:13px;font-family:'Poppins',sans-serif;letter-spacing:.05em;}
 
 /* ─── Diagram card ─── */
-.dcard{background:rgba(2,6,18,.85);border:1px solid rgba(99,102,241,.18);border-radius:14px;padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
-.dcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#6366f1,#a855f7,#22d3ee,transparent);}
+.dcard{background:rgba(2,6,18,.85);border:1px solid rgba(139,92,246,.18);border-radius:14px;padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
+.dcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#ff4d9d,#8b5cf6,#21d4fd,transparent);}
 /* Scan line on diagram */
-.dcard::after{content:'';position:absolute;top:-100%;left:0;width:100%;height:60px;background:linear-gradient(transparent,rgba(99,102,241,.04),transparent);animation:scan 5s linear infinite;pointer-events:none;}
+.dcard::after{content:'';position:absolute;top:-100%;left:0;width:100%;height:60px;background:linear-gradient(transparent,rgba(139,92,246,.04),transparent);animation:scan 5s linear infinite;pointer-events:none;}
 @keyframes scan{to{top:110%}}
 
 /* ─── Legend ─── */
-.legend{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;font-size:11px;color:#475569;position:relative;z-index:1;padding:0 16px 8px;font-family:'Inter',sans-serif;}
+.legend{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;font-size:11px;color:#3a4569;position:relative;z-index:1;padding:0 16px 8px;font-family:'Poppins',sans-serif;}
 .li{display:flex;align-items:center;gap:5px;}
 .ll{display:inline-block;width:26px;height:2px;border-radius:2px;}
 
 /* ─── Tooltip ─── */
-#tt{position:fixed;background:rgba(2,6,18,.98);border:1px solid rgba(99,102,241,.5);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.75;display:none;max-width:230px;box-shadow:0 0 30px rgba(99,102,241,.2),0 8px 30px rgba(0,0,0,.6);z-index:300;pointer-events:none;color:#e2e8f0;font-family:'Inter',sans-serif;}
-#tt b{color:#a855f7;}
-#tt .mono{font-family:'Inter',sans-serif;font-size:11px;color:#67e8f9;}
+#tt{position:fixed;background:rgba(2,6,18,.98);border:1px solid rgba(139,92,246,.5);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.75;display:none;max-width:230px;box-shadow:0 0 30px rgba(139,92,246,.2),0 8px 30px rgba(0,0,0,.6);z-index:300;pointer-events:none;color:#e9edf8;font-family:'Poppins',sans-serif;}
+#tt b{color:#b07cff;}
+#tt .mono{font-family:'Poppins',sans-serif;font-size:11px;color:#7ce4ff;}
 
 /* ─── Footer ─── */
-.footer{position:relative;z-index:1;text-align:center;padding:30px 20px;color:#1e293b;font-size:12px;border-top:1px solid rgba(99,102,241,.1);font-family:'Inter',sans-serif;}
-.footer a{color:#6366f1;text-decoration:none;}
+.footer{position:relative;z-index:1;text-align:center;padding:30px 20px;color:#171f38;font-size:12px;border-top:1px solid rgba(139,92,246,.1);font-family:'Poppins',sans-serif;}
+.footer a{color:#8b5cf6;text-decoration:none;}
 
 /* ─── SVG path animations ─── */
 @keyframes df{to{stroke-dashoffset:-24}}
@@ -87,12 +93,12 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 <body>
 
 <div class="stars" id="stars"></div>
-<div class="orb" style="width:500px;height:500px;background:rgba(99,102,241,.1);top:-150px;left:-150px;animation-delay:0s"></div>
-<div class="orb" style="width:350px;height:350px;background:rgba(168,85,247,.08);bottom:50px;right:-80px;animation-delay:-6s"></div>
-<div class="orb" style="width:280px;height:280px;background:rgba(34,211,238,.06);top:40%;left:35%;animation-delay:-10s"></div>
+<div class="orb" style="width:500px;height:500px;background:rgba(139,92,246,.1);top:-150px;left:-150px;animation-delay:0s"></div>
+<div class="orb" style="width:350px;height:350px;background:rgba(176,124,255,.08);bottom:50px;right:-80px;animation-delay:-6s"></div>
+<div class="orb" style="width:280px;height:280px;background:rgba(33,212,253,.06);top:40%;left:35%;animation-delay:-10s"></div>
 
 <nav class="nav">
-  <div class="nav-logo">[ MANA TRADING ]</div>
+  <div class="nav-logo">[ DJCH.ONE INFRA ]</div>
   <div class="nav-links">
     <a href="https://money.djch.one/zabbix" id="n-zabbix">Zabbix Monitoring</a>
     <a href="https://money.djch.one/k8s" id="n-k8s">K8s Architecture</a>
@@ -102,7 +108,7 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 </nav>
 
 <section class="hero">
-  <h1 id="hero-title">Mana Trading 企业网络架构</h1>
+  <h1 id="hero-title">djch.one 企业网络架构</h1>
   <p class="hero-sub" id="hero-desc">多站点专线互联 · 零信任网络访问 · 混合云代理矩阵 · 容器化微服务平台 · 全栈可观测性</p>
   <div class="badges">
     <span class="badge bl">RKE2 v1.33.5</span>
@@ -125,14 +131,14 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
   </div>
   <div class="legend">
     <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#ef4444 0,#ef4444 9px,transparent 9px,transparent 16px)"></div><span id="l1">IPsec 隧道</span></div>
-    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#3b82f6 0,#3b82f6 7px,transparent 7px,transparent 14px)"></div><span id="l2">OpenVPN</span></div>
-    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#a855f7 0,#a855f7 8px,transparent 8px,transparent 15px)"></div><span id="l3">vless / trojan</span></div>
-    <div class="li"><div class="ll" style="background:#22c55e"></div><span id="l4">CF Tunnel</span></div>
+    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#38bdf8 0,#38bdf8 7px,transparent 7px,transparent 14px)"></div><span id="l2">OpenVPN</span></div>
+    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#b07cff 0,#b07cff 8px,transparent 8px,transparent 15px)"></div><span id="l3">vless / trojan</span></div>
+    <div class="li"><div class="ll" style="background:#2fe39a"></div><span id="l4">CF Tunnel</span></div>
     <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#14b8a6 0,#14b8a6 8px,transparent 8px,transparent 14px)"></div><span id="l5">DNS 查询</span></div>
-    <div class="li"><div class="ll" style="background:#475569"></div><span id="l6">内部网络</span></div>
-    <div class="li"><div class="ll" style="background:#22d3ee"></div><span id="l7">100G IB</span></div>
-    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#3b82f6 0,#3b82f6 6px,transparent 6px,transparent 13px)"></div><span id="l8">10G SSH</span></div>
-    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#475569 0,#475569 4px,transparent 4px,transparent 9px)"></div><span id="l9">1G MGMT</span></div>
+    <div class="li"><div class="ll" style="background:#3a4569"></div><span id="l6">内部网络</span></div>
+    <div class="li"><div class="ll" style="background:#21d4fd"></div><span id="l7">100G IB</span></div>
+    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#38bdf8 0,#38bdf8 6px,transparent 6px,transparent 13px)"></div><span id="l8">10G SSH</span></div>
+    <div class="li"><div class="ll" style="background:repeating-linear-gradient(90deg,#3a4569 0,#3a4569 4px,transparent 4px,transparent 9px)"></div><span id="l9">1G MGMT</span></div>
   </div>
 </section>
 
@@ -150,7 +156,7 @@ for(let i=0;i<180;i++){const s=document.createElement('div');s.className='star';
 let lang='zh';
 const T={
   zh:{
-    'hero-title':'Mana Trading 企业网络架构',
+    'hero-title':'djch.one 企业网络架构',
     'hero-desc':'多站点专线互联 · 零信任网络访问 · 混合云代理矩阵 · 容器化微服务平台 · 全栈可观测性',
     'n-zabbix':'Zabbix 监控','n-k8s':'K8s 架构','n-portal':'网络门户',
     'sec-title':'基础设施架构','sec-desc':'// 完整网络拓扑 · 悬停节点查看详情',
@@ -158,7 +164,7 @@ const T={
     'langBtn':'[ EN ]',
   },
   en:{
-    'hero-title':'Mana Trading Enterprise Network',
+    'hero-title':'djch.one Enterprise Network',
     'hero-desc':'Multi-site VPN mesh · Zero Trust Access · Hybrid cloud proxy matrix · Containerized microservices · Full-stack observability',
     'n-zabbix':'Zabbix Monitoring','n-k8s':'K8s Architecture','n-portal':'Network Portal',
     'sec-title':'Infrastructure Architecture','sec-desc':'// FULL NETWORK TOPOLOGY · HOVER NODES FOR DETAILS',
@@ -178,7 +184,7 @@ function applyPageLang(){
 function toggleLang(){lang=lang==='zh'?'en':'zh';applyPageLang();}
 
 document.getElementById('footer-txt').innerHTML=
-  `UPDATED: ${new Date().toLocaleDateString('en-CA')} &nbsp;·&nbsp; <a href="#">Mana Trading Corp</a> &nbsp;·&nbsp; RKE2 + PROXMOX + MIKROTIK`;
+  `UPDATED: ${new Date().toLocaleDateString('en-CA')} &nbsp;·&nbsp; <a href="#">djch.one Corp</a> &nbsp;·&nbsp; RKE2 + PROXMOX + MIKROTIK`;
 
 /* ═══════════════════════════════════════
    SVG DIAGRAM ENGINE
@@ -197,8 +203,8 @@ defsEl.innerHTML=`
   <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b"/>
   <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
 </filter>
-${[['ao','#ef4444'],['ab','#3b82f6'],['agr','#22c55e'],['ap','#a855f7'],
-   ['aam','#f59e0b'],['at','#14b8a6'],['ag','#475569'],['acy','#22d3ee']].map(([id,c])=>
+${[['ao','#ef4444'],['ab','#38bdf8'],['agr','#2fe39a'],['ap','#b07cff'],
+   ['aam','#ffa31a'],['at','#14b8a6'],['ag','#3a4569'],['acy','#21d4fd']].map(([id,c])=>
 `<marker id="${id}" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
   <polygon points="0 0,9 3.5,0 7" fill="${c}"/>
 </marker>`).join('')}
@@ -219,8 +225,8 @@ function txt(x,y,zh_text,arg4={},arg5){
   e.setAttribute('x',x);e.setAttribute('y',y);
   e.setAttribute('text-anchor',o.a||'middle');
   e.setAttribute('font-size',o.s||13);
-  e.setAttribute('font-family',o.mono?"'Inter',sans-serif":"'Inter','Noto Sans SC',sans-serif");
-  e.setAttribute('fill',o.c||'#94a3b8');
+  e.setAttribute('font-family',o.mono?"'Poppins',sans-serif":"'Poppins','Noto Sans SC',sans-serif");
+  e.setAttribute('fill',o.c||'#8d97b4');
   if(o.w)e.setAttribute('font-weight','700');
   if(o.i)e.setAttribute('font-style','italic');
   const lines=String(content).split('\n');
@@ -262,12 +268,12 @@ function badge(mx,my,t,c){
   el('rect',{x:mx-w/2,y:my-10,width:w,height:18,fill:'rgba(2,6,18,.95)',rx:3,stroke:c,'stroke-width':1,'stroke-opacity':'.55'});
   const bt=document.createElementNS(NS,'text');
   bt.setAttribute('x',mx);bt.setAttribute('y',my+5);bt.setAttribute('text-anchor','middle');
-  bt.setAttribute('font-size',10);bt.setAttribute('font-family',"'Inter',sans-serif");
+  bt.setAttribute('font-size',10);bt.setAttribute('font-family',"'Poppins',sans-serif");
   bt.setAttribute('fill',c);bt.setAttribute('font-weight','700');
   bt.textContent=t;svg.appendChild(bt);
 }
 function status(x,y,online=true){
-  const c=online?'#22c55e':'#ef4444';
+  const c=online?'#2fe39a':'#ef4444';
   el('circle',{cx:x,cy:y,r:4,fill:c,opacity:'.9',filter:'url(#glow)'});
   el('circle',{cx:x,cy:y,r:4,fill:c,opacity:'.15'}).style.animation='pulse 2s ease-in-out infinite';
 }
@@ -284,26 +290,26 @@ function cloud(cx,cy,fc,sc){
 }
 
 /* ══════════ BACKGROUND ══════════ */
-el('rect',{x:0,y:0,width:2400,height:1260,fill:'#0a0e27',rx:8});
+el('rect',{x:0,y:0,width:2400,height:1260,fill:'#060a14',rx:8});
 /* Subtle hex grid */
 for(let x=0;x<2400;x+=40) for(let y=0;y<1260;y+=40)
   el('circle',{cx:x,cy:y,r:.7,fill:'#0f172a',opacity:'.8'});
 
 /* ══════════ 1. INTERNET ══════════ */
-cloud(1400,70,'rgba(23,37,84,.5)','#3b82f6');
-el('ellipse',{cx:1400,cy:78,rx:115,ry:30,fill:'#3b82f6',opacity:'.08',filter:'url(#glow2)'});
-txt(1400,74,'🌐  互联网','🌐  Internet',{s:16,c:'#93c5fd',w:true},'🌐  Internet');
+cloud(1400,70,'rgba(23,30,54,.5)','#38bdf8');
+el('ellipse',{cx:1400,cy:78,rx:115,ry:30,fill:'#38bdf8',opacity:'.08',filter:'url(#glow2)'});
+txt(1400,74,'🌐  互联网','🌐  Internet',{s:16,c:'#9bd6fb',w:true},'🌐  Internet');
 
 /* ══════════ 1b. INTERNET (right of CF — public egress) ══════════ */
-cloud(1960,70,'rgba(23,37,84,.5)','#3b82f6');
-el('ellipse',{cx:1960,cy:78,rx:100,ry:26,fill:'#3b82f6',opacity:'.08',filter:'url(#glow2)'});
-txt(1960,74,'🌐  互联网','🌐  Internet',{s:14,c:'#93c5fd',w:true},'🌐  Internet');
+cloud(1960,70,'rgba(23,30,54,.5)','#38bdf8');
+el('ellipse',{cx:1960,cy:78,rx:100,ry:26,fill:'#38bdf8',opacity:'.08',filter:'url(#glow2)'});
+txt(1960,74,'🌐  互联网','🌐  Internet',{s:14,c:'#9bd6fb',w:true},'🌐  Internet');
 
 /* ══════════ 2. REMOTE WORKFORCE ══════════ */
-const ouB=rb(28,104,215,90,'#a855f7',2,2);
-txt(135,128,'💼  远程员工','💼  Remote Workforce',{s:13,c:'#d8b4fe',w:true},'💼  Remote Workforce');
-txt(135,147,'Mac / Mobile / etc.',{s:11,c:'#475569',i:true});
-txt(135,164,'零信任接入','Zero Trust Access',{s:11,c:'#a855f7'},'Zero Trust Access');
+const ouB=rb(28,104,215,90,'#b07cff',2,2);
+txt(135,128,'💼  远程员工','💼  Remote Workforce',{s:13,c:'#cdb2ff',w:true},'💼  Remote Workforce');
+txt(135,147,'Mac / Mobile / etc.',{s:11,c:'#3a4569',i:true});
+txt(135,164,'零信任接入','Zero Trust Access',{s:11,c:'#b07cff'},'Zero Trust Access');
 status(218,112);
 tip(ouB,'<b>远程员工 / Remote Workforce</b><br><span class="mono">OpenVPN TCP 1194</span><br>通过腾讯云 OpenVPN 接入企业内网<br>→ 各站点路由互通<br>.ovpn 证书认证');
 
@@ -311,122 +317,122 @@ tip(ouB,'<b>远程员工 / Remote Workforce</b><br><span class="mono">OpenVPN TC
 const cfB=rb(1460,114,270,110,'#f97316',2.5,3);
 txt(1595,138,'☁️  Cloudflare',{s:14,c:'#fb923c',w:true});
 txt(1595,157,'CDN · Zero Trust Tunnel',{s:11,c:'#a78bfa'});
-txt(1595,175,'*.djch.one 统一入口','*.djch.one Public Entry',{s:11,c:'#94a3b8'},'*.djch.one Public Entry');
-txt(1595,192,'→ Traefik HTTPS',{s:10,c:'#334155',mono:true});
-txt(1595,207,'Tunnel: 8932a86e',{s:10,c:'#1e293b',mono:true});
+txt(1595,175,'*.djch.one 统一入口','*.djch.one Public Entry',{s:11,c:'#8d97b4'},'*.djch.one Public Entry');
+txt(1595,192,'→ Traefik HTTPS',{s:10,c:'#2a3354',mono:true});
+txt(1595,207,'Tunnel: 8932a86e',{s:10,c:'#171f38',mono:true});
 status(1715,122);
 tip(cfB,'<b>Cloudflare CDN + Zero Trust</b><br><span class="mono">Tunnel ID: 8932a86e-40df-4c38</span><br>通配符: *.djch.one<br>→ Traefik Ingress :443<br>cert-manager 颁发 TLS 证书');
 
 /* ══════════ 4. AWS CLUSTER ══════════ */
-reg(840,58,390,308,'#22c55e',2.5,3);
-el('ellipse',{cx:1035,cy:75,rx:165,ry:18,fill:'#22c55e',opacity:'.06',filter:'url(#glow2)'});
-txt(1035,82,'AWS 全球代理矩阵','AWS Global Proxy Matrix',{s:14,c:'#4ade80',w:true},'AWS Global Proxy Matrix');
+reg(840,58,390,308,'#2fe39a',2.5,3);
+el('ellipse',{cx:1035,cy:75,rx:165,ry:18,fill:'#2fe39a',opacity:'.06',filter:'url(#glow2)'});
+txt(1035,82,'AWS 全球代理矩阵','AWS Global Proxy Matrix',{s:14,c:'#54e9aa',w:true},'AWS Global Proxy Matrix');
 /* Core */
-const coreB=rb(856,98,355,74,'#22c55e',1.8,2.2);
-txt(1033,122,'🖥  ajpnode01  [ CORE ]',{s:13,c:'#4ade80',w:true,mono:true});
-txt(1033,142,'vless 核心节点 · 出口路由','vless Core · Outbound Route',{s:11,c:'#64748b',i:true},'vless Core · Outbound Route');
+const coreB=rb(856,98,355,74,'#2fe39a',1.8,2.2);
+txt(1033,122,'🖥  ajpnode01  [ CORE ]',{s:13,c:'#54e9aa',w:true,mono:true});
+txt(1033,142,'vless 核心节点 · 出口路由','vless Core · Outbound Route',{s:11,c:'#69749b',i:true},'vless Core · Outbound Route');
 status(1190,108);
 tip(coreB,'<b>ajpnode01 — CORE</b><br>vless 出口核心<br>Leaf → Core (vless) → Internet<br>全局流量出口路由');
 /* Leaf 1 */
 const l1B=rb(856,184,170,74,'#34d399',1.8,2);
 txt(941,208,'🖥  ajpnode02',{s:12,c:'#6ee7b7',w:true,mono:true});
-txt(941,226,'trojan inbound',{s:10,c:'#475569',mono:true});
+txt(941,226,'trojan inbound',{s:10,c:'#3a4569',mono:true});
 status(1015,192);
 tip(l1B,'<b>ajpnode02 — LEAF</b><br>trojan inbound<br>→ ajpnode01 core (vless out)');
 /* Leaf 2 */
 const l2B=rb(1042,184,172,74,'#34d399',1.8,2);
 txt(1128,208,'🖥  akrnode01',{s:12,c:'#6ee7b7',w:true,mono:true});
-txt(1128,226,'trojan inbound',{s:10,c:'#475569',mono:true});
+txt(1128,226,'trojan inbound',{s:10,c:'#3a4569',mono:true});
 status(1204,192);
 tip(l2B,'<b>akrnode01 — LEAF</b><br>trojan inbound<br>OpenWrt Global Internet Group');
 /* Leaf → Core arrows (outbound) */
-ap('M 941 184 C 941 155,990 135,1033 172','#22d3ee','6 4','acy','af');
-ap('M 1128 184 C 1128 155,1080 135,1033 172','#22d3ee','6 4','acy','af',-.5);
-badge(920,150,'outbound','#22d3ee');
+ap('M 941 184 C 941 155,990 135,1033 172','#21d4fd','6 4','acy','af');
+ap('M 1128 184 C 1128 155,1080 135,1033 172','#21d4fd','6 4','acy','af',-.5);
+badge(920,150,'outbound','#21d4fd');
 /* Global Internet Group badge */
-el('rect',{x:1043,y:264,width:180,height:22,fill:'rgba(34,197,94,.08)',rx:3,stroke:'#22c55e','stroke-width':1,'stroke-opacity':'.35'});
-const git=document.createElementNS(NS,'text');Object.entries({x:1133,y:280,'text-anchor':'middle','font-size':10,'font-family':"'Inter',sans-serif",'font-weight':'700',fill:'#86efac'}).forEach(([k,v])=>git.setAttribute(k,v));git.textContent='GLOBAL INTERNET GROUP';svg.appendChild(git);
+el('rect',{x:1043,y:264,width:180,height:22,fill:'rgba(47,227,154,.08)',rx:3,stroke:'#2fe39a','stroke-width':1,'stroke-opacity':'.35'});
+const git=document.createElementNS(NS,'text');Object.entries({x:1133,y:280,'text-anchor':'middle','font-size':10,'font-family':"'Poppins',sans-serif",'font-weight':'700',fill:'#9af0c8'}).forEach(([k,v])=>git.setAttribute(k,v));git.textContent='GLOBAL INTERNET GROUP';svg.appendChild(git);
 
 /* ══════════ 5. TENCENT CLOUD ══════════ */
-reg(265,73,572,342,'#3b82f6',2.8,3);
-el('ellipse',{cx:551,cy:90,rx:225,ry:17,fill:'#3b82f6',opacity:'.06',filter:'url(#glow2)'});
-txt(551,98,'腾讯云  ·  广州区','Tencent Cloud  ·  ap-guangzhou',{s:14,c:'#93c5fd',w:true},'Tencent Cloud  ·  ap-guangzhou');
-const chrB=rb(285,116,532,270,'#3b82f6',2,2.2);
+reg(265,73,572,342,'#38bdf8',2.8,3);
+el('ellipse',{cx:551,cy:90,rx:225,ry:17,fill:'#38bdf8',opacity:'.06',filter:'url(#glow2)'});
+txt(551,98,'腾讯云  ·  广州区','Tencent Cloud  ·  ap-guangzhou',{s:14,c:'#9bd6fb',w:true},'Tencent Cloud  ·  ap-guangzhou');
+const chrB=rb(285,116,532,270,'#38bdf8',2,2.2);
 txt(551,141,'🔀  MikroTik CHR  v7.22',{s:14,c:'#60a5fa',w:true,mono:true});
-txt(551,161,'WAN: 150.158.83.118  |  LAN: 10.0.0.0/22',{s:11,c:'#475569',mono:true});
+txt(551,161,'WAN: 150.158.83.118  |  LAN: 10.0.0.0/22',{s:11,c:'#3a4569',mono:true});
 status(797,129);
 /* VPN card */
 rb(295,178,248,178,'#0ea5e9',1.8,2);
 txt(419,198,'🔐  VPN 服务','🔐  VPN Services',{s:13,c:'#38bdf8',w:true},'🔐  VPN Services');
-txt(419,218,'IPsec IKEv2 + AES-256-GCM',{s:10.5,c:'#cbd5e1',mono:true});
-txt(419,236,'NAT-T 穿透  · OpenVPN TCP 1194',{s:10.5,c:'#cbd5e1',mono:true});
-txt(419,254,'外网接入 · 站点互联','Remote Access · Site Mesh',{s:10,c:'#475569',i:true},'Remote Access · Site Mesh');
+txt(419,218,'IPsec IKEv2 + AES-256-GCM',{s:10.5,c:'#c3cce6',mono:true});
+txt(419,236,'NAT-T 穿透  · OpenVPN TCP 1194',{s:10.5,c:'#c3cce6',mono:true});
+txt(419,254,'外网接入 · 站点互联','Remote Access · Site Mesh',{s:10,c:'#3a4569',i:true},'Remote Access · Site Mesh');
 txt(419,272,'DDNS IPv6 IPsec  4-site Hub',{s:10,c:'#38bdf8',mono:true});
-txt(419,290,'Site: tencent-route-os',{s:9,c:'#1e293b',mono:true});
+txt(419,290,'Site: tencent-route-os',{s:9,c:'#171f38',mono:true});
 /* Network card */
 rb(557,178,248,178,'#eab308',1.8,2);
-txt(681,198,'🌐  网络配置','🌐  Network Config',{s:13,c:'#fbbf24',w:true},'🌐  Network Config');
-txt(681,216,'WAN  150.158.83.118',{s:10.5,c:'#cbd5e1',mono:true});
-txt(681,234,'LAN  10.0.0.0/22',{s:10.5,c:'#cbd5e1',mono:true});
-txt(681,252,'DHCP 10.0.0.10-200',{s:10.5,c:'#cbd5e1',mono:true});
-txt(681,270,'DNS  1.1.1.1 / 8.8.8.8',{s:10.5,c:'#cbd5e1',mono:true});
-txt(681,288,'Firewall + NAT + PBR',{s:10.5,c:'#cbd5e1',mono:true});
+txt(681,198,'🌐  网络配置','🌐  Network Config',{s:13,c:'#ffb224',w:true},'🌐  Network Config');
+txt(681,216,'WAN  150.158.83.118',{s:10.5,c:'#c3cce6',mono:true});
+txt(681,234,'LAN  10.0.0.0/22',{s:10.5,c:'#c3cce6',mono:true});
+txt(681,252,'DHCP 10.0.0.10-200',{s:10.5,c:'#c3cce6',mono:true});
+txt(681,270,'DNS  1.1.1.1 / 8.8.8.8',{s:10.5,c:'#c3cce6',mono:true});
+txt(681,288,'Firewall + NAT + PBR',{s:10.5,c:'#c3cce6',mono:true});
 tip(chrB,'<b>MikroTik CHR v7.22 — Tencent</b><br><span class="mono">150.158.83.118</span><br>LAN: 10.0.0.0/22<br>▪ IPsec IKEv2 AES-256 NAT-T<br>▪ OpenVPN Server TCP 1194<br>▪ 4站点 DDNS IPv6 IPsec Hub');
 
 /* ══════════ 6. HQ DATA CENTER ══════════ */
-reg(28,438,1142,704,'#22c55e',2.8,3.5);
-el('ellipse',{cx:600,cy:456,rx:310,ry:15,fill:'#22c55e',opacity:'.05',filter:'url(#glow2)'});
-txt(600,463,'🏢  总部数据中心  ·  HQ Data Center','🏢  HQ Data Center  ·  192.168.6.0/24',{s:16,c:'#4ade80',w:true},'🏢  HQ Data Center  ·  192.168.6.0/24');
-txt(600,480,'192.168.6.0/24',{s:10,c:'#1e293b',mono:true});
+reg(28,438,1142,704,'#2fe39a',2.8,3.5);
+el('ellipse',{cx:600,cy:456,rx:310,ry:15,fill:'#2fe39a',opacity:'.05',filter:'url(#glow2)'});
+txt(600,463,'🏢  总部数据中心  ·  HQ Data Center','🏢  HQ Data Center  ·  192.168.6.0/24',{s:16,c:'#54e9aa',w:true},'🏢  HQ Data Center  ·  192.168.6.0/24');
+txt(600,480,'192.168.6.0/24',{s:10,c:'#171f38',mono:true});
 
 /* Core Gateway */
-const rB=rb(268,488,312,114,'#22c55e',2.2,3);
-txt(424,511,'🔀  核心网关','🔀  Core Network Gateway',{s:14,c:'#4ade80',w:true},'🔀  Core Network Gateway');
-txt(424,530,'192.168.6.254  |  kissu8',{s:10.5,c:'#475569',mono:true});
-txt(424,548,'PPPoE WAN · 动态公网 IP','PPPoE WAN · Dynamic IP',{s:11,c:'#64748b',i:true},'PPPoE WAN · Dynamic IP');
-txt(424,566,'VLAN · Firewall · NAT · BGP',{s:11,c:'#86efac',mono:true});
-txt(424,582,'RouterOS 7.x',{s:9,c:'#1e293b',mono:true});
+const rB=rb(268,488,312,114,'#2fe39a',2.2,3);
+txt(424,511,'🔀  核心网关','🔀  Core Network Gateway',{s:14,c:'#54e9aa',w:true},'🔀  Core Network Gateway');
+txt(424,530,'192.168.6.254  |  kissu8',{s:10.5,c:'#3a4569',mono:true});
+txt(424,548,'PPPoE WAN · 动态公网 IP','PPPoE WAN · Dynamic IP',{s:11,c:'#69749b',i:true},'PPPoE WAN · Dynamic IP');
+txt(424,566,'VLAN · Firewall · NAT · BGP',{s:11,c:'#9af0c8',mono:true});
+txt(424,582,'RouterOS 7.x',{s:9,c:'#171f38',mono:true});
 status(564,500);
 tip(rB,'<b>核心网关 / Core Network Gateway</b><br><span class="mono">192.168.6.254</span><br>RouterOS 7.x<br>WAN: PPPoE 动态IP<br>LAN: 192.168.6.0/24<br>IPsec ↔ 腾讯云<br>VLAN + Firewall + NAT');
 
 /* Smart Traffic Router (OpenWrt) */
 const owB=rb(608,488,280,114,'#14b8a6',2,2.5);
 txt(748,511,'🔧  智能流量路由器','🔧  Smart Traffic Router',{s:13,c:'#2dd4bf',w:true},'🔧  Smart Traffic Router');
-txt(748,530,'192.168.6.91  [ OpenWrt ]',{s:10.5,c:'#475569',mono:true});
-txt(748,548,'*.djch.one → FreeIPA DNS',{s:10.5,c:'#cbd5e1',mono:true});
-txt(748,564,'中国IP→本地 / 全球→AWS代理','CN-IP→Direct / Global→AWS Proxy',{s:10,c:'#64748b',i:true},'CN-IP→Direct / Global→AWS Proxy');
+txt(748,530,'192.168.6.91  [ OpenWrt ]',{s:10.5,c:'#3a4569',mono:true});
+txt(748,548,'*.djch.one → FreeIPA DNS',{s:10.5,c:'#c3cce6',mono:true});
+txt(748,564,'中国IP→本地 / 全球→AWS代理','CN-IP→Direct / Global→AWS Proxy',{s:10,c:'#69749b',i:true},'CN-IP→Direct / Global→AWS Proxy');
 txt(748,580,'akrnode01 + ajpnode02',{s:10,c:'#14b8a6',mono:true});
 status(868,500);
 tip(owB,'<b>智能流量路由器 / OpenWrt</b><br><span class="mono">192.168.6.91</span><br>DNS 策略路由:<br>▪ *.djch.one → FreeIPA :53<br>▪ CN IP → 本地宽带直连<br>▪ 全球 IP → AWS Leaf 代理');
 
 /* Identity & DNS (FreeIPA) */
 const fB=rb(608,626,280,102,'#ca8a04',2,2.5);
-txt(748,649,'🗂️  身份认证 & DNS','🗂️  Identity & DNS',{s:13,c:'#fbbf24',w:true},'🗂️  Identity & DNS');
-txt(748,668,'192.168.6.181  [ FreeIPA ]',{s:10.5,c:'#475569',mono:true});
-txt(748,686,'*.djch.one 权威 DNS','*.djch.one Authoritative DNS',{s:11,c:'#fbbf24',w:true},'*.djch.one Authoritative DNS');
-txt(748,704,'LDAP · Kerberos · OIDC · SSO',{s:10.5,c:'#cbd5e1',mono:true});
+txt(748,649,'🗂️  身份认证 & DNS','🗂️  Identity & DNS',{s:13,c:'#ffb224',w:true},'🗂️  Identity & DNS');
+txt(748,668,'192.168.6.181  [ FreeIPA ]',{s:10.5,c:'#3a4569',mono:true});
+txt(748,686,'*.djch.one 权威 DNS','*.djch.one Authoritative DNS',{s:11,c:'#ffb224',w:true},'*.djch.one Authoritative DNS');
+txt(748,704,'LDAP · Kerberos · OIDC · SSO',{s:10.5,c:'#c3cce6',mono:true});
 status(868,638);
 tip(fB,'<b>Identity & DNS / FreeIPA</b><br><span class="mono">192.168.6.181</span><br>*.djch.one 内部权威 DNS<br>LDAP + Kerberos 统一认证<br>OIDC/SAML SSO 集成');
 
 /* DNS rules card */
-rb(906,488,242,102,'#6366f1',1.8,2);
-txt(1027,508,'📡  DNS 路由策略','📡  DNS Routing Policy',{s:11.5,c:'#a5b4fc',w:true},'📡  DNS Routing Policy');
+rb(906,488,242,102,'#8b5cf6',1.8,2);
+txt(1027,508,'📡  DNS 路由策略','📡  DNS Routing Policy',{s:11.5,c:'#c5b2fd',w:true},'📡  DNS Routing Policy');
 txt(1027,526,'*.djch.one  →  FreeIPA',{s:10.5,c:'#60a5fa',mono:true});
-txt(1027,543,'non-djch  →  OpenWrt',{s:10.5,c:'#cbd5e1',mono:true});
-txt(1027,561,'  CN-IP  →  直连',{s:10.5,c:'#86efac',mono:true,a:'start'});
-txt(1027,578,'  Global  →  AWS Proxy',{s:10.5,c:'#d8b4fe',mono:true,a:'start'});
+txt(1027,543,'non-djch  →  OpenWrt',{s:10.5,c:'#c3cce6',mono:true});
+txt(1027,561,'  CN-IP  →  直连',{s:10.5,c:'#9af0c8',mono:true,a:'start'});
+txt(1027,578,'  Global  →  AWS Proxy',{s:10.5,c:'#cdb2ff',mono:true,a:'start'});
 
 /* Other services */
-rb(906,608,242,92,'#334155',1.8,2);
-txt(1027,628,'🗄️  扩展服务','🗄️  Platform Services',{s:12,c:'#94a3b8',w:true},'🗄️  Platform Services');
-txt(1027,646,'Zabbix 7.4  · Foreman 3.18',{s:10.5,c:'#cbd5e1',mono:true});
-txt(1027,664,'Slurm-Web · Homepage',{s:10.5,c:'#cbd5e1',mono:true});
-txt(1027,682,'IPMI · PXE · NTP',{s:10.5,c:'#cbd5e1',mono:true});
+rb(906,608,242,92,'#2a3354',1.8,2);
+txt(1027,628,'🗄️  扩展服务','🗄️  Platform Services',{s:12,c:'#8d97b4',w:true},'🗄️  Platform Services');
+txt(1027,646,'Zabbix 7.4  · Foreman 3.18',{s:10.5,c:'#c3cce6',mono:true});
+txt(1027,664,'Slurm-Web · Homepage',{s:10.5,c:'#c3cce6',mono:true});
+txt(1027,682,'IPMI · PXE · NTP',{s:10.5,c:'#c3cce6',mono:true});
 
 /* ══════════ PVE CLUSTER ══════════ */
-reg(44,736,390,380,'#f59e0b',2.5,3);
-el('ellipse',{cx:239,cy:753,rx:162,ry:15,fill:'#f59e0b',opacity:'.05',filter:'url(#glow2)'});
-txt(239,760,'⚙️  Proxmox VE 集群','⚙️  Proxmox VE Cluster',{s:13,c:'#fbbf24',w:true},'⚙️  Proxmox VE Cluster');
+reg(44,736,390,380,'#ffa31a',2.5,3);
+el('ellipse',{cx:239,cy:753,rx:162,ry:15,fill:'#ffa31a',opacity:'.05',filter:'url(#glow2)'});
+txt(239,760,'⚙️  Proxmox VE 集群','⚙️  Proxmox VE Cluster',{s:13,c:'#ffb224',w:true},'⚙️  Proxmox VE Cluster');
 /* ── Live data stores (populated by fetchIPMI + fetchZabbix) ── */
 const ipmiLive={};  // { bmcIP: {power:1|0} }
 const zbxLive={};   // { 'host.djch.one': {cpu, inlet, power} }
@@ -439,7 +445,7 @@ function dynTip(el,htmlFn){
 }
 function zbxRow(fqdn){
   const z=zbxLive[fqdn];
-  if(!z) return '<span style="color:#94a3b8">⏳ loading...</span>';
+  if(!z) return '<span style="color:#8d97b4">⏳ loading...</span>';
   return (z.cpu!=null?`🌡 CPU: ${z.cpu}°C &nbsp;Inlet: ${z.inlet}°C`:'')
         +(z.power!=null?`<br>⚡ Power: ${z.power} W`:'');
 }
@@ -449,31 +455,31 @@ function zbxRow(fqdn){
  {y:862,name:'pve02',ip:'192.168.6.172',bmc:'192.168.6.72', fqdn:'pve02.djch.one'},
  {y:950,name:'pve03',ip:'192.168.6.173',bmc:'192.168.6.73', fqdn:'pve03.djch.one'},
 ].forEach(n=>{
-  const nb=rb(60,n.y,356,74,'#f59e0b',1.8,2.2);
+  const nb=rb(60,n.y,356,74,'#ffa31a',1.8,2.2);
   txt(84,n.y+21,'🖥',{s:20,a:'start'});
-  txt(110,n.y+23,n.name,{s:14,c:'#fbbf24',w:true,a:'start',mono:true});
-  txt(110,n.y+41,'SSH: '+n.ip,{s:10,c:'#475569',mono:true,a:'start'});
-  txt(110,n.y+57,'BMC: '+n.bmc,{s:10,c:'#d97706',mono:true,a:'start'});
-  el('circle',{cx:398,cy:n.y+15,r:4,fill:'#94a3b8',opacity:'.9',filter:'url(#glow)',id:'dot-bmc-'+n.bmc.replace(/\./g,'-')});
+  txt(110,n.y+23,n.name,{s:14,c:'#ffb224',w:true,a:'start',mono:true});
+  txt(110,n.y+41,'SSH: '+n.ip,{s:10,c:'#3a4569',mono:true,a:'start'});
+  txt(110,n.y+57,'BMC: '+n.bmc,{s:10,c:'#e08900',mono:true,a:'start'});
+  el('circle',{cx:398,cy:n.y+15,r:4,fill:'#8d97b4',opacity:'.9',filter:'url(#glow)',id:'dot-bmc-'+n.bmc.replace(/\./g,'-')});
   const _n=n;
   dynTip(nb,()=>{
     const ipm=ipmiLive[_n.bmc], on=ipm?ipm.power===1:null;
     return `<b>${_n.name}</b><br><span class="mono">SSH: ${_n.ip}</span><br><span class="mono">BMC: ${_n.bmc}</span><br>`
-      +(on!=null?`<span style="color:${on?'#22c55e':'#ef4444'}">${on?'● ONLINE':'● OFFLINE'}</span><br>`:'')
+      +(on!=null?`<span style="color:${on?'#2fe39a':'#ef4444'}">${on?'● ONLINE':'● OFFLINE'}</span><br>`:'')
       +zbxRow(_n.fqdn);
   });
 });
-rb(60,1033,356,26,'#d97706',1.3,1.8);
-txt(238,1050,'PERC H730 · WB-AHEAD · RAID',{s:10.5,c:'#fbbf24',w:true,mono:true});
+rb(60,1033,356,26,'#e08900',1.3,1.8);
+txt(238,1050,'PERC H730 · WB-AHEAD · RAID',{s:10.5,c:'#ffb224',w:true,mono:true});
 rb(60,1068,356,60,'#b45309',1.8,2.5);
-txt(238,1088,'🐙  Ceph  Distributed Storage',{s:11.5,c:'#fbbf24',w:true,mono:true});
-txt(238,1104,'OSD.0(pve02) · OSD.2(pve0) · OSD.1(pve03)',{s:9.5,c:'#d97706',mono:true});
-txt(238,1118,'Replication×2  ·  CephFS + RBD',{s:9.5,c:'#d97706',mono:true});
+txt(238,1088,'🐙  Ceph  Distributed Storage',{s:11.5,c:'#ffb224',w:true,mono:true});
+txt(238,1104,'OSD.0(pve02) · OSD.2(pve0) · OSD.1(pve03)',{s:9.5,c:'#e08900',mono:true});
+txt(238,1118,'Replication×2  ·  CephFS + RBD',{s:9.5,c:'#e08900',mono:true});
 
 /* ══════════ K8s CLUSTER ══════════ */
-reg(450,736,442,380,'#a855f7',2.5,3);
-el('ellipse',{cx:671,cy:753,rx:185,ry:15,fill:'#a855f7',opacity:'.05',filter:'url(#glow2)'});
-txt(671,760,'☸️  RKE2  v1.33.5  |  Rancher','☸️  RKE2  v1.33.5  |  Rancher',{s:13,c:'#d8b4fe',w:true});
+reg(450,736,442,380,'#b07cff',2.5,3);
+el('ellipse',{cx:671,cy:753,rx:185,ry:15,fill:'#b07cff',opacity:'.05',filter:'url(#glow2)'});
+txt(671,760,'☸️  RKE2  v1.33.5  |  Rancher','☸️  RKE2  v1.33.5  |  Rancher',{s:13,c:'#cdb2ff',w:true});
 [{y:774,name:'k8snode01',st:'ACTIVE',ok:true,t:'<b>k8snode01.djch.one</b><br><span class="mono">192.168.6.131</span><br>状态: Active<br>Longhorn 存储节点'},
  {y:836,name:'k8snode02',st:'SCHEDULING-DISABLED',ok:false,t:'<b>k8snode02.djch.one</b><br><span class="mono">192.168.6.132</span><br>SchedulingDisabled<br>kubectl 主机 / SSH 入口'},
  {y:898,name:'k8snode03',st:'ACTIVE',ok:true,t:'<b>k8snode03.djch.one</b><br><span class="mono">192.168.6.133</span><br>状态: Active<br>Longhorn 存储节点'}
@@ -481,17 +487,17 @@ txt(671,760,'☸️  RKE2  v1.33.5  |  Rancher','☸️  RKE2  v1.33.5  |  Ranch
   const nb=rb(462,n.y,192,50,n.ok?'#8b5cf6':'#ec4899',1.8,2.2);
   txt(487,n.y+19,'⚡',{s:15,a:'start'});
   txt(508,n.y+20,n.name,{s:12,c:n.ok?'#c4b5fd':'#f472b6',w:true,a:'start',mono:true});
-  txt(508,n.y+37,n.st,{s:9,c:n.ok?'#7c3aed':'#be185d',mono:true,a:'start'});
+  txt(508,n.y+37,n.st,{s:9,c:n.ok?'#8b5cf6':'#be185d',mono:true,a:'start'});
   status(644,n.y+10,n.ok);
   tip(nb,n.t);
 });
-rb(462,956,192,28,'#7c3aed',1.5,1.8);
+rb(462,956,192,28,'#8b5cf6',1.5,1.8);
 txt(558,974,'MetalLB  .240-.250',{s:10,c:'#a78bfa',w:true,mono:true});
 rb(462,992,192,28,'#4f46e5',1.5,1.8);
 txt(558,1010,'Traefik  192.168.6.240',{s:10,c:'#818cf8',w:true,mono:true});
 /* Services panel */
-rb(666,770,208,338,'#a855f7',2,1.8);
-txt(770,790,'[ SERVICES ]',{s:11,c:'#d8b4fe',w:true,mono:true});
+rb(666,770,208,338,'#b07cff',2,1.8);
+txt(770,790,'[ SERVICES ]',{s:11,c:'#cdb2ff',w:true,mono:true});
 [['infra-nt','📦 NetBox IPAM/DCIM'],
  ['infra-nt','📚 Wiki.js'],
  ['infra-nt','🖥️ portal.djch.one'],
@@ -504,24 +510,24 @@ txt(770,790,'[ SERVICES ]',{s:11,c:'#d8b4fe',w:true,mono:true});
  ['storage','💾 Longhorn CSI'],
  ['gitops','🔄 ArgoCD'],
 ].forEach(([ns,name],i)=>{
-  txt(676,812+i*26,name,{s:10.5,c:'#e2e8f0',a:'start'});
+  txt(676,812+i*26,name,{s:10.5,c:'#e9edf8',a:'start'});
   txt(676,825+i*26,ns,{s:9,c:'#4c1d95',i:true,a:'start',mono:true});
 });
 rb(450,1095,442,28,'#6d28d9',1.3,1.8);
 txt(671,1113,'🔑  *.djch.one  TLS  ·  cert-manager  ·  replicator',{s:10,c:'#a78bfa',i:true,mono:true});
 
 /* ══════════ SITES ROW ══════════ */
-reg(28,1150,1142,94,'#334155',2,2.5);
-txt(600,1173,'◈  四站点互联  ·  DDNS IPv6 IPsec VPN Mesh','◈  4-Site VPN Mesh  ·  DDNS IPv6 IPsec',{s:12,c:'#94a3b8',w:true,mono:true},'◈  4-Site VPN Mesh  ·  DDNS IPv6 IPsec');
+reg(28,1150,1142,94,'#2a3354',2,2.5);
+txt(600,1173,'◈  四站点互联  ·  DDNS IPv6 IPsec VPN Mesh','◈  4-Site VPN Mesh  ·  DDNS IPv6 IPsec',{s:12,c:'#8d97b4',w:true,mono:true},'◈  4-Site VPN Mesh  ·  DDNS IPv6 IPsec');
 [{x:44,n:'NTServer',hw:'RouterOS',c:'#0ea5e9',t:'<b>NTServer</b><br>RouterOS<br>DDNS IPv6 IPsec 互联'},
- {x:324,n:'Leex Server',hw:'Fortigate 60F',c:'#22c55e',t:'<b>Leex Server</b><br>Fortigate 60F'},
- {x:604,n:'Tencent Site',hw:'CHR v7.22',c:'#3b82f6',t:'<b>Tencent Site</b><br>MikroTik CHR<br>150.158.83.118'},
- {x:884,n:'KissHome',hw:'Fortigate 60F',c:'#f59e0b',t:'<b>KissHome Branch</b><br>Fortigate 60F'},
+ {x:324,n:'Leex Server',hw:'Fortigate 60F',c:'#2fe39a',t:'<b>Leex Server</b><br>Fortigate 60F'},
+ {x:604,n:'Tencent Site',hw:'CHR v7.22',c:'#38bdf8',t:'<b>Tencent Site</b><br>MikroTik CHR<br>150.158.83.118'},
+ {x:884,n:'KissHome',hw:'Fortigate 60F',c:'#ffa31a',t:'<b>KissHome Branch</b><br>Fortigate 60F'},
 ].forEach(s=>{
   el('rect',{x:s.x,y:1188,width:264,height:46,fill:s.c,rx:4,opacity:'.05',filter:'url(#glow)'});
   const sb=rb(s.x,1188,264,46,s.c,1.8,2);
-  const nt=document.createElementNS(NS,'text');Object.entries({x:s.x+132,y:1208,'text-anchor':'middle','font-size':12,'font-family':"'Inter',sans-serif",'font-weight':'700',fill:s.c}).forEach(([k,v])=>nt.setAttribute(k,v));nt.textContent=s.n;svg.appendChild(nt);
-  txt(s.x+132,1225,s.hw,{s:9.5,c:'#334155',mono:true});
+  const nt=document.createElementNS(NS,'text');Object.entries({x:s.x+132,y:1208,'text-anchor':'middle','font-size':12,'font-family':"'Poppins',sans-serif",'font-weight':'700',fill:s.c}).forEach(([k,v])=>nt.setAttribute(k,v));nt.textContent=s.n;svg.appendChild(nt);
+  txt(s.x+132,1225,s.hw,{s:9.5,c:'#2a3354',mono:true});
   status(s.x+248,1196);
   tip(sb,s.t);
 });
@@ -532,43 +538,43 @@ for(let i=0;i<3;i++){
 }
 
 /* ══════════ HPC & STORAGE ZONE ══════════ */
-reg(1195,398,1185,742,'#22d3ee',2.8,3.5);
-el('ellipse',{cx:1787,cy:415,rx:280,ry:15,fill:'#22d3ee',opacity:'.05',filter:'url(#glow2)'});
-txt(1787,423,'⚡  HPC & Storage Infrastructure  ·  InfiniBand Fabric Zone','⚡  HPC & Storage Infrastructure  ·  InfiniBand Fabric Zone',{s:15,c:'#67e8f9',w:true},'⚡  HPC & Storage Infrastructure  ·  InfiniBand Fabric Zone');
+reg(1195,398,1185,742,'#21d4fd',2.8,3.5);
+el('ellipse',{cx:1787,cy:415,rx:280,ry:15,fill:'#21d4fd',opacity:'.05',filter:'url(#glow2)'});
+txt(1787,423,'⚡  HPC & Storage Infrastructure  ·  InfiniBand Fabric Zone','⚡  HPC & Storage Infrastructure  ·  InfiniBand Fabric Zone',{s:15,c:'#7ce4ff',w:true},'⚡  HPC & Storage Infrastructure  ·  InfiniBand Fabric Zone');
 
 /* ── Network Switches ── */
 // SB7700 100G IB Switch
-const sbB=rb(1210,448,325,88,'#22d3ee',2,2.5);
-el('ellipse',{cx:1372,cy:458,rx:118,ry:11,fill:'#22d3ee',opacity:'.07',filter:'url(#glow2)'});
-txt(1372,470,'🔌  SB7700',{s:14,c:'#67e8f9',w:true,mono:true});
-txt(1372,488,'100G InfiniBand Fabric Switch',{s:10.5,c:'#cbd5e1',mono:true});
-txt(1372,504,'Mellanox / NVIDIA  ·  HDR',{s:9.5,c:'#475569',mono:true});
+const sbB=rb(1210,448,325,88,'#21d4fd',2,2.5);
+el('ellipse',{cx:1372,cy:458,rx:118,ry:11,fill:'#21d4fd',opacity:'.07',filter:'url(#glow2)'});
+txt(1372,470,'🔌  SB7700',{s:14,c:'#7ce4ff',w:true,mono:true});
+txt(1372,488,'100G InfiniBand Fabric Switch',{s:10.5,c:'#c3cce6',mono:true});
+txt(1372,504,'Mellanox / NVIDIA  ·  HDR',{s:9.5,c:'#3a4569',mono:true});
 txt(1372,520,'Core Storage & Compute Fabric',{s:9,c:'#164e63',mono:true});
 status(1520,460);
 tip(sbB,'<b>SB7700 InfiniBand Switch</b><br><span class="mono">100G HDR InfiniBand</span><br>核心存储 + 计算 IB 交换机<br>连接 Lustre 4节点 + Slurm 10节点<br>全无阻塞非阻塞交换架构');
 
 // 10G Switch (SSH Access)
-const sw10B=rb(1562,448,238,88,'#3b82f6',2,2.5);
+const sw10B=rb(1562,448,238,88,'#38bdf8',2,2.5);
 txt(1681,470,'🔌  10G Switch',{s:13,c:'#60a5fa',w:true,mono:true});
-txt(1681,488,'SSH Access Network',{s:10.5,c:'#cbd5e1',mono:true});
-txt(1681,504,'10GbE  ·  SSH / Data Transfer',{s:9.5,c:'#475569',mono:true});
+txt(1681,488,'SSH Access Network',{s:10.5,c:'#c3cce6',mono:true});
+txt(1681,504,'10GbE  ·  SSH / Data Transfer',{s:9.5,c:'#3a4569',mono:true});
 txt(1681,520,'作业提交 + 数据传输','SSH + Data Transfer',{s:9,c:'#1e3a5f',mono:true},'SSH + Data Transfer');
 status(1784,460);
 tip(sw10B,'<b>10G Ethernet Switch</b><br>SSH 管理与数据访问网络<br>▪ 作业提交 / SSH 登录<br>▪ Lustre 客户端挂载<br>连接全部 Lustre + Slurm 节点');
 
 // 1G Switch (MGMT / IPMI)
-const sw1B=rb(1828,448,238,88,'#475569',2,2.5);
-txt(1947,470,'🔌  1G Switch',{s:13,c:'#94a3b8',w:true,mono:true});
-txt(1947,488,'MGMT / IPMI Network',{s:10.5,c:'#cbd5e1',mono:true});
-txt(1947,504,'1GbE  ·  Out-of-Band MGMT',{s:9.5,c:'#475569',mono:true});
-txt(1947,520,'BMC / IPMI / iDRAC',{s:9,c:'#334155',mono:true});
+const sw1B=rb(1828,448,238,88,'#3a4569',2,2.5);
+txt(1947,470,'🔌  1G Switch',{s:13,c:'#8d97b4',w:true,mono:true});
+txt(1947,488,'MGMT / IPMI Network',{s:10.5,c:'#c3cce6',mono:true});
+txt(1947,504,'1GbE  ·  Out-of-Band MGMT',{s:9.5,c:'#3a4569',mono:true});
+txt(1947,520,'BMC / IPMI / iDRAC',{s:9,c:'#2a3354',mono:true});
 status(2050,460);
 tip(sw1B,'<b>1G Ethernet Switch</b><br>带外管理网络 (OOB MGMT)<br>▪ BMC / IPMI 接口接入<br>▪ iDRAC 远程管理<br>▪ PXE 引导 / 节点部署');
 
 /* ── Lustre Distributed Storage ── */
-reg(1210,558,860,162,'#f59e0b',2.5,3);
-el('ellipse',{cx:1640,cy:574,rx:210,ry:12,fill:'#f59e0b',opacity:'.05',filter:'url(#glow2)'});
-txt(1640,582,'🗄️  Lustre 分布式存储集群  ·  4 节点','🗄️  Lustre Distributed Storage  ·  4 Nodes',{s:12,c:'#fbbf24',w:true},'🗄️  Lustre Distributed Storage  ·  4 Nodes');
+reg(1210,558,860,162,'#ffa31a',2.5,3);
+el('ellipse',{cx:1640,cy:574,rx:210,ry:12,fill:'#ffa31a',opacity:'.05',filter:'url(#glow2)'});
+txt(1640,582,'🗄️  Lustre 分布式存储集群  ·  4 节点','🗄️  Lustre Distributed Storage  ·  4 Nodes',{s:12,c:'#ffb224',w:true},'🗄️  Lustre Distributed Storage  ·  4 Nodes');
 
 [
   {n:'lustre01',fqdn:'lustre01.djch.one',r:'MDS + OSS'},
@@ -577,13 +583,13 @@ txt(1640,582,'🗄️  Lustre 分布式存储集群  ·  4 节点','🗄️  Lus
   {n:'lustre04',fqdn:'lustre04.djch.one',r:'OSS'},
 ].forEach((n,i)=>{
   const lx=1213+i*213;
-  const lb=rb(lx,592,207,120,'#d97706',1.8,2.2);
+  const lb=rb(lx,592,207,120,'#e08900',1.8,2.2);
   txt(lx+14,613,'🗄',{s:18,a:'start'});
-  txt(lx+36,614,n.n,{s:12,c:'#fbbf24',w:true,a:'start',mono:true});
+  txt(lx+36,614,n.n,{s:12,c:'#ffb224',w:true,a:'start',mono:true});
   txt(lx+36,631,n.r,{s:9.5,c:'#92400e',a:'start',mono:true});
-  txt(lx+14,649,'100G IB  ·  10G SSH',{s:9,c:'#d97706',a:'start',mono:true});
-  txt(lx+14,665,'1G MGMT / IPMI',{s:9,c:'#475569',a:'start',mono:true});
-  el('circle',{cx:lx+191,cy:602,r:4,fill:'#94a3b8',opacity:'.9',filter:'url(#glow)',id:'dot-zbx-'+n.fqdn.replace(/\./g,'-')});
+  txt(lx+14,649,'100G IB  ·  10G SSH',{s:9,c:'#e08900',a:'start',mono:true});
+  txt(lx+14,665,'1G MGMT / IPMI',{s:9,c:'#3a4569',a:'start',mono:true});
+  el('circle',{cx:lx+191,cy:602,r:4,fill:'#8d97b4',opacity:'.9',filter:'url(#glow)',id:'dot-zbx-'+n.fqdn.replace(/\./g,'-')});
   const _n=n;
   dynTip(lb,()=>`<b>${_n.n}</b><br><span class="mono">${_n.fqdn}</span><br>${_n.r} · 100G IB<br>`+zbxRow(_n.fqdn));
 });
@@ -598,13 +604,13 @@ txt(1787,768,'⚡  Slurm HPC 计算集群  ·  research1-10 + gpu01','⚡  Slurm
   const col=ii%5,row=Math.floor(ii/5);
   const nx=1218+col*224,ny=780+row*110;
   const fqdn=name+'.djch.one';
-  const hb=rb(nx,ny,216,96,'#7c3aed',1.8,2);
+  const hb=rb(nx,ny,216,96,'#8b5cf6',1.8,2);
   txt(nx+13,ny+23,'⚡',{s:15,a:'start'});
   txt(nx+30,ny+23,name,{s:11,c:'#c4b5fd',w:true,a:'start',mono:true});
   txt(nx+13,ny+42,'Slurm Compute Node',{s:9,c:'#4c1d95',a:'start',mono:true});
-  txt(nx+13,ny+57,'100G IB  ·  10G SSH',{s:9,c:'#7c3aed',a:'start',mono:true});
-  txt(nx+13,ny+72,'1G MGMT / IPMI',{s:9,c:'#475569',a:'start',mono:true});
-  el('circle',{cx:nx+200,cy:ny+14,r:4,fill:'#94a3b8',opacity:'.9',filter:'url(#glow)',id:'dot-zbx-'+fqdn.replace(/\./g,'-')});
+  txt(nx+13,ny+57,'100G IB  ·  10G SSH',{s:9,c:'#8b5cf6',a:'start',mono:true});
+  txt(nx+13,ny+72,'1G MGMT / IPMI',{s:9,c:'#3a4569',a:'start',mono:true});
+  el('circle',{cx:nx+200,cy:ny+14,r:4,fill:'#8d97b4',opacity:'.9',filter:'url(#glow)',id:'dot-zbx-'+fqdn.replace(/\./g,'-')});
   const _name=name,_fqdn=fqdn;
   dynTip(hb,()=>`<b>${_name}</b><br><span class="mono">${_fqdn}</span><br>Slurm Compute · 100G IB<br>`+zbxRow(_fqdn));
 });
@@ -612,97 +618,97 @@ txt(1787,768,'⚡  Slurm HPC 计算集群  ·  research1-10 + gpu01','⚡  Slurm
 // Slurm controller + gpu01 summary bar
 rb(1215,990,1135,66,'#4f46e5',1.5,1.8);
 txt(1787,1009,'[ SLURM WORKLOAD MANAGER ]  ·  gpu01.djch.one (GPU Partition)',{s:11,c:'#818cf8',w:true,mono:true});
-txt(1787,1026,'research1-10 + gpu01  ·  Multi-partition Scheduler  ·  Slurm v23.x',{s:10,c:'#475569',mono:true});
+txt(1787,1026,'research1-10 + gpu01  ·  Multi-partition Scheduler  ·  Slurm v23.x',{s:10,c:'#3a4569',mono:true});
 txt(1787,1042,'100G IB Fabric  ·  10G SSH Access  ·  1G Out-of-Band MGMT',{s:9.5,c:'#312e81',mono:true});
 
 /* ── HPC Internal Switch Connections ── */
 // SB7700 → Lustre (IB, short downward lines)
-ap('M 1290 536 L 1290 558','#22d3ee','5 3','acy','af');
-ap('M 1370 536 L 1370 558','#22d3ee','5 3','acy','af',-.3);
-badge(1330,548,'100G IB','#22d3ee');
+ap('M 1290 536 L 1290 558','#21d4fd','5 3','acy','af');
+ap('M 1370 536 L 1370 558','#21d4fd','5 3','acy','af',-.3);
+badge(1330,548,'100G IB','#21d4fd');
 
 // SB7700 → Slurm (IB, route right side at x=2095 avoiding Lustre region)
-ap('M 1535 490 C 1535 490,2095 490,2095 742','#22d3ee','8 4','acy','am');
-el('path',{d:'M 1535 490 C 1535 490,2095 490,2095 742',fill:'none',stroke:'#22d3ee','stroke-width':8,opacity:'.03',filter:'url(#glow2)'});
-badge(1870,484,'IB→Slurm','#22d3ee');
+ap('M 1535 490 C 1535 490,2095 490,2095 742','#21d4fd','8 4','acy','am');
+el('path',{d:'M 1535 490 C 1535 490,2095 490,2095 742',fill:'none',stroke:'#21d4fd','stroke-width':8,opacity:'.03',filter:'url(#glow2)'});
+badge(1870,484,'IB→Slurm','#21d4fd');
 
 // 10G Switch → Lustre
-ap('M 1640 536 C 1640 548,1640 558,1640 558','#3b82f6','5 4','ab','as',-.2);
+ap('M 1640 536 C 1640 548,1640 558,1640 558','#38bdf8','5 4','ab','as',-.2);
 // 10G Switch → Slurm (right route)
-ap('M 1700 536 C 1700 536,2120 536,2120 742','#3b82f6','6 5','ab','as',-.5);
+ap('M 1700 536 C 1700 536,2120 536,2120 742','#38bdf8','6 5','ab','as',-.5);
 
 // 1G Switch → Lustre (subtle)
-el('line',{x1:1940,y1:536,x2:1860,y2:558,stroke:'#475569','stroke-width':1.2,'stroke-dasharray':'4 5','stroke-opacity':'.5'});
+el('line',{x1:1940,y1:536,x2:1860,y2:558,stroke:'#3a4569','stroke-width':1.2,'stroke-dasharray':'4 5','stroke-opacity':'.5'});
 // 1G Switch → Slurm (subtle, right side)
-el('line',{x1:1960,y1:536,x2:2145,y2:742,stroke:'#475569','stroke-width':1.2,'stroke-dasharray':'4 5','stroke-opacity':'.4'});
+el('line',{x1:1960,y1:536,x2:2145,y2:742,stroke:'#3a4569','stroke-width':1.2,'stroke-dasharray':'4 5','stroke-opacity':'.4'});
 
 /* ── HQ DC ↔ HPC Zone Bridge ── */
-el('line',{x1:1170,y1:482,x2:1210,y2:482,stroke:'#22d3ee','stroke-width':2,'stroke-dasharray':'6 3','stroke-opacity':'.9','marker-end':'url(#acy)'});
-el('line',{x1:1170,y1:493,x2:1210,y2:493,stroke:'#3b82f6','stroke-width':1.5,'stroke-dasharray':'5 4','stroke-opacity':'.65'});
-el('line',{x1:1170,y1:503,x2:1210,y2:503,stroke:'#334155','stroke-width':1.2,'stroke-dasharray':'4 5','stroke-opacity':'.5'});
-badge(1190,487,'DC LAN','#22d3ee');
+el('line',{x1:1170,y1:482,x2:1210,y2:482,stroke:'#21d4fd','stroke-width':2,'stroke-dasharray':'6 3','stroke-opacity':'.9','marker-end':'url(#acy)'});
+el('line',{x1:1170,y1:493,x2:1210,y2:493,stroke:'#38bdf8','stroke-width':1.5,'stroke-dasharray':'5 4','stroke-opacity':'.65'});
+el('line',{x1:1170,y1:503,x2:1210,y2:503,stroke:'#2a3354','stroke-width':1.2,'stroke-dasharray':'4 5','stroke-opacity':'.5'});
+badge(1190,487,'DC LAN','#21d4fd');
 
 /* ══════════ CONNECTIONS ══════════ */
 /* Internet → CF */
-el('line',{x1:1330,y1:98,x2:1462,y2:124,stroke:'#334155','stroke-width':1.5,'stroke-opacity':'.7'});
-el('line',{x1:1463,y1:123,x2:1462,y2:124,stroke:'#475569','stroke-width':2,'marker-end':'url(#ag)'});
-badge(1398,107,'HTTPS','#475569');
+el('line',{x1:1330,y1:98,x2:1462,y2:124,stroke:'#2a3354','stroke-width':1.5,'stroke-opacity':'.7'});
+el('line',{x1:1463,y1:123,x2:1462,y2:124,stroke:'#3a4569','stroke-width':2,'marker-end':'url(#ag)'});
+badge(1398,107,'HTTPS','#3a4569');
 /* CF → Internet (public egress) */
 el('line',{x1:1730,y1:155,x2:1865,y2:98,stroke:'#fb923c','stroke-width':1.8,'stroke-opacity':'.7','marker-end':'url(#aam)'});
 badge(1800,120,'Public','#fb923c');
 /* Internet → Tencent */
-el('line',{x1:1338,y1:90,x2:837,y2:108,stroke:'#3b82f6','stroke-width':1.5,'stroke-opacity':'.6'});
-el('line',{x1:840,y1:107,x2:837,y2:108,stroke:'#3b82f6','stroke-width':2,'marker-end':'url(#ab)'});
+el('line',{x1:1338,y1:90,x2:837,y2:108,stroke:'#38bdf8','stroke-width':1.5,'stroke-opacity':'.6'});
+el('line',{x1:840,y1:107,x2:837,y2:108,stroke:'#38bdf8','stroke-width':2,'marker-end':'url(#ab)'});
 /* Internet → AWS */
-el('line',{x1:1368,y1:88,x2:1230,y2:100,stroke:'#22c55e','stroke-width':1.5,'stroke-opacity':'.6'});
-el('line',{x1:1232,y1:99,x2:1230,y2:100,stroke:'#22c55e','stroke-width':2,'marker-end':'url(#agr)'});
-badge(1300,87,'Internet→AWS','#22c55e');
+el('line',{x1:1368,y1:88,x2:1230,y2:100,stroke:'#2fe39a','stroke-width':1.5,'stroke-opacity':'.6'});
+el('line',{x1:1232,y1:99,x2:1230,y2:100,stroke:'#2fe39a','stroke-width':2,'marker-end':'url(#agr)'});
+badge(1300,87,'Internet→AWS','#2fe39a');
 /* CF Tunnel → Gateway (long curve from right to left) */
-ap('M 1595 224 C 1595 380,900 460,424 488','#22c55e','12 5','agr','am');
-el('path',{d:'M 1595 224 C 1595 380,900 460,424 488',fill:'none',stroke:'#22c55e','stroke-width':12,opacity:'.05',filter:'url(#glow2)'});
-badge(1020,370,'CF Tunnel','#22c55e');
+ap('M 1595 224 C 1595 380,900 460,424 488','#2fe39a','12 5','agr','am');
+el('path',{d:'M 1595 224 C 1595 380,900 460,424 488',fill:'none',stroke:'#2fe39a','stroke-width':12,opacity:'.05',filter:'url(#glow2)'});
+badge(1020,370,'CF Tunnel','#2fe39a');
 /* IPsec bidirectional (Tencent CHR ↔ HQ Gateway, vertical) */
 ap('M 500 386 C 500 430,452 460,442 488','#ef4444','12 6','ao','af');
 ap('M 442 488 C 452 460,510 430,520 386','#ef4444','12 6','ao-r','ar',-.5);
 el('path',{d:'M 505 386 C 505 430,457 460,447 488',fill:'none',stroke:'#ef4444','stroke-width':12,opacity:'.05',filter:'url(#glow2)'});
 badge(484,437,'IPsec IKEv2  AES-256','#ef4444');
 /* OpenVPN (Tencent → HQ, adjacent vertical) */
-ap('M 564 386 C 564 430,494 460,484 488','#3b82f6','8 8','ab','am',-.4);
-badge(534,462,'OpenVPN','#3b82f6');
+ap('M 564 386 C 564 430,494 460,484 488','#38bdf8','8 8','ab','am',-.4);
+badge(534,462,'OpenVPN','#38bdf8');
 /* Remote Workforce → Tencent (now adjacent, OpenVPN entry) */
-ap('M 243 149 C 252 149,262 155,265 175','#3b82f6','9 6','ab','as');
-badge(254,140,'OpenVPN','#3b82f6');
+ap('M 243 149 C 252 149,262 155,265 175','#38bdf8','9 6','ab','as');
+badge(254,140,'OpenVPN','#38bdf8');
 /* AWS ↔ OpenWrt vless/trojan */
-ap('M 1000 366 C 970 420,900 460,868 488','#a855f7','10 5','ap','am',-.3);
-el('path',{d:'M 1000 366 C 970 420,900 460,868 488',fill:'none',stroke:'#a855f7','stroke-width':12,opacity:'.05',filter:'url(#glow2)'});
-badge(940,430,'vless / trojan','#a855f7');
+ap('M 1000 366 C 970 420,900 460,868 488','#b07cff','10 5','ap','am',-.3);
+el('path',{d:'M 1000 366 C 970 420,900 460,868 488',fill:'none',stroke:'#b07cff','stroke-width':12,opacity:'.05',filter:'url(#glow2)'});
+badge(940,430,'vless / trojan','#b07cff');
 /* Gateway → OpenWrt */
 el('line',{x1:580,y1:545,x2:608,y2:545,stroke:'#14b8a6','stroke-width':2.5,'marker-end':'url(#at)'});
 /* OpenWrt → FreeIPA */
 ap('M 748 602 L 748 626','#ca8a04','6 4','aam','as');
 badge(784,616,'DNS','#ca8a04');
 /* OpenWrt → DNS rules */
-el('line',{x1:888,y1:542,x2:906,y2:542,stroke:'#6366f1','stroke-width':1.5,'stroke-opacity':'.6'});
+el('line',{x1:888,y1:542,x2:906,y2:542,stroke:'#8b5cf6','stroke-width':1.5,'stroke-opacity':'.6'});
 /* Gateway → PVE */
-ap('M 334 602 C 296 617,254 626,234 736','#f59e0b','8 5','aam','as',-.2);
-badge(276,663,'LAN','#d97706');
+ap('M 334 602 C 296 617,254 626,234 736','#ffa31a','8 5','aam','as',-.2);
+badge(276,663,'LAN','#e08900');
 /* Gateway → K8s */
 ap('M 508 602 C 548 617,618 626,671 736','#8b5cf6','8 5','ap','as',-.6);
-badge(596,663,'100G IB','#7c3aed');
+badge(596,663,'100G IB','#8b5cf6');
 /* PVE → K8s (hosts) */
-el('path',{d:'M 440 958 L 450 958',fill:'none',stroke:'#334155','stroke-width':2,'stroke-dasharray':'5 4','marker-end':'url(#ag)'});
-txt(446,950,'VM hosts',{s:8,c:'#1e293b',mono:true});
+el('path',{d:'M 440 958 L 450 958',fill:'none',stroke:'#2a3354','stroke-width':2,'stroke-dasharray':'5 4','marker-end':'url(#ag)'});
+txt(446,950,'VM hosts',{s:8,c:'#171f38',mono:true});
 /* K8s → CF upward egress (now curves right to CF) */
-ap('M 671 736 C 900 600,1200 400,1595 224','#22c55e','10 5','agr','as',-1);
+ap('M 671 736 C 900 600,1200 400,1595 224','#2fe39a','10 5','agr','as',-1);
 /* Corp → Sites */
 ap('M 428 1140 C 428 1158,348 1170,262 1188','#ef4444','10 5','ao','am',-.1);
 badge(355,1158,'IPsec','#ef4444');
 
 /* Node accent glows */
-for(const[cx,cy,rx,c]of[[1400,70,56,'#3b82f6'],[1595,169,45,'#f97316'],[551,141,68,'#3b82f6'],[239,750,56,'#f59e0b'],[671,750,56,'#a855f7'],[748,546,45,'#14b8a6'],[1372,468,60,'#22d3ee'],[1787,762,56,'#8b5cf6'],[1640,630,40,'#d97706']])
+for(const[cx,cy,rx,c]of[[1400,70,56,'#38bdf8'],[1595,169,45,'#f97316'],[551,141,68,'#38bdf8'],[239,750,56,'#ffa31a'],[671,750,56,'#b07cff'],[748,546,45,'#14b8a6'],[1372,468,60,'#21d4fd'],[1787,762,56,'#8b5cf6'],[1640,630,40,'#e08900']])
   el('ellipse',{cx,cy,rx,ry:Math.round(rx*.26),fill:c,opacity:'.08',filter:'url(#glow2)'});
 
-const ftxt=document.createElementNS(NS,'text');Object.entries({x:1200,y:1248,'text-anchor':'middle','font-size':10,'font-family':"'Inter',sans-serif",fill:'#0f172a'}).forEach(([k,v])=>ftxt.setAttribute(k,String(v)));ftxt.textContent=`SYS_UPDATED: ${new Date().toLocaleDateString('en-CA')}  ·  Mana Trading Corp Network  ·  portal.djch.one`;svg.appendChild(ftxt);
+const ftxt=document.createElementNS(NS,'text');Object.entries({x:1200,y:1248,'text-anchor':'middle','font-size':10,'font-family':"'Poppins',sans-serif",fill:'#0f172a'}).forEach(([k,v])=>ftxt.setAttribute(k,String(v)));ftxt.textContent=`SYS_UPDATED: ${new Date().toLocaleDateString('en-CA')}  ·  djch.one Corp Network  ·  portal.djch.one`;svg.appendChild(ftxt);
 
 /* ─── Dynamic: Prometheus IPMI (PVE online/offline dots) ─── */
 const PROM='https://prometheus.djch.one/api/v1/query';
@@ -713,7 +719,7 @@ async function fetchIPMI(){
     for(const r of up.data.result){const ip=r.metric.instance;(ipmiLive[ip]??={}).power=+r.value[1];}
     for(const [bmc,d] of Object.entries(ipmiLive)){
       const dot=document.getElementById('dot-bmc-'+bmc.replace(/\./g,'-'));
-      if(dot)dot.setAttribute('fill',d.power===1?'#22c55e':'#ef4444');
+      if(dot)dot.setAttribute('fill',d.power===1?'#2fe39a':'#ef4444');
     }
   }catch(e){console.warn('IPMI fetch failed:',e);}
 }
@@ -745,7 +751,7 @@ async function fetchZabbix(){
     /* update zbx status dots */
     for(const [host,d] of Object.entries(zbxLive)){
       const dot=document.getElementById('dot-zbx-'+host.replace(/\./g,'-'));
-      if(dot)dot.setAttribute('fill',d.power>0?'#22c55e':'#ef4444');
+      if(dot)dot.setAttribute('fill',d.power>0?'#2fe39a':'#ef4444');
     }
   }catch(e){console.warn('Zabbix fetch failed:',e);}
 }
