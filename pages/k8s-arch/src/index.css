@@ -1,0 +1,101 @@
+/* portal-unified self-hosted fonts (absolute path on portal.djch.one; graceful fallback elsewhere) */
+@font-face { font-family: 'Poppins'; font-weight: 400; font-display: swap; src: url('/assets/fonts/poppins-400.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 500; font-display: swap; src: url('/assets/fonts/poppins-500.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 600; font-display: swap; src: url('/assets/fonts/poppins-600.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 700; font-display: swap; src: url('/assets/fonts/poppins-700.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto Mono'; font-weight: 400; font-display: swap; src: url('/assets/fonts/robotomono-400.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto Mono'; font-weight: 500; font-display: swap; src: url('/assets/fonts/robotomono-500.woff2') format('woff2'); }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  margin: 0;
+  background: #060a14;
+  color: #e9edf8;
+  font-family: Poppins, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* 环境光晕背景 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 500px at 12% -5%, rgba(255, 77, 157, 0.13), transparent 60%),
+    radial-gradient(800px 500px at 95% 8%, rgba(139, 92, 246, 0.11), transparent 55%),
+    radial-gradient(700px 600px at 50% 110%, rgba(33, 212, 253, 0.09), transparent 60%);
+}
+
+::selection {
+  background: rgba(255, 77, 157, 0.3);
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0f1c; }
+::-webkit-scrollbar-thumb { background: #232c4e; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #32406e; }
+
+.mono-code {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.88em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(33, 212, 253, 0.12);
+  color: #21d4fd;
+}
+
+.grad-text {
+  background: linear-gradient(135deg, #ff4d9d 0%, #8b5cf6 52%, #21d4fd 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* React Flow 暗色覆盖 */
+.react-flow__attribution { display: none; }
+.react-flow__edge-path { stroke-width: 1.6; }
+.react-flow__handle { opacity: 0; }
+
+/* 滚动揭示 */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
