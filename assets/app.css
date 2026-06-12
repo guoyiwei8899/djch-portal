@@ -47,6 +47,7 @@
   --d-network: #e8347f;
   --d-virtualization: #0fa46f;
   --d-terraform_iac: #8b4fe8;
+  --d-ansible: #d63a3a;
   --d-monitoring: #d98b00;
 }
 
@@ -80,6 +81,7 @@
   --d-network: #ff5da2;
   --d-virtualization: #2fe39a;
   --d-terraform_iac: #b07cff;
+  --d-ansible: #ff6b6b;
   --d-monitoring: #ffb224;
 }
 

@@ -8,6 +8,7 @@
     "network":        { "label": "Network",         "icon": "globe" },
     "virtualization": { "label": "Virtualization",  "icon": "layers" },
     "terraform_iac":  { "label": "Terraform · IaC", "icon": "box" },
+    "ansible":        { "label": "Ansible · Roles", "icon": "terminal" },
     "monitoring":     { "label": "Monitoring",      "icon": "activity" }
   },
   "viz": [
