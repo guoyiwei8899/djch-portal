@@ -192,6 +192,12 @@
     /* ===== chrome ===== */
     $('#brand-logo').innerHTML = svgIcon('sparkle');
     $('#logout-btn').innerHTML = svgIcon('log-out');
+    // 彻底注销:先杀本应用 outpost 会话,再终止 Authentik SSO 主会话(否则点 Sign in 会被静默登回)
+    $('#logout-btn').onclick = async e => {
+      e.preventDefault();
+      try { await fetch('/outpost.goauthentik.io/sign_out', { redirect: 'manual', cache: 'no-store' }); } catch (_) {}
+      location.href = 'https://auth.djch.one/flows/-/default/invalidation/';
+    };
     $('#search-ic').innerHTML = svgIcon('search');
     const themeBtn = $('#theme-btn');
     const paint = () => themeBtn.innerHTML = themeIcon();
