@@ -164,8 +164,9 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
       <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>GenericRedfishDriver</h3><ul>
         <li>技嘉 / 曙光 / 联想 / 默认(<code>normalize_vendor</code> 含中英文别名)</li>
         <li>读版本:<code>Systems.BiosVersion</code> + <code>Managers.FirmwareVersion</code></li>
-        <li>刷写:优先 <code>MultipartHttpPushUri</code>(AMI),<code>UpdateParameters</code> 带 Targets + ApplyTime</li>
-        <li>httpx 流式分块推送,不整包进内存</li>
+        <li>刷写:<code>MultipartHttpPushUri</code> 三段体 UpdateParameters + OemParameters + UpdateFile</li>
+        <li><b>技嘉实测坑</b>:OemParameters 必带 <code>ImageType:BMC/BIOS</code>(大写枚举),且<b>不能</b>带 <code>@Redfish.OperationApplyTime</code>(AMI 拒收)</li>
+        <li>httpx 流式分块推送,不整包进内存;同版本重刷 BMC 返回 <code>prepare flash area failed</code>(预期拦截)</li>
       </ul></div>
       <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>DellRedfishDriver</h3><ul>
         <li>iDRAC:有 Multipart 走 generic;否则 <code>HttpPushUri</code> + <code>SimpleUpdate</code></li>

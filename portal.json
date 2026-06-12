@@ -9,7 +9,8 @@
     "virtualization": { "label": "Virtualization",  "icon": "layers" },
     "terraform_iac":  { "label": "Terraform · IaC", "icon": "box" },
     "ansible":        { "label": "Ansible · Roles", "icon": "terminal" },
-    "monitoring":     { "label": "Monitoring",      "icon": "activity" }
+    "monitoring":     { "label": "Monitoring",      "icon": "activity" },
+    "aidc":           { "label": "AIDC",            "icon": "server" }
   },
   "viz": [
     {
@@ -55,7 +56,7 @@
       "path": "viz/zabbix-arch.html"
     },
     {
-      "domain": "monitoring", "icon": "cpu",
+      "domain": "aidc", "icon": "cpu",
       "title": "BMC / BIOS Firmware Pipeline",
       "desc": "Redfish firmware inventory, PVC library and vendor-dispatched BMC/BIOS upgrade state machine",
       "path": "viz/bmc-firmware-arch.html"
