@@ -53,6 +53,12 @@
       "title": "Zabbix × AIDC Hardware Pipeline",
       "desc": "Custom agent → Zabbix → AIDC rack: snapshot, temps/power, locate LED flows",
       "path": "viz/zabbix-arch.html"
+    },
+    {
+      "domain": "monitoring", "icon": "cpu",
+      "title": "BMC / BIOS Firmware Pipeline",
+      "desc": "Redfish firmware inventory, PVC library and vendor-dispatched BMC/BIOS upgrade state machine",
+      "path": "viz/bmc-firmware-arch.html"
     }
   ],
   "system": [

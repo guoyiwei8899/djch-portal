@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BMC / BIOS 固件升级管线</title>
+<style>
+/* portal-unified self-hosted fonts */
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
+
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --vio2:#b07cff; --cyan:#21d4fd;
+  --blue:#38bdf8; --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b;
+  --grad:linear-gradient(100deg,#ff4d9d,#8b5cf6,#21d4fd);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(255,77,157,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(139,92,246,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(33,212,253,.07),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
+
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--cyan);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,77,157,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:760px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
+
+.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:18px 16px 70px}
+
+/* ---- flow tabs ---- */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
+  display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--cyan));box-shadow:0 0 8px var(--fc,var(--cyan))}
+.tab:hover{border-color:var(--fc,var(--cyan));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--cyan));color:var(--ink);
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 10%,var(--card));
+  box-shadow:0 0 18px color-mix(in srgb,var(--fc,var(--cyan)) 28%,transparent)}
+.steps{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;min-height:30px;
+  margin:10px auto 4px;max-width:1280px;font-size:12px;color:var(--muted)}
+.steps .st{display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(4px);transition:all .35s}
+.steps .st.in{opacity:1;transform:none}
+.steps .st i{font-style:normal;font-family:var(--mono);font-size:10px;width:17px;height:17px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 22%,transparent);color:var(--fc,var(--cyan));
+  border:1px solid color-mix(in srgb,var(--fc,var(--cyan)) 45%,transparent)}
+
+/* ---- diagram ---- */
+.dia{position:relative;background:rgba(6,9,20,.7);border:1px solid var(--bd);border-radius:16px;
+  padding:6px;margin-top:10px;overflow:hidden}
+.dia::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pink),var(--violet),var(--cyan),transparent);opacity:.8}
+svg{display:block;width:100%;height:auto}
+.node rect{fill:var(--card);stroke:var(--bd2);stroke-width:1}
+.node.grp>rect{fill:rgba(13,19,36,.5);stroke:var(--bd);stroke-dasharray:4 4}
+.node text{fill:var(--ink);font-family:'Poppins',sans-serif}
+.node .ttl{font-size:12.5px;font-weight:600}
+.node .sub{font-size:9.5px;fill:var(--muted);font-family:var(--mono)}
+.node .tag{font-size:9px;fill:var(--faint);font-family:var(--mono)}
+.node.dim{opacity:.30}
+.node.lit>rect{stroke:var(--fc);filter:drop-shadow(0 0 9px color-mix(in srgb,var(--fc) 55%,transparent))}
+.gt{font-family:var(--disp);font-size:11px;letter-spacing:.18em;fill:var(--faint)}
+.edge{fill:none;stroke:rgba(146,168,255,.18);stroke-width:1.6;transition:opacity .3s}
+.edge.lit{stroke-width:2;stroke-dasharray:7 5;animation:dash 1s linear infinite}
+.edge.dim{opacity:.15}
+@keyframes dash{to{stroke-dashoffset:-12}}
+.elabel{font-family:var(--mono);font-size:9.5px;fill:var(--muted);opacity:0;transition:opacity .3s}
+.elabel.lit{opacity:1}
+.pkt{opacity:0}
+.pkt.lit{opacity:1}
+
+/* ---- detail sections ---- */
+.sec{margin-top:46px}
+.sec h2{font-family:var(--disp);font-size:20px;font-weight:600;text-align:center;
+  background:linear-gradient(100deg,#ff4d9d,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;margin:4px 0 18px;letter-spacing:.08em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:16px 17px;backdrop-filter:blur(10px);
+  position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ac,var(--cyan)),transparent);opacity:.7}
+.card h3{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ac,var(--cyan));margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--cyan));box-shadow:0 0 8px var(--ac,var(--cyan));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--cyan))}
+.card code,td code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);
+  padding:1px 6px;border-radius:5px;border:1px solid rgba(33,212,253,.18)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10.5px;text-align:left;color:var(--faint);letter-spacing:.08em;
+  padding:7px 10px;border-bottom:1px solid var(--bd2);text-transform:uppercase}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--muted);vertical-align:top}
+td b{color:var(--ink);font-weight:500}
+.tcard{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:6px 6px 2px;backdrop-filter:blur(10px);overflow-x:auto}
+footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="hero">
+  <div class="kick">/// out-of-band firmware lifecycle</div>
+  <h1>BMC / BIOS 固件升级管线</h1>
+  <p>AIDC 门户「BMC/BIOS」模块:Redfish 读固件版本 → 门户固件库(Longhorn 持久化)→ 厂商分发的 driver 刷写 → 任务状态机推进到 staged → 独立重启生效。BIOS 默认只 stage,重启是强确认的独立操作。</p>
+  <div class="badges">
+    <span class="bdg">执行通道 <b>Redfish-first</b></span>
+    <span class="bdg">固件库 <b>Longhorn PVC</b></span>
+    <span class="bdg">任务 <b>单实例状态机</b></span>
+    <span class="bdg">厂商 <b>技嘉/Dell/超微/曙光/联想</b></span>
+    <span class="bdg">重启 <b>hostname 强确认</b></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="steps" id="steps"></div>
+  <div class="dia"><svg id="svg" viewBox="0 0 1660 620" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+  <!-- ════ 端点清单 ════ -->
+  <section class="sec">
+    <h2>API 端点清单</h2>
+    <div class="sd">// routers/firmware.py · 读=user / 写=admin(get_admin_user) · 挂载先于 servers 路由避免 /servers/{id} 抢占</div>
+    <div class="tcard"><table>
+      <tr><th>端点</th><th>方法 · 权限</th><th>职责</th></tr>
+      <tr><td><code>/firmware/packages</code></td><td>GET user · POST/DELETE <b>admin</b></td><td>固件库 CRUD;POST 为 multipart 分块落盘 + 算 sha256;(vendor,model,component,version) 唯一,冲突 409;有 active 任务引用拒删 409</td></tr>
+      <tr><td><code>/servers/firmware-inventory</code></td><td>GET user</td><td>fleet 视图:join 各机 BMC/BIOS 版本快照</td></tr>
+      <tr><td><code>/servers/{id}/firmware</code></td><td>GET user · <code>?force_refresh</code></td><td>缓存优先,空或强刷时走 driver 实查并回写 snapshot(镜像 SEL 端点模式)</td></tr>
+      <tr><td><code>/servers/{id}/firmware-update</code></td><td>POST <b>admin</b></td><td>校验 vendor 匹配 + 无 active 任务 → 建 task 行 + <code>asyncio.create_task</code> 启动执行器</td></tr>
+      <tr><td><code>/firmware/tasks</code> · <code>/{id}</code></td><td>GET user · cancel <b>admin</b></td><td>任务列表/详情(前端 3s 轮询);仅 pending/uploading 可取消(flashing 中断有变砖风险)</td></tr>
+      <tr><td><code>/servers/{id}/bmc-reset</code><br><code>/servers/{id}/power-cycle</code></td><td>POST <b>admin</b> · <code>confirm=true</code></td><td>独立重启:BMC GracefulRestart / 主机 Reset;不确认 400;BIOS staged 后靠 power-cycle 生效</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ driver 分发 ════ -->
+  <section class="sec">
+    <h2>厂商 driver 分发</h2>
+    <div class="sd">// integrations/firmware/ · get_driver(server) 按 servers.manufacturer 子串归一化 · 资源路径经 collection Members 发现(不硬编码 Self/Embedded.1)</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>GenericRedfishDriver</h3><ul>
+        <li>技嘉 / 曙光 / 联想 / 默认(<code>normalize_vendor</code> 含中英文别名)</li>
+        <li>读版本:<code>Systems.BiosVersion</code> + <code>Managers.FirmwareVersion</code></li>
+        <li>刷写:优先 <code>MultipartHttpPushUri</code>(AMI),<code>UpdateParameters</code> 带 Targets + ApplyTime</li>
+        <li>httpx 流式分块推送,不整包进内存</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>DellRedfishDriver</h3><ul>
+        <li>iDRAC:有 Multipart 走 generic;否则 <code>HttpPushUri</code> + <code>SimpleUpdate</code></li>
+        <li>iDRAC8 老固件无 push/SimpleUpdate → 明确报「需 racadm」</li>
+        <li>racadm CLI 兜底留接口(本期 stub)</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>SupermicroDriver</h3><ul>
+        <li>读 inventory / 重启复用 generic(只读无需 license)</li>
+        <li>刷写显式 <code>DriverUnsupportedError</code>:需 sum CLI / OOB license</li>
+        <li>UI 按钮禁用并显示原因</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- ════ 状态机 ════ -->
+  <section class="sec">
+    <h2>升级任务状态机</h2>
+    <div class="sd">// firmware_tasks.py · 进程内 _RUNNING registry(replicas=1 安全)· Semaphore(2) 限并发刷写 · 全程经 AsyncWriteSessionLocal 短事务提交</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>状态流转</h3><ul>
+        <li><code>pending → uploading</code>:记 previous_version,流式推镜像</li>
+        <li><code>→ flashing</code>:拿 Redfish task URL,每 5s 轮询 PercentComplete</li>
+        <li><code>→ staged</code>(终态):BIOS 待重启 / BMC 已自重启</li>
+        <li><code>→ failed</code>:超时 1800s / driver 不支持 / Redfish exception</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>BMC 自重启竞态</h3><ul>
+        <li>flashing 中连续 30s 连不上 + component=bmc</li>
+        <li>→ 等待重连(≤5min)后比对 Managers 版本判定成败</li>
+        <li>BIOS staged 后,下次 power-cycle + 采集到新版本 → 自动转 completed</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--pink)"><h3><span class="ic"></span>崩溃恢复</h3><ul>
+        <li>启动 <code>recover_stale_tasks()</code>:uploading/flashing 残留置 failed</li>
+        <li><b>不自动重放</b> —— 固件刷写不可盲目重试,人工确认 BMC 后重发</li>
+        <li>固件文件 + 任务状态都在 PVC/DB,pod 重启不丢</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- ════ 部署 ════ -->
+  <section class="sec">
+    <h2>部署形态</h2>
+    <div class="sd">// k8s-gitops/manifests/aidc · ArgoCD automated sync · 镜像 registry.djch.one :latest</div>
+    <div class="tcard"><table>
+      <tr><th>组件</th><th>配置</th><th>说明</th></tr>
+      <tr><td><b>aidc-backend</b></td><td><code>replicas: 1</code> · <code>strategy: Recreate</code></td><td>固件任务进程内状态 + 共享文件,必须单实例</td></tr>
+      <tr><td><b>固件库存储</b></td><td>Longhorn PVC <code>aidc-backend-data</code> 10Gi RWO → <code>/data/firmware</code></td><td>上传的固件持久化,pod 重启不丢</td></tr>
+      <tr><td><b>新表(自动建)</b></td><td><code>firmware_packages</code> · <code>firmware_update_tasks</code> · <code>server_firmware_snapshots</code></td><td>启动 <code>create_all</code> 建表,无 Alembic</td></tr>
+      <tr><td><b>固件采集 loop</b></td><td><code>firmware_inventory_loop</code> 6h · Semaphore(8)</td><td>低频后台刷版本;按需 force_refresh 实时拉</td></tr>
+    </table></div>
+  </section>
+
+  <footer>aidc-portal · BMC/BIOS firmware module · Redfish-first, vendor-dispatched, single-instance state machine</footer>
+</main>
+
+<script>
+const C={pink:'#ff4d9d',violet:'#8b5cf6',vio2:'#b07cff',cyan:'#21d4fd',blue:'#38bdf8',green:'#2fe39a',amber:'#ffb224'};
+
+const NODES=[
+  {id:'fegrp',x:20,y:46,w:330,h:540,grp:1,title:'前端 · BMC/BIOS 页',sub:'bmc-events · 4 tabs · SWR'},
+  {id:'host',x:44,y:100,w:282,h:56,title:'主机列表',sub:'lamp 灯 · 固件版本徽章 · staged',tag:'bmc-event-host-list'},
+  {id:'ftab',x:44,y:172,w:282,h:74,title:'Firmware Tab',sub:'BMC/BIOS 双卡 · 匹配包 · 升级按钮',tag:'firmware-inventory-panel'},
+  {id:'ltab',x:44,y:262,w:282,h:58,title:'Library Tab',sub:'上传 / 列表 / 删除固件包',tag:'firmware-library-panel'},
+  {id:'ttab',x:44,y:336,w:282,h:60,title:'Tasks Tab',sub:'任务进度 · 轮询 3s · 历史',tag:'firmware-tasks-panel'},
+  {id:'dlg',x:44,y:412,w:282,h:78,title:'上传 / 升级 / 危险对话框',sub:'XHR multipart 进度 · Lustre 红警',tag:'输 hostname 强确认'},
+  {id:'evtab',x:44,y:506,w:282,h:62,title:'Events Tab(保留)',sub:'SEL 系统事件 · Clear SEL',tag:'ipmitool sel elist'},
+
+  {id:'begrp',x:470,y:46,w:310,h:540,grp:1,title:'后端 API · FastAPI',sub:'routers/firmware.py'},
+  {id:'invep',x:492,y:100,w:266,h:60,title:'GET /servers/{id}/firmware',sub:'缓存优先 · force_refresh',tag:'fleet: /firmware-inventory'},
+  {id:'pkgep',x:492,y:178,w:266,h:64,title:'/firmware/packages',sub:'POST multipart · sha256',tag:'409/404/403 · CRUD'},
+  {id:'updep',x:492,y:262,w:266,h:58,title:'POST /firmware-update',sub:'vendor 校验 · 无 active 任务',tag:'→ 建 task + asyncio'},
+  {id:'tskep',x:492,y:338,w:266,h:56,title:'/firmware/tasks',sub:'GET 列表/详情 · cancel',tag:'前端轮询数据源'},
+  {id:'pwrep',x:492,y:412,w:266,h:62,title:'/bmc-reset · /power-cycle',sub:'admin · confirm=true',tag:'独立重启'},
+  {id:'auth',x:492,y:494,w:266,h:74,title:'权限层',sub:'get_admin_user · get_current_user',tag:'写=admin · 读=user'},
+
+  {id:'exgrp',x:900,y:46,w:340,h:540,grp:1,title:'执行层 · driver',sub:'integrations/firmware/'},
+  {id:'tasks',x:922,y:100,w:296,h:80,title:'firmware_tasks.py',sub:'状态机 pending→uploading→flashing→staged',tag:'_RUNNING · Semaphore(2) · recover'},
+  {id:'disp',x:922,y:198,w:296,h:54,title:'get_driver(server)',sub:'manufacturer 归一化分发',tag:'normalize_vendor(中英文别名)'},
+  {id:'rfd',x:922,y:270,w:296,h:56,title:'GenericRedfishDriver',sub:'技嘉/曙光/联想 · AMI Multipart',tag:'redfish.py · httpx 流式'},
+  {id:'dell',x:922,y:344,w:296,h:50,title:'DellRedfishDriver',sub:'HttpPushUri + SimpleUpdate · racadm stub'},
+  {id:'smc',x:922,y:412,w:296,h:50,title:'SupermicroDriver',sub:'读复用 · 写需 sum CLI(stub)'},
+  {id:'mon',x:922,y:480,w:296,h:88,title:'monitoring loop',sub:'firmware_inventory_loop 6h',tag:'recover_stale_tasks 启动回收'},
+
+  {id:'hwgrp',x:1360,y:46,w:280,h:540,grp:1,title:'硬件 · 存储',sub:'BMC Redfish · Longhorn · PG'},
+  {id:'bmc',x:1380,y:100,w:242,h:92,title:'BMC Redfish',sub:'UpdateService · Managers · Systems',tag:'MultipartHttpPushUri'},
+  {id:'ts',x:1380,y:208,w:242,h:54,title:'TaskService',sub:'TaskState · PercentComplete',tag:'刷写进度轮询'},
+  {id:'pvc',x:1380,y:280,w:242,h:64,title:'固件库 PVC',sub:'Longhorn RWO 10Gi',tag:'/data/firmware · replicas=1'},
+  {id:'db1',x:1380,y:362,w:242,h:52,title:'firmware_packages',sub:'vendor/model/component/version · sha256'},
+  {id:'db2',x:1380,y:430,w:242,h:50,title:'firmware_update_tasks',sub:'状态机持久化 · 任务历史'},
+  {id:'db3',x:1380,y:496,w:242,h:62,title:'server_firmware_snapshots',sub:'BMC/BIOS 版本缓存'},
+];
+
+const EDGES=[
+  {id:'i1',f:'invep',t:'disp',lbl:'force_refresh'},
+  {id:'i2',f:'mon',t:'disp',v:1,lbl:'6h 巡检'},
+  {id:'i3',f:'disp',t:'rfd',v:1},
+  {id:'i4',f:'rfd',t:'bmc',lbl:'读 Systems/Managers'},
+  {id:'i5',f:'bmc',t:'db3',lbl:'版本回写'},
+  {id:'i6',f:'db3',t:'invep',lbl:'缓存',curve:90},
+  {id:'i7',f:'invep',t:'ftab',lbl:'GET /firmware'},
+
+  {id:'u1',f:'ltab',t:'pkgep',lbl:'上传'},
+  {id:'u2',f:'dlg',t:'pkgep',lbl:'XHR multipart'},
+  {id:'u3',f:'pkgep',t:'pvc',lbl:'分块落盘'},
+  {id:'u4',f:'pkgep',t:'db1',lbl:'sha256 + 元数据'},
+
+  {id:'g1',f:'ftab',t:'updep',lbl:'发起升级'},
+  {id:'g2',f:'updep',t:'tasks',lbl:'建 task'},
+  {id:'g3',f:'tasks',t:'disp',v:1,lbl:'execute'},
+  {id:'g4',f:'pvc',t:'tasks',lbl:'读固件',curve:-120},
+  {id:'g5',f:'rfd',t:'bmc',lbl:'Multipart push'},
+  {id:'g6',f:'bmc',t:'ts',v:1},
+  {id:'g7',f:'ts',t:'tasks',lbl:'轮询进度',curve:120},
+  {id:'g8',f:'tasks',t:'db2',lbl:'状态持久化'},
+  {id:'g9',f:'ttab',t:'tskep',lbl:'轮询 3s'},
+  {id:'g10',f:'tskep',t:'db2',lbl:'读任务'},
+
+  {id:'r1',f:'ftab',t:'pwrep',lbl:'power-cycle'},
+  {id:'r2',f:'pwrep',t:'disp',v:1,lbl:'reset'},
+  {id:'r3',f:'disp',t:'dell',v:1},
+  {id:'r4',f:'disp',t:'smc',v:1},
+];
+
+const FLOWS=[
+  {name:'① 固件版本采集流',color:C.cyan,
+   edges:['i2','i1','i3','i4','i5','i6','i7'],
+   nodes:['mon','exgrp','disp','rfd','hwgrp','bmc','db3','begrp','invep','fegrp','ftab'],
+   steps:['6h loop 或前端 force_refresh','get_driver 按厂商分发','Redfish 读 Systems.BiosVersion + Managers.FirmwareVersion','回写 server_firmware_snapshots','Firmware Tab 渲染当前版本 + 可升级']},
+  {name:'② 固件库上传流',color:C.green,
+   edges:['u1','u2','u3','u4'],
+   nodes:['fegrp','ltab','dlg','begrp','pkgep','hwgrp','pvc','db1'],
+   steps:['Library Tab 选文件 + 标 vendor/component/version','XHR multipart 带上传进度','后端分块边读边算 sha256 落 PVC','元数据入 firmware_packages(唯一约束/409)']},
+  {name:'③ 升级任务流',color:C.violet,
+   edges:['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10'],
+   nodes:['fegrp','ftab','ttab','begrp','updep','tskep','exgrp','tasks','disp','rfd','hwgrp','bmc','ts','pvc','db2'],
+   steps:['校验 vendor + 无 active 任务 → 建 task','asyncio 执行器读 PVC 固件','driver Multipart 推 BMC,拿 task URL','每 5s 轮询 TaskService PercentComplete','状态机推进并持久化 → staged','Tasks Tab 3s 轮询展示进度']},
+  {name:'④ 重启生效流',color:C.pink,
+   edges:['r1','r2','r3','r4','i4','i5'],
+   nodes:['fegrp','ftab','begrp','pwrep','exgrp','disp','dell','smc','rfd','hwgrp','bmc','db3'],
+   steps:['BIOS staged 后点 Power Cycle(输 hostname 确认)','后端 driver.power_cycle 经 Redfish 下发','主机重启,BIOS 镜像生效','下次采集读到新版本 → 任务转 completed']},
+];
+
+const svg=document.getElementById('svg');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},parent=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);parent.appendChild(e);return e;};
+const byId={};NODES.forEach(n=>byId[n.id]=n);
+
+const edgeEls={},pktEls={},lblEls={};
+function anchors(e){
+  const a=byId[e.f],b=byId[e.t];
+  if(e.v){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
+  }
+  const fwd=b.x+b.w/2>a.x+a.w/2;
+  return fwd?[a.x+a.w,a.y+a.h/2,b.x,b.y+b.h/2,'h']:[a.x,a.y+a.h/2,b.x+b.w,b.y+b.h/2,'h'];
+}
+EDGES.forEach(e=>{
+  const[x1,y1,x2,y2,dir]=anchors(e);
+  let d;
+  if(dir==='v'){d=`M${x1},${y1} C${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`;}
+  else{
+    const c=e.curve||0,mx=(x1+x2)/2;
+    d=c?`M${x1},${y1} C${mx},${y1+c} ${mx},${y2+c} ${x2},${y2}`
+       :`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  }
+  edgeEls[e.id]=el('path',{d,class:'edge',id:'p-'+e.id});
+  const pk=el('circle',{r:3.4,class:'pkt'});
+  const mo=el('animateMotion',{dur:'1.5s',repeatCount:'indefinite'},pk);
+  el('mpath',{href:'#p-'+e.id},mo);
+  pktEls[e.id]=pk;
+  if(e.lbl){
+    const midx=(x1+x2)/2,midy=(y1+y2)/2+(dir==='h'&&e.curve?e.curve*0.72:0)-6;
+    const t=el('text',{x:midx,y:midy,class:'elabel','text-anchor':'middle'});
+    t.textContent=e.lbl;lblEls[e.id]=t;
+  }
+});
+
+const nodeEls={};
+NODES.forEach(n=>{
+  const g=el('g',{class:'node'+(n.grp?' grp':'')});
+  el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:10},g);
+  if(n.grp){
+    const t=el('text',{x:n.x+14,y:n.y+24,class:'gt'},g);t.textContent=n.title.toUpperCase();
+    const s=el('text',{x:n.x+14,y:n.y+41,class:'sub'},g);s.textContent=n.sub;
+  }else{
+    const t=el('text',{x:n.x+14,y:n.y+23,class:'ttl'},g);t.textContent=n.title;
+    const s=el('text',{x:n.x+14,y:n.y+40,class:'sub'},g);s.textContent=n.sub;
+    if(n.tag){const k=el('text',{x:n.x+14,y:n.y+56,class:'tag'},g);k.textContent=n.tag;}
+  }
+  nodeEls[n.id]=g;
+});
+
+const tabsBox=document.getElementById('tabs'),stepsBox=document.getElementById('steps');
+FLOWS.forEach((f,i)=>{
+  const b=document.createElement('button');
+  b.className='tab';b.style.setProperty('--fc',f.color);
+  b.innerHTML='<span class="dot"></span>'+f.name;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  const f=FLOWS[i];
+  document.documentElement.style.setProperty('--fc',f.color);
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  EDGES.forEach(e=>{
+    const on=f.edges.includes(e.id);
+    edgeEls[e.id].setAttribute('class','edge'+(on?' lit':' dim'));
+    edgeEls[e.id].style.stroke=on?f.color:'';
+    edgeEls[e.id].style.filter=on?`drop-shadow(0 0 5px ${f.color})`:'';
+    pktEls[e.id].setAttribute('class','pkt'+(on?' lit':''));
+    pktEls[e.id].setAttribute('fill',f.color);
+    if(lblEls[e.id]){lblEls[e.id].setAttribute('class','elabel'+(on?' lit':''));lblEls[e.id].style.fill=on?f.color:'';}
+  });
+  f.edges.forEach((id,k)=>{
+    const mo=pktEls[id].querySelector('animateMotion');
+    mo.setAttribute('begin',(k*0.2)+'s');
+    const node=pktEls[id];node.remove();svg.appendChild(node);
+  });
+  NODES.forEach(n=>{
+    const on=f.nodes.includes(n.id);
+    nodeEls[n.id].setAttribute('class','node'+(n.grp?' grp':'')+(on?' lit':' dim'));
+    nodeEls[n.id].style.setProperty('--fc',f.color);
+  });
+  stepsBox.innerHTML='';
+  stepsBox.style.setProperty('--fc',f.color);
+  f.steps.forEach((s,k)=>{
+    const d=document.createElement('span');
+    d.className='st';d.innerHTML='<i>'+(k+1)+'</i>'+s;
+    stepsBox.appendChild(d);
+    setTimeout(()=>d.classList.add('in'),110*k+60);
+  });
+}
+activate(0);
+</script>
+</body>
+</html>
