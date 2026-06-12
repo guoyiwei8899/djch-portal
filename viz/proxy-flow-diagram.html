@@ -5,22 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>透明代理链路动态图</title>
   <style>
+
+    /* portal-unified fonts (self-hosted, ../assets/fonts) */
+    @font-face { font-family: "Poppins"; font-weight: 400; font-display: swap; src: url("../assets/fonts/poppins-400.woff2") format("woff2"); }
+    @font-face { font-family: "Poppins"; font-weight: 500; font-display: swap; src: url("../assets/fonts/poppins-500.woff2") format("woff2"); }
+    @font-face { font-family: "Poppins"; font-weight: 600; font-display: swap; src: url("../assets/fonts/poppins-600.woff2") format("woff2"); }
+    @font-face { font-family: "Poppins"; font-weight: 700; font-display: swap; src: url("../assets/fonts/poppins-700.woff2") format("woff2"); }
+    @font-face { font-family: "Chakra Petch"; font-weight: 600; font-display: swap; src: url("../assets/fonts/chakra-petch-latin-600-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Chakra Petch"; font-weight: 700; font-display: swap; src: url("../assets/fonts/chakra-petch-latin-700-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Roboto Mono"; font-weight: 400; font-display: swap; src: url("../assets/fonts/robotomono-400.woff2") format("woff2"); }
     :root {
-      --bg: #111111;
-      --panel: rgba(25, 25, 25, .72);
-      --card: #191919;
-      --bd: #322c26;
-      --bd-soft: rgba(255, 224, 194, .14);
-      --ink: #f4efe8;
-      --muted: #a99f92;
-      --faint: #7d7468;
-      --line: #4a4038;
-      --dns: #8ab4ff;
-      --direct: #6ee7b7;
-      --proxy: #ff9b85;
-      --router: #d8b4fe;
-      --warn: #ffe0c2;
-      --bronze: #b98a5e;
+      --bg: #060a14;
+      --panel: rgba(17, 24, 44, .62);
+      --card: #11182c;
+      --bd: #232c4e;
+      --bd-soft: rgba(146, 168, 255, .14);
+      --ink: #e9edf8;
+      --muted: #8d97b4;
+      --faint: #69749b;
+      --line: #3a4569;
+      --dns: #38bdf8;
+      --direct: #2fe39a;
+      --proxy: #ff5da2;
+      --router: #b07cff;
+      --warn: #ffd089;
+      --bronze: #21d4fd;
       --shadow: 0 14px 34px rgba(0, 0, 0, .34);
       --radius: 8px;
     }
@@ -30,14 +39,14 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       font-variant-numeric: tabular-nums;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       color: var(--ink);
       background:
-        radial-gradient(circle at top right, rgba(185, 138, 94, .14), transparent 24%),
-        radial-gradient(circle at top left, rgba(100, 74, 64, .10), transparent 18%),
+        radial-gradient(circle at top right, rgba(255, 77, 157, .14), transparent 24%),
+        radial-gradient(circle at top left, rgba(139, 92, 246, .10), transparent 18%),
         var(--bg);
       overflow-x: hidden;
     }
@@ -69,18 +78,19 @@
       justify-content: space-between;
       gap: 16px;
       padding: 12px 20px;
-      background: linear-gradient(90deg, rgba(18, 15, 12, .92), rgba(25, 21, 17, .96));
+      background: linear-gradient(90deg, rgba(9, 13, 26, .92), rgba(13, 18, 36, .96));
       border-bottom: 1px solid var(--bd);
       backdrop-filter: blur(12px);
     }
 
     h1 {
       margin: 0;
+      font-family: "Chakra Petch", "Poppins", sans-serif;
       font-size: 20px;
       font-weight: 750;
       line-height: 1.2;
       letter-spacing: 0;
-      background-image: linear-gradient(100deg, #f4efe8 0%, #ffe7cf 28%, #c79a6e 50%, #ffe7cf 72%, #f4efe8 100%);
+      background-image: linear-gradient(100deg, #e9edf8 0%, #ff4d9d 28%, #8b5cf6 50%, #21d4fd 72%, #e9edf8 100%);
       background-size: 220% auto;
       -webkit-background-clip: text;
       background-clip: text;
@@ -114,17 +124,17 @@
       border-radius: var(--radius);
       padding: 1px;
       background:
-        linear-gradient(rgba(25, 25, 25, .92), rgba(25, 25, 25, .92)) padding-box,
-        linear-gradient(135deg, rgba(255, 224, 194, .32), rgba(185, 138, 94, .12), rgba(255, 224, 194, .18)) border-box;
-      box-shadow: inset 0 0 0 1px rgba(255, 224, 194, .04);
+        linear-gradient(rgba(17, 24, 44, .92), rgba(17, 24, 44, .92)) padding-box,
+        linear-gradient(135deg, rgba(146, 168, 255, .32), rgba(255, 77, 157, .12), rgba(146, 168, 255, .18)) border-box;
+      box-shadow: inset 0 0 0 1px rgba(146, 168, 255, .04);
       transition: box-shadow .18s ease, filter .18s ease;
     }
 
     .segmented:hover {
       background:
-        linear-gradient(rgba(25, 25, 25, .92), rgba(25, 25, 25, .92)) padding-box,
-        linear-gradient(135deg, #ffe0c2, #b98a5e 46%, #ffe7cf) border-box;
-      box-shadow: 0 0 22px rgba(255, 224, 194, .16), inset 0 0 0 1px rgba(255, 224, 194, .08);
+        linear-gradient(rgba(17, 24, 44, .92), rgba(17, 24, 44, .92)) padding-box,
+        linear-gradient(135deg, #ffd089, #21d4fd 46%, #cfe3ff) border-box;
+      box-shadow: 0 0 22px rgba(146, 168, 255, .16), inset 0 0 0 1px rgba(146, 168, 255, .08);
     }
 
     button {
@@ -141,23 +151,23 @@
     }
 
     button.active {
-      background: linear-gradient(135deg, rgba(100, 74, 64, .92), rgba(58, 46, 37, .96));
+      background: linear-gradient(135deg, rgba(139, 92, 246, .92), rgba(42, 51, 84, .96));
       color: var(--ink);
-      border-color: rgba(255, 224, 194, .28);
-      box-shadow: inset 0 0 0 1px rgba(255, 224, 194, .16);
+      border-color: rgba(146, 168, 255, .28);
+      box-shadow: inset 0 0 0 1px rgba(146, 168, 255, .16);
     }
 
     button:hover {
       color: var(--ink);
-      border-color: rgba(255, 224, 194, .68);
-      background: linear-gradient(135deg, rgba(255, 224, 194, .12), rgba(185, 138, 94, .10));
-      box-shadow: 0 0 18px rgba(255, 224, 194, .14), inset 0 0 0 1px rgba(185, 138, 94, .18);
+      border-color: rgba(146, 168, 255, .68);
+      background: linear-gradient(135deg, rgba(146, 168, 255, .12), rgba(255, 77, 157, .10));
+      box-shadow: 0 0 18px rgba(146, 168, 255, .14), inset 0 0 0 1px rgba(255, 77, 157, .18);
     }
 
     .icon-btn {
       border: 1px solid var(--bd);
       border-radius: var(--radius);
-      background: rgba(35, 32, 32, .9);
+      background: rgba(23, 30, 54, .9);
       color: var(--ink);
       min-width: 96px;
     }
@@ -189,7 +199,7 @@
       width: 1536px;
       height: 792px;
       margin: 0 auto;
-      background: rgba(17, 17, 17, .58);
+      background: rgba(6, 10, 20, .58);
       border: 1px solid var(--bd);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -213,7 +223,7 @@
       bottom: 22px;
       border: 1px solid var(--bd-soft);
       border-radius: var(--radius);
-      background: rgba(25, 25, 25, .24);
+      background: rgba(17, 24, 44, .24);
     }
 
     .zone.lan { left: 22px; width: 388px; }
@@ -234,7 +244,7 @@
       position: absolute;
       width: 176px;
       min-height: 78px;
-      border: 1px solid rgba(255, 224, 194, .16);
+      border: 1px solid rgba(146, 168, 255, .16);
       border-radius: var(--radius);
       background: var(--panel);
       box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
@@ -272,7 +282,7 @@
       margin-top: 7px;
       font-size: 11px;
       color: var(--ink);
-      background: rgba(255, 224, 194, .08);
+      background: rgba(146, 168, 255, .08);
       padding: 3px 6px;
       border-radius: 6px;
     }
@@ -286,15 +296,15 @@
     .aws { left: 914px; top: 312px; }
     .target { left: 1060px; top: 484px; }
 
-    .node.client { border-color: rgba(255, 224, 194, .42); box-shadow: inset 0 0 0 1px rgba(255, 224, 194, .08), 0 8px 28px rgba(0, 0, 0, .35); }
+    .node.client { border-color: rgba(146, 168, 255, .42); box-shadow: inset 0 0 0 1px rgba(146, 168, 255, .08), 0 8px 28px rgba(0, 0, 0, .35); }
     .node.routeros { border-color: var(--router); }
     .node.singbox { border-color: var(--proxy); }
     .node.mosdns { border-color: var(--dns); }
     .node.aws { border-color: var(--proxy); }
     .node.localdns { border-color: var(--direct); }
     .node.target {
-      border-color: rgba(255, 224, 194, .46);
-      box-shadow: inset 0 0 0 1px rgba(255, 224, 194, .08), 0 8px 28px rgba(0, 0, 0, .35);
+      border-color: rgba(146, 168, 255, .46);
+      box-shadow: inset 0 0 0 1px rgba(146, 168, 255, .08), 0 8px 28px rgba(0, 0, 0, .35);
     }
 
     .node.target.direct-target {
@@ -337,7 +347,7 @@
       padding: 4px 7px;
       border: 1px solid var(--bd);
       border-radius: 6px;
-      background: rgba(25, 25, 25, .86);
+      background: rgba(17, 24, 44, .86);
       color: var(--ink);
       font-size: 11px;
       white-space: nowrap;
@@ -350,8 +360,8 @@
       padding: 9px 10px;
       border: 1px solid transparent;
       background:
-        linear-gradient(rgba(25, 25, 25, .92), rgba(25, 25, 25, .92)) padding-box,
-        linear-gradient(135deg, rgba(255, 224, 194, .55), rgba(185, 138, 94, .18), rgba(255, 231, 207, .34)) border-box;
+        linear-gradient(rgba(17, 24, 44, .92), rgba(17, 24, 44, .92)) padding-box,
+        linear-gradient(135deg, rgba(146, 168, 255, .55), rgba(255, 77, 157, .18), rgba(207, 227, 255, .34)) border-box;
       box-shadow: 0 8px 24px rgba(0, 0, 0, .32);
       cursor: grab;
       white-space: normal;
@@ -361,9 +371,9 @@
     .arrow-label.callout:hover,
     .arrow-label.callout:hover {
       background:
-        linear-gradient(rgba(25, 25, 25, .92), rgba(25, 25, 25, .92)) padding-box,
-        linear-gradient(135deg, #ffe0c2, #b98a5e 46%, #ffe7cf) border-box;
-      box-shadow: 0 0 24px rgba(255, 224, 194, .16), 0 8px 24px rgba(0, 0, 0, .32);
+        linear-gradient(rgba(17, 24, 44, .92), rgba(17, 24, 44, .92)) padding-box,
+        linear-gradient(135deg, #ffd089, #21d4fd 46%, #cfe3ff) border-box;
+      box-shadow: 0 0 24px rgba(146, 168, 255, .16), 0 8px 24px rgba(0, 0, 0, .32);
     }
 
     .arrow-label.callout.dragging { cursor: grabbing; }
@@ -373,7 +383,7 @@
 
     .callout-link {
       fill: none;
-      stroke: rgba(255, 224, 194, .56);
+      stroke: rgba(146, 168, 255, .56);
       stroke-width: 1.4;
       stroke-dasharray: 5 5;
       pointer-events: none;
@@ -411,7 +421,7 @@
       grid-template-columns: repeat(4, max-content);
       gap: 10px 18px;
       z-index: 7;
-      background: rgba(25, 25, 25, .82);
+      background: rgba(17, 24, 44, .82);
       border: 1px solid var(--bd);
       border-radius: var(--radius);
       padding: 10px 12px;
@@ -450,8 +460,8 @@
       border: 1px solid transparent;
       border-radius: var(--radius);
       background:
-        linear-gradient(rgba(25, 25, 25, .90), rgba(25, 25, 25, .90)) padding-box,
-        linear-gradient(135deg, rgba(255, 224, 194, .50), rgba(185, 138, 94, .18), rgba(255, 231, 207, .28)) border-box;
+        linear-gradient(rgba(17, 24, 44, .90), rgba(17, 24, 44, .90)) padding-box,
+        linear-gradient(135deg, rgba(146, 168, 255, .50), rgba(255, 77, 157, .18), rgba(207, 227, 255, .28)) border-box;
       padding: 11px 12px;
       box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
       backdrop-filter: blur(10px);
@@ -460,9 +470,9 @@
 
     .explain:hover {
       background:
-        linear-gradient(rgba(25, 25, 25, .90), rgba(25, 25, 25, .90)) padding-box,
-        linear-gradient(135deg, #ffe0c2, #b98a5e 46%, #ffe7cf) border-box;
-      box-shadow: 0 0 26px rgba(255, 224, 194, .16), 0 8px 28px rgba(0, 0, 0, .35);
+        linear-gradient(rgba(17, 24, 44, .90), rgba(17, 24, 44, .90)) padding-box,
+        linear-gradient(135deg, #ffd089, #21d4fd 46%, #cfe3ff) border-box;
+      box-shadow: 0 0 26px rgba(146, 168, 255, .16), 0 8px 28px rgba(0, 0, 0, .35);
     }
 
     .explain h2 {
@@ -479,7 +489,7 @@
       padding: 0;
       list-style: none;
       font-size: 11.5px;
-      color: #cfc8be;
+      color: #aab4d4;
       line-height: 1.35;
     }
 
@@ -496,7 +506,7 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: rgba(255, 224, 194, .09);
+      background: rgba(146, 168, 255, .09);
       color: var(--ink);
       font-size: 11px;
     }
@@ -540,7 +550,7 @@
       gap: 5px;
     }
 
-    .note li { color: #cfc8be; }
+    .note li { color: #aab4d4; }
 
     .note.hidden { display: none; }
 
