@@ -210,7 +210,7 @@ insmod part_gpt / fat / chain
       </ul></div>
       <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>② Ansible Variables</h3><ul>
         <li>role 导入 Foreman,<b>勾 Override 才注入</b> play</li>
-        <li>⚠ 导入默认值会<b>陈旧</b>:`ib_interfaces` 在 Foreman 里还押着旧 IP(1.1.1.35/235),靠上层压过没出事 —— 改 defaults 后记得重导或清理</li>
+        <li>⚠ 导入默认值会<b>陈旧</b>(曾押旧 IP/失效 URL,2026-06-12 已全量对账修复 11 个)—— <b>改磁盘 defaults 后记得同步 Foreman 变量</b></li>
       </ul></div>
       <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>③ hostgroup 参数</h3><ul>
         <li><code>ansible_user=turing</code> · <code>ansible_become=true</code></li>
