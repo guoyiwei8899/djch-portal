@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foreman 装机流水线 · Rocky 9.7</title>
+<style>
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
+
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --vio2:#b07cff; --cyan:#21d4fd;
+  --blue:#38bdf8; --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b;
+  --grad:linear-gradient(100deg,#ff4d9d,#8b5cf6,#21d4fd);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(255,107,107,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(139,92,246,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(33,212,253,.07),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
+
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--red);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,77,157,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:780px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
+
+.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:18px 16px 70px}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
+  display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--cyan));box-shadow:0 0 8px var(--fc,var(--cyan))}
+.tab:hover{border-color:var(--fc,var(--cyan));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--cyan));color:var(--ink);
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 10%,var(--card));
+  box-shadow:0 0 18px color-mix(in srgb,var(--fc,var(--cyan)) 28%,transparent)}
+.steps{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;min-height:30px;
+  margin:10px auto 4px;max-width:1320px;font-size:12px;color:var(--muted)}
+.steps .st{display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(4px);transition:all .35s}
+.steps .st.in{opacity:1;transform:none}
+.steps .st i{font-style:normal;font-family:var(--mono);font-size:10px;width:17px;height:17px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 22%,transparent);color:var(--fc,var(--cyan));
+  border:1px solid color-mix(in srgb,var(--fc,var(--cyan)) 45%,transparent)}
+
+.dia{position:relative;background:rgba(6,9,20,.7);border:1px solid var(--bd);border-radius:16px;
+  padding:6px;margin-top:10px;overflow:hidden}
+.dia::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pink),var(--violet),var(--cyan),transparent);opacity:.8}
+svg{display:block;width:100%;height:auto}
+.node rect{fill:var(--card);stroke:var(--bd2);stroke-width:1}
+.node.grp>rect{fill:rgba(13,19,36,.5);stroke:var(--bd);stroke-dasharray:4 4}
+.node text{fill:var(--ink);font-family:'Poppins',sans-serif}
+.node .ttl{font-size:12.5px;font-weight:600}
+.node .sub{font-size:9.5px;fill:var(--muted);font-family:var(--mono)}
+.node .tag{font-size:9px;fill:var(--faint);font-family:var(--mono)}
+.node.dim{opacity:.30}
+.node.lit>rect{stroke:var(--fc);filter:drop-shadow(0 0 9px color-mix(in srgb,var(--fc) 55%,transparent))}
+.gt{font-family:var(--disp);font-size:11px;letter-spacing:.18em;fill:var(--faint)}
+.edge{fill:none;stroke:rgba(146,168,255,.18);stroke-width:1.6;transition:opacity .3s}
+.edge.lit{stroke-width:2;stroke-dasharray:7 5;animation:dash 1s linear infinite}
+.edge.dim{opacity:.15}
+@keyframes dash{to{stroke-dashoffset:-12}}
+.elabel{font-family:var(--mono);font-size:9.5px;fill:var(--muted);opacity:0;transition:opacity .3s}
+.elabel.lit{opacity:1}
+.pkt{opacity:0}
+.pkt.lit{opacity:1}
+
+.sec{margin-top:46px}
+.sec h2{font-family:var(--disp);font-size:20px;font-weight:600;text-align:center;
+  background:linear-gradient(100deg,#ff4d9d,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;margin:4px 0 18px;letter-spacing:.08em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:16px 17px;backdrop-filter:blur(10px);
+  position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ac,var(--cyan)),transparent);opacity:.7}
+.card h3{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ac,var(--cyan));margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--cyan));box-shadow:0 0 8px var(--ac,var(--cyan));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--cyan))}
+.card code,td code,pre code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);
+  padding:1px 6px;border-radius:5px;border:1px solid rgba(33,212,253,.18)}
+pre{background:rgba(6,9,20,.8);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;overflow-x:auto;
+  font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--muted)}
+pre b{color:var(--cyan);font-weight:400}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10.5px;text-align:left;color:var(--faint);letter-spacing:.08em;
+  padding:7px 10px;border-bottom:1px solid var(--bd2);text-transform:uppercase}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--muted);vertical-align:top}
+td b{color:var(--ink);font-weight:500}
+.tcard{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:6px 6px 2px;backdrop-filter:blur(10px);overflow-x:auto}
+footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="hero">
+  <div class="kick">/// foreman provisioning pipeline · ansible roles</div>
+  <h1>Foreman 装机流水线 · Rocky 9.7</h1>
+  <p>Build Host → PXE GRUB2 UEFI → Kickstart(Katello + IPA)→ Ansible Roles。两种启动 Ansible 的方式:build 后<b>原生 roles 自动触发</b> 与 <b>REX 单跑</b>,执行器同为 smart-proxy ansible-runner</p>
+  <div class="badges">
+    <span class="bdg">hostgroup <b>Rocky 9.7 Server</b>(id 1)</span>
+    <span class="bdg">PXE Loader <b>Grub2 UEFI</b></span>
+    <span class="bdg">模板 <b>id195 KS / id196 PXEGrub2</b></span>
+    <span class="bdg">自动触发 <b>post_provision 900s</b></span>
+    <span class="bdg">REX 用户 <b>turing</b></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="steps" id="steps"></div>
+  <div class="dia"><svg id="svg" viewBox="0 0 1640 730" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+  <!-- ════ 两种模式对比 ════ -->
+  <section class="sec">
+    <h2>两种启动 Ansible 的方式</h2>
+    <div class="sd">// 同一个执行器(smart-proxy ansible-runner),不同触发与变量入口</div>
+    <div class="tcard"><table>
+      <tr><th>维度</th><th>① Build → 原生 Roles(自动)</th><th>② REX 单跑(手动/定时)</th></tr>
+      <tr><td><b>触发</b></td><td>host <b>built 回调</b> → Ansible 插件在 <code>ansible_post_provision_timeout=900s</code> 窗口自动调度</td><td>UI「Run Job」/ <code>hammer job-invocation create</code> / 定时计划</td></tr>
+      <tr><td><b>Job 形态</b></td><td>名称「Run Ansible roles」· 类别 <b>Ansible Playbook</b>(插件按 hostgroup 绑定的 role 自动生成 playbook)</td><td>任意模板:Play Ansible roles / Ansible playbook / 命令(实例:<b>Daily non-kernel security 04:00</b>)</td></tr>
+      <tr><td><b>Role 来源</b></td><td>hostgroup「Rocky 9.7 Server」显式绑定 5 role(<b>meta 依赖不自动跑</b>,mlx5_ib 必须显式)</td><td>job 里现选 role / playbook / 命令,与 hostgroup 绑定无关</td></tr>
+      <tr><td><b>变量来源</b></td><td>四层优先级:defaults → Ansible Variables(Override)→ hostgroup 参数 → <b>host 参数</b></td><td>同左 + job 级 extra vars(临时覆盖)</td></tr>
+      <tr><td><b>典型用途</b></td><td>裸机纳管全自动(job#81:全新装机零编译实证)</td><td>调试重跑(06-08 那串 failed→succeeded)、日常安全更新、ad-hoc</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ PXE/GRUB 实物 ════ -->
+  <section class="sec">
+    <h2>PXE / GRUB2 实物取证</h2>
+    <div class="sd">// 2026-06-12 摄于 foreman.djch.one(192.168.6.15)</div>
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(420px,1fr))">
+      <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>Build 态 menuentry(模板 id196 渲染)</h3>
+<pre>menuentry 'Rocky Linux 9.7 Install' {
+  linux boot/<b>Rocky-9.7-x86_64-vmlinuz</b>
+    inst.repo=http://192.168.6.15:8080/rocky9-iso/Minimal
+    <b>inst.ks=&lt;foreman_url('provision')&gt;</b>
+    inst.stage2=http://192.168.6.15:8080/rocky9/ inst.noverifyssl
+  initrd boot/<b>Rocky-9.7-x86_64-initrd.img</b>
+}</pre>
+        <ul>
+          <li>TFTP 路径:<code>/var/lib/tftpboot/grub2/grub.cfg-01-&lt;mac&gt;</code>(MAC 冒号转横线)</li>
+          <li>内核/initrd 同放 <code>tftpboot/boot/</code>(Rocky-9.7 + aliyun 媒介两套)</li>
+        </ul>
+      </div>
+      <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>装完后同一文件翻转为本地启动</h3>
+<pre>set default=<b>local</b>
+set timeout=20
+insmod part_gpt / fat / chain
+# → chainload 本地 ESP,退出装机循环</pre>
+        <ul>
+          <li>未注册机器命中全局 <code>grub.cfg</code>:提示 + 600s 后 chainload 本地盘(防误装)</li>
+          <li>build 完成 ⇒ Foreman 重写 mac cfg ⇒ 重启不再进安装</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ Kickstart ════ -->
+  <section class="sec">
+    <h2>Kickstart(id195)关键段</h2>
+    <div class="sd">// 安装源直指 Katello pulp(官方 vault 钉 9.7,境内镜像残缺已踩坑)</div>
+    <div class="tcard"><table>
+      <tr><th>段</th><th>内容</th><th>意义</th></tr>
+      <tr><td><b>url / repo</b></td><td><code>pulp/content/.../Rocky_9_BaseOS</code> + AppStream + Extras</td><td>安装期即用 Katello 钉版内容,不碰公网</td></tr>
+      <tr><td><b>%packages</b></td><td><code>ipa-client</code> · <code>authselect</code> 等</td><td>入域工具随系统装好</td></tr>
+      <tr><td><b>%post · repo</b></td><td>写 5 个 katello repo(baseos/appstream/extras/crb/<b>epel</b>)并启用</td><td>开机即有完整钉版软件源</td></tr>
+      <tr><td><b>%post · 身份</b></td><td><code>ipa-client-install</code> → <code>authselect sssd with-mkhomedir with-sudo</code></td><td>FreeIPA 入域;<b>with-sudo 是 svc 账号免密 sudo 的前提</b></td></tr>
+      <tr><td><b>收尾</b></td><td><code>reboot</code> + built 回调</td><td>交棒给 Ansible 阶段(选项卡②)</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ 变量优先级 ════ -->
+  <section class="sec">
+    <h2>变量四层优先级(原生 roles 模式)</h2>
+    <div class="sd">// 后者覆盖前者 · 选项卡④有动画走向</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--faint)"><h3><span class="ic"></span>① role defaults(打底)</h3><ul>
+        <li>磁盘 <code>/etc/ansible/roles → /opt/ansible</code> 软链</li>
+        <li>例:<code>lustre_prebuilt_rpm_url</code> 默认已指 Katello 预编译仓</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>② Ansible Variables</h3><ul>
+        <li>role 导入 Foreman,<b>勾 Override 才注入</b> play</li>
+        <li>⚠ 导入默认值会<b>陈旧</b>:`ib_interfaces` 在 Foreman 里还押着旧 IP(1.1.1.35/235),靠上层压过没出事 —— 改 defaults 后记得重导或清理</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>③ hostgroup 参数</h3><ul>
+        <li><code>ansible_user=turing</code> · <code>ansible_become=true</code></li>
+        <li><code>ansible_ssh_private_key_file</code> = foreman-proxy 专用 key</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--pink)"><h3><span class="ic"></span>④ host 参数(最高)</h3><ul>
+        <li>每台机个性化:<code>ib_interfaces</code>(yaml 型)定 IB IP</li>
+        <li>实例:lustre04 → <code>ib0 = 1.1.1.38/24</code>(NID 1.1.1.38@o2ib)</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>portal.djch.one · foreman provisioning pipeline · 事实实查 2026-06-12(hammer/TFTP/模板 dump)</footer>
+</main>
+
+<script>
+const C={pink:'#ff4d9d',violet:'#8b5cf6',vio2:'#b07cff',cyan:'#21d4fd',blue:'#38bdf8',green:'#2fe39a',amber:'#ffb224',red:'#ff6b6b',faint:'#69749b'};
+
+const NODES=[
+  // 入口
+  {id:'aidc',x:20,y:96,w:280,h:70,title:'AIDC Portal',sub:'push_to_foreman · build=true',tag:'装完 webhook 回写状态'},
+  {id:'ui',x:20,y:206,w:280,h:66,title:'Foreman UI / hammer',sub:'手动 Build · Run Job'},
+  {id:'sched',x:20,y:312,w:280,h:70,title:'定时计划(REX recurring)',sub:'Daily non-kernel security · 04:00',tag:'纯 REX,与 build 无关'},
+  // Foreman
+  {id:'fgrp',x:360,y:46,w:420,h:524,grp:1,title:'FOREMAN · 192.168.6.15',sub:'Katello · Smart Proxy · Ansible 插件'},
+  {id:'host',x:382,y:96,w:376,h:66,title:'Host 对象',sub:'hostgroup: Rocky 9.7 Server · build=true',tag:'PXE Loader: Grub2 UEFI'},
+  {id:'tftp',x:382,y:192,w:376,h:66,title:'TFTP / PXE',sub:'grub2/grub.cfg-01-<mac>',tag:'内核: boot/Rocky-9.7-x86_64-vmlinuz'},
+  {id:'ks',x:382,y:288,w:376,h:64,title:'装机模板',sub:'PXEGrub2(id196) · Kickstart Base(id195)',tag:"foreman_url('provision') 动态渲染"},
+  {id:'plugin',x:382,y:382,w:376,h:60,title:'Ansible 插件',sub:'built 回调 → 自动派「Run Ansible roles」',tag:'post_provision_timeout = 900s'},
+  {id:'rex',x:382,y:480,w:376,h:72,title:'REX · smart-proxy 执行器',sub:'ansible-runner · ssh turing + proxy key',tag:'connect_by_ip=true(避 IPv6 断连)'},
+  // 目标机
+  {id:'tgrp',x:840,y:46,w:360,h:524,grp:1,title:'目标机(裸机 → 服务器)',sub:'Rocky 9.7 · UEFI'},
+  {id:'fw',x:862,y:96,w:316,h:62,title:'UEFI 固件 PXE',sub:'DHCP next-server → TFTP 拉 grub.cfg'},
+  {id:'ana',x:862,y:192,w:316,h:66,title:'Anaconda 安装',sub:'inst.ks · BaseOS = Katello pulp 钉 9.7',tag:'inst.stage2 = :8080/rocky9'},
+  {id:'post',x:862,y:292,w:316,h:78,title:'%post',sub:'5×katello repo · ipa-client-install',tag:'authselect sssd with-sudo → reboot'},
+  {id:'roles',x:862,y:440,w:316,h:96,title:'play 5 roles(顺序)',sub:'kernel_tuning → doca → lustre_server',tag:'→ mlx5_ib → zabbix_client(显式绑定)'},
+  // 结果
+  {id:'built',x:1280,y:120,w:320,h:70,title:'built 回调',sub:'退出 build 模式 · grub 翻转 default=local'},
+  {id:'hook',x:1280,y:252,w:320,h:66,title:'after_build webhook',sub:'→ AIDC 标 active → push_to_zabbix'},
+  {id:'report',x:1280,y:470,w:320,h:64,title:'Config Report',sub:'Ansible 执行报告回传 Foreman'},
+  // 变量阶梯
+  {id:'defs',x:20,y:636,w:330,h:72,title:'① role defaults',sub:'/etc/ansible/roles → /opt/ansible 软链',tag:'磁盘 defaults/main.yml'},
+  {id:'avars',x:420,y:636,w:340,h:72,title:'② Ansible Variables',sub:'导入 Foreman · 勾 Override 才注入',tag:'⚠ 导入默认值会陈旧'},
+  {id:'hgp',x:830,y:636,w:330,h:72,title:'③ hostgroup 参数',sub:'ansible_user=turing · become=true',tag:'连接类参数'},
+  {id:'hp',x:1230,y:636,w:370,h:72,title:'④ host 参数(最高优先)',sub:'ib_interfaces(yaml)→ 每台机 IB IP',tag:'lustre04: ib0=1.1.1.38/24'},
+];
+
+const EDGES=[
+  {id:'a1',f:'aidc',t:'host',lbl:'POST /hosts'},
+  {id:'a2',f:'ui',t:'host',lbl:'点 Build'},
+  {id:'a3',f:'host',t:'tftp',v:1,lbl:'生成 mac cfg'},
+  {id:'a4',f:'tftp',t:'fw',lbl:'grub.cfg + 内核'},
+  {id:'a5',f:'ks',t:'ana',lbl:'inst.ks 渲染'},
+  {id:'a6',f:'ana',t:'post',v:1},
+  {id:'a7',f:'post',t:'built',lbl:'装完 reboot'},
+  {id:'b1',f:'built',t:'plugin',lbl:'900s 窗口自动触发',curve:120},
+  {id:'b2',f:'plugin',t:'rex',v:1,lbl:'调度 job'},
+  {id:'b3',f:'rex',t:'roles',lbl:'ssh turing 执行'},
+  {id:'b4',f:'roles',t:'report',lbl:'报告'},
+  {id:'b5',f:'built',t:'hook',v:1,lbl:'webhook'},
+  {id:'c1',f:'ui',t:'rex',lbl:'Run Job(手动)',curve:130},
+  {id:'c2',f:'sched',t:'rex',lbl:'定时触发',curve:60},
+  {id:'v1',f:'defs',t:'avars',lbl:'被覆盖 →'},
+  {id:'v2',f:'avars',t:'hgp',lbl:'被覆盖 →'},
+  {id:'v3',f:'hgp',t:'hp',lbl:'被覆盖 →'},
+  {id:'v4',f:'hp',t:'rex',lbl:'注入 play',curve:-40},
+];
+
+const FLOWS=[
+  {name:'① Build 装机流',color:C.cyan,
+   edges:['a1','a2','a3','a4','a5','a6','a7','b5'],
+   nodes:['aidc','ui','fgrp','host','tftp','ks','tgrp','fw','ana','post','built','hook'],
+   steps:['UI / AIDC 置 build=true','TFTP 生成 grub.cfg-01-<mac>','GRUB2 UEFI 拉内核 + inst.ks','Anaconda 从 Katello 装 Rocky 9.7','%post: 5 repo + IPA 入域 + with-sudo','reboot → built 回调 · webhook 通知 AIDC']},
+  {name:'② 原生 Roles 自动触发',color:C.green,
+   edges:['b1','b2','b3','b4'],
+   nodes:['built','fgrp','plugin','rex','tgrp','roles','report'],
+   steps:['built 回调进入 900s 窗口','自动派「Run Ansible roles」(类别 Ansible Playbook)','smart-proxy ansible-runner · ssh turing','hostgroup 绑定的 5 role 顺序执行','Config Report 回传(job#81 零编译实证)']},
+  {name:'③ REX 单跑(手动/定时)',color:C.amber,
+   edges:['c1','c2','b3','b4'],
+   nodes:['ui','sched','fgrp','rex','tgrp','roles','report'],
+   steps:['UI/hammer 选 job 模板,或定时计划到点','直接进 REX 队列(不依赖 build)','同一执行器跑 roles / playbook / 命令','调试重跑、日常安全更新都走这条']},
+  {name:'④ 变量优先级流',color:C.pink,
+   edges:['v1','v2','v3','v4','b3'],
+   nodes:['defs','avars','hgp','hp','fgrp','rex','tgrp','roles'],
+   steps:['磁盘 role defaults 打底','Ansible Variables 勾 Override 才生效(防陈旧)','hostgroup 参数(连接类)','host 参数压轴:ib_interfaces 定 IB IP','合成最终变量注入 play']},
+];
+
+const svg=document.getElementById('svg');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},parent=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);parent.appendChild(e);return e;};
+const byId={};NODES.forEach(n=>byId[n.id]=n);
+
+const edgeEls={},pktEls={},lblEls={};
+function anchors(e){
+  const a=byId[e.f],b=byId[e.t];
+  if(e.v){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
+  }
+  const fwd=b.x+b.w/2>a.x+a.w/2;
+  return fwd?[a.x+a.w,a.y+a.h/2,b.x,b.y+b.h/2,'h']:[a.x,a.y+a.h/2,b.x+b.w,b.y+b.h/2,'h'];
+}
+EDGES.forEach(e=>{
+  const[x1,y1,x2,y2,dir]=anchors(e);
+  let d;
+  if(dir==='v'){d=`M${x1},${y1} C${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`;}
+  else{
+    const c=e.curve||0,mx=(x1+x2)/2;
+    d=c?`M${x1},${y1} C${mx},${y1+c} ${mx},${y2+c} ${x2},${y2}`
+       :`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  }
+  edgeEls[e.id]=el('path',{d,class:'edge',id:'p-'+e.id});
+  const pk=el('circle',{r:3.4,class:'pkt'});
+  const mo=el('animateMotion',{dur:'1.5s',repeatCount:'indefinite'},pk);
+  el('mpath',{href:'#p-'+e.id},mo);
+  pktEls[e.id]=pk;
+  if(e.lbl){
+    const midx=(x1+x2)/2,midy=(y1+y2)/2+(dir==='h'&&e.curve?e.curve*0.72:0)-6;
+    const t=el('text',{x:midx,y:midy,class:'elabel','text-anchor':'middle'});
+    t.textContent=e.lbl;lblEls[e.id]=t;
+  }
+});
+
+const nodeEls={};
+NODES.forEach(n=>{
+  const g=el('g',{class:'node'+(n.grp?' grp':'')});
+  el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:10},g);
+  if(n.grp){
+    const t=el('text',{x:n.x+14,y:n.y+24,class:'gt'},g);t.textContent=n.title.toUpperCase();
+    const s=el('text',{x:n.x+14,y:n.y+41,class:'sub'},g);s.textContent=n.sub;
+  }else{
+    const t=el('text',{x:n.x+14,y:n.y+23,class:'ttl'},g);t.textContent=n.title;
+    const s=el('text',{x:n.x+14,y:n.y+40,class:'sub'},g);s.textContent=n.sub;
+    if(n.tag){const k=el('text',{x:n.x+14,y:n.y+56,class:'tag'},g);k.textContent=n.tag;}
+  }
+  nodeEls[n.id]=g;
+});
+
+const tabsBox=document.getElementById('tabs'),stepsBox=document.getElementById('steps');
+FLOWS.forEach((f,i)=>{
+  const b=document.createElement('button');
+  b.className='tab';b.style.setProperty('--fc',f.color);
+  b.innerHTML='<span class="dot"></span>'+f.name;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  const f=FLOWS[i];
+  document.documentElement.style.setProperty('--fc',f.color);
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  EDGES.forEach(e=>{
+    const on=f.edges.includes(e.id);
+    edgeEls[e.id].setAttribute('class','edge'+(on?' lit':' dim'));
+    edgeEls[e.id].style.stroke=on?f.color:'';
+    edgeEls[e.id].style.filter=on?`drop-shadow(0 0 5px ${f.color})`:'';
+    pktEls[e.id].setAttribute('class','pkt'+(on?' lit':''));
+    pktEls[e.id].setAttribute('fill',f.color);
+    if(lblEls[e.id]){lblEls[e.id].setAttribute('class','elabel'+(on?' lit':''));lblEls[e.id].style.fill=on?f.color:'';}
+  });
+  f.edges.forEach((id,k)=>{
+    const mo=pktEls[id].querySelector('animateMotion');
+    mo.setAttribute('begin',(k*0.2)+'s');
+    const node=pktEls[id];node.remove();svg.appendChild(node);
+  });
+  NODES.forEach(n=>{
+    const on=f.nodes.includes(n.id);
+    nodeEls[n.id].setAttribute('class','node'+(n.grp?' grp':'')+(on?' lit':' dim'));
+    nodeEls[n.id].style.setProperty('--fc',f.color);
+  });
+  stepsBox.innerHTML='';
+  stepsBox.style.setProperty('--fc',f.color);
+  f.steps.forEach((s,k)=>{
+    const d=document.createElement('span');
+    d.className='st';d.innerHTML='<i>'+(k+1)+'</i>'+s;
+    stepsBox.appendChild(d);
+    setTimeout(()=>d.classList.add('in'),110*k+60);
+  });
+}
+activate(0);
+</script>
+</body>
+</html>

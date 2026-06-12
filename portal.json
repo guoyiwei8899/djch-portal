@@ -13,6 +13,12 @@
   },
   "viz": [
     {
+      "domain": "ansible", "icon": "terminal",
+      "title": "Foreman Build Pipeline · Rocky 9.7",
+      "desc": "Build → PXE GRUB2 → Kickstart → Ansible roles: native auto-play vs REX, variable precedence",
+      "path": "viz/foreman-build.html"
+    },
+    {
       "domain": "network", "icon": "globe",
       "title": "Transparent Proxy Flow",
       "desc": "DNS / direct / proxy / RouterOS split-routing data path",
