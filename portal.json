@@ -60,6 +60,12 @@
       "title": "BMC / BIOS Firmware Pipeline",
       "desc": "Redfish firmware inventory, PVC library and vendor-dispatched BMC/BIOS upgrade state machine",
       "path": "viz/bmc-firmware-arch.html"
+    },
+    {
+      "domain": "aidc", "icon": "layers",
+      "title": "AIDC Rack 机柜视图",
+      "desc": "/racks/{id}/detail aggregates occupants + PDU + health into SVG 28px/U front/rear elevation, status lamps, hover metrics, APC outlet power control",
+      "path": "viz/aidc-rack-arch.html"
     }
   ],
   "system": [
