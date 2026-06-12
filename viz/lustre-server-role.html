@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lustre Server Role 解剖</title>
+<style>
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
+
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --vio2:#b07cff; --cyan:#21d4fd;
+  --blue:#38bdf8; --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b;
+  --grad:linear-gradient(100deg,#ff4d9d,#8b5cf6,#21d4fd);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(255,107,107,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(139,92,246,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(33,212,253,.07),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
+
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--red);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,77,157,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:780px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
+
+.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:18px 16px 70px}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
+  display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--cyan));box-shadow:0 0 8px var(--fc,var(--cyan))}
+.tab:hover{border-color:var(--fc,var(--cyan));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--cyan));color:var(--ink);
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 10%,var(--card));
+  box-shadow:0 0 18px color-mix(in srgb,var(--fc,var(--cyan)) 28%,transparent)}
+.steps{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;min-height:30px;
+  margin:10px auto 4px;max-width:1320px;font-size:12px;color:var(--muted)}
+.steps .st{display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(4px);transition:all .35s}
+.steps .st.in{opacity:1;transform:none}
+.steps .st i{font-style:normal;font-family:var(--mono);font-size:10px;width:17px;height:17px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 22%,transparent);color:var(--fc,var(--cyan));
+  border:1px solid color-mix(in srgb,var(--fc,var(--cyan)) 45%,transparent)}
+
+.dia{position:relative;background:rgba(6,9,20,.7);border:1px solid var(--bd);border-radius:16px;
+  padding:6px;margin-top:10px;overflow:hidden}
+.dia::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pink),var(--violet),var(--cyan),transparent);opacity:.8}
+svg{display:block;width:100%;height:auto}
+.node rect{fill:var(--card);stroke:var(--bd2);stroke-width:1}
+.node.grp>rect{fill:rgba(13,19,36,.5);stroke:var(--bd);stroke-dasharray:4 4}
+.node text{fill:var(--ink);font-family:'Poppins',sans-serif}
+.node .ttl{font-size:12.5px;font-weight:600}
+.node .sub{font-size:9.5px;fill:var(--muted);font-family:var(--mono)}
+.node .tag{font-size:9px;fill:var(--faint);font-family:var(--mono)}
+.node.dim{opacity:.30}
+.node.lit>rect{stroke:var(--fc);filter:drop-shadow(0 0 9px color-mix(in srgb,var(--fc) 55%,transparent))}
+.gt{font-family:var(--disp);font-size:11px;letter-spacing:.18em;fill:var(--faint)}
+.edge{fill:none;stroke:rgba(146,168,255,.18);stroke-width:1.6;transition:opacity .3s}
+.edge.lit{stroke-width:2;stroke-dasharray:7 5;animation:dash 1s linear infinite}
+.edge.dim{opacity:.15}
+@keyframes dash{to{stroke-dashoffset:-12}}
+.elabel{font-family:var(--mono);font-size:9.5px;fill:var(--muted);opacity:0;transition:opacity .3s}
+.elabel.lit{opacity:1}
+.pkt{opacity:0}
+.pkt.lit{opacity:1}
+
+.sec{margin-top:46px}
+.sec h2{font-family:var(--disp);font-size:20px;font-weight:600;text-align:center;
+  background:linear-gradient(100deg,#ff4d9d,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;margin:4px 0 18px;letter-spacing:.08em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:16px 17px;backdrop-filter:blur(10px);
+  position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ac,var(--cyan)),transparent);opacity:.7}
+.card h3{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ac,var(--cyan));margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--cyan));box-shadow:0 0 8px var(--ac,var(--cyan));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--cyan))}
+.card code,td code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);
+  padding:1px 6px;border-radius:5px;border:1px solid rgba(33,212,253,.18)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10.5px;text-align:left;color:var(--faint);letter-spacing:.08em;
+  padding:7px 10px;border-bottom:1px solid var(--bd2);text-transform:uppercase}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--muted);vertical-align:top}
+td b{color:var(--ink);font-weight:500}
+.tcard{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:6px 6px 2px;backdrop-filter:blur(10px);overflow-x:auto}
+footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="hero">
+  <div class="kick">/// ansible role anatomy · lustre server</div>
+  <h1>Lustre Server Role 解剖 · Rocky 9.7</h1>
+  <p>hostgroup「Rocky 9.7 Server」的 5 role 顺序执行;lustre_server 内部 7 阶段;<b>预编译 vs DKMS 分流</b>;换内核(CVE)的成对受控升级。终态:<code style="font-family:var(--mono)">dkms status</code> 为空 = 零编译(job#81 实证)</p>
+  <div class="badges">
+    <span class="bdg">Lustre <b>2.17.0</b>(28 .ko 预编译)</span>
+    <span class="bdg">DOCA OFED <b>26.01</b>(25 .ko · Provides 6×-dkms)</span>
+    <span class="bdg">versionlock <b>5.14.0-611.55.1.el9_7</b></span>
+    <span class="bdg">仅 <b>1 次</b> reboot(DOCA)</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="steps" id="steps"></div>
+  <div class="dia"><svg id="svg" viewBox="0 0 1640 690" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+  <!-- ════ role 速查 ════ -->
+  <section class="sec">
+    <h2>5 Role 速查</h2>
+    <div class="sd">// roles/ 源码核读 · meta 依赖 Foreman 不自动跑,全部显式绑定 hostgroup</div>
+    <div class="tcard"><table>
+      <tr><th>#</th><th>Role</th><th>干什么</th><th>关键变量</th><th>重启</th></tr>
+      <tr><td>1</td><td><b>kernel_tuning</b></td><td>15 条 sysctl(TCP buffer/拥塞控制)· NUMA hugepage · 禁 THP · 禁 IPv6</td><td><code>hugepages_ratio=0.10</code> <code>thp_disable=true</code></td><td>随 doca</td></tr>
+      <tr><td>2</td><td><b>doca</b></td><td>doca-host release 仓 → <b>预编译 OFED kmod</b> → doca-ofed 用户态 → blacklist in-tree RDMA → dracut</td><td><code>doca_prebuilt_rpm_url</code>(空=DKMS)</td><td><b>✅ 唯一一次</b></td></tr>
+      <tr><td>3</td><td><b>mlx5_ib</b></td><td>扫 PCI → udev 75-mlx5-ib.rules 命名 ib0/ib1(<b>在线改名免重启</b>)→ NUMA IRQ 绑定 service</td><td><code>ib_udev_rules=[]</code>(空=自动探测)</td><td>❌</td></tr>
+      <tr><td>4</td><td><b>lustre_server</b></td><td>7 阶段(见下方选项卡③)</td><td><code>lustre_prebuilt_rpm_url</code> · <code>ib_interfaces</code>(host 参数)</td><td>❌</td></tr>
+      <tr><td>5</td><td><b>zabbix_client</b></td><td>agent active + <code>aidc.hw.snapshot</code> 采集套件(联动 AIDC 硬件页)</td><td><code>zabbix_server_ip=192.168.6.13</code></td><td>❌</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ 预编译产物 ════ -->
+  <section class="sec">
+    <h2>预编译产物 / Katello 仓</h2>
+    <div class="sd">// 全在 foreman pulp,装机不出内网 · vermagic 与 versionlock 成对</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>lustre-server-modules-2.17.0</h3><ul>
+        <li><b>28 个 .ko</b>(含 osd_ldiskfs),vermagic 钉 <code>5.14.0-611.55.1.el9_7</code></li>
+        <li>仓:<code>Lustre_HPC/Rocky9.7_lustre_server</code>(id 74)</li>
+        <li>装法:<code>rpm -ivh --replacepkgs</code> → <code>depmod -a</code>,不装 dkms</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--vio2)"><h3><span class="ic"></span>doca-ofed-modules-26.01</h3><ul>
+        <li><b>25 个 .ko</b>,<b>Provides 6 个 -dkms 包名</b> → <code>dnf install doca-ofed</code> 只装用户态、不触发编译</li>
+        <li>仓:<code>NVIDIA_DOCA/Rocky9.7_doca</code>(id 79)</li>
+        <li>暴露过的坑:e2fsprogs 要用 <code>dnf</code> 装(解 info 依赖)、验证改查 osd_ldiskfs.ko(预编译没有 dkms)</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>Rocky_9_BaseOS_Debug(id 73)</h3><ul>
+        <li><b>仅 DKMS 路径需要</b>:osd-ldiskfs 编译要 kernel-debuginfo(ext4 源)</li>
+        <li>钉死 el9_7 —— 用 stock 9.8 debuginfo 会导致 ldiskfs 不编(踩过)</li>
+        <li>预编译路径完全不碰它</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- ════ 调优与铁律 ════ -->
+  <section class="sec">
+    <h2>LNet / ko2iblnd 与验证清单</h2>
+    <div class="sd">// role 模板下发 /etc/lnet.conf + modprobe.d/ko2iblnd.conf</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>服务端 ko2iblnd 调优(role 下发)</h3><ul>
+        <li><code>credits=4096</code> · <code>ntx=4096</code> · <code>concurrent_sends=256</code> · <code>conns_per_peer=2</code>(ConnectX-5 100G)</li>
+        <li>handler「reload ko2iblnd」只在参数实际变化时智能 rmmod+modprobe</li>
+        <li>⚠ 铁律:<b>client 侧 LNET/ko2iblnd 保持默认</b>(peer_credits=32),乱调会触发 recovery storm;改前必读 lustre_poc_tuning 手册</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>jobstats(MGS 专属阶段)</h3><ul>
+        <li><code>lctl set_param -P jobid_var=procname_uid</code> 写 MGS llog,全 OST/MDT 下发</li>
+        <li>重启不丢(非持久值丢失正是 Grafana jobstats 没数据的老根因)</li>
+        <li>幂等:非 MGS / 未挂载阶段自动跳过</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--pink)"><h3><span class="ic"></span>装完验证清单</h3><ul>
+        <li><code>dkms status</code> → <b>空</b>(零编译)</li>
+        <li><code>lsmod | grep osd_ldiskfs</code> → 就位</li>
+        <li><code>lctl list_nids</code> → 如 <code>1.1.1.38@o2ib</code></li>
+        <li><code>ofed_info -s</code> → DOCA 26.01;<code>dnf versionlock list</code> → kernel×4 锁定</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>portal.djch.one · lustre server role anatomy · 源码核读 + job#81 装机实证 · 2026-06-12</footer>
+</main>
+
+<script>
+const C={pink:'#ff4d9d',violet:'#8b5cf6',vio2:'#b07cff',cyan:'#21d4fd',blue:'#38bdf8',green:'#2fe39a',amber:'#ffb224',red:'#ff6b6b'};
+
+const NODES=[
+  // row1: 5 roles
+  {id:'rgrp',x:10,y:40,w:1620,h:152,grp:1,title:'hostgroup「Rocky 9.7 Server」· play 顺序',sub:'Run Ansible roles(原生自动 / REX 单跑均走此序)'},
+  {id:'r1',x:28,y:88,w:288,h:84,title:'1 · kernel_tuning',sub:'sysctl×15 · hugepage · 禁THP/IPv6',tag:'hugepages_ratio=0.10'},
+  {id:'r2',x:352,y:88,w:288,h:84,title:'2 · doca',sub:'预编译 OFED 25.ko · blacklist · dracut',tag:'唯一一次 reboot ⟳'},
+  {id:'r3',x:676,y:88,w:288,h:84,title:'3 · mlx5_ib',sub:'PCI 扫描 → udev 命名 ib0/ib1(在线)',tag:'NUMA IRQ 绑定 service'},
+  {id:'r4',x:1000,y:88,w:288,h:84,title:'4 · lustre_server',sub:'7 阶段 → 见选项卡③',tag:'meta 依赖 mlx5_ib(Foreman 须显式)'},
+  {id:'r5',x:1324,y:88,w:288,h:84,title:'5 · zabbix_client',sub:'agent active + aidc.hw.snapshot',tag:'联动 AIDC 硬件页'},
+  // row2: lustre_server 7 stages
+  {id:'lgrp',x:10,y:228,w:1620,h:142,grp:1,title:'lustre_server 内部 7 阶段',sub:'tasks/main.yml 七个 import_tasks · 按 tag 可分步跑'},
+  {id:'l1',x:26,y:278,w:208,h:74,title:'security',sub:'关 firewalld · 禁 SELinux'},
+  {id:'l2',x:256,y:278,w:208,h:74,title:'kernel_lock',sub:'versionlock kernel×4',tag:'钉 611.55'},
+  {id:'l3',x:486,y:278,w:208,h:74,title:'e2fsprogs',sub:'Whamcloud 1.47.3.wc2',tag:'ldiskfs 必备'},
+  {id:'l4',x:716,y:278,w:208,h:74,title:'kmod 安装',sub:'预编译 / DKMS 分流',tag:'→ 选项卡②'},
+  {id:'l5',x:946,y:278,w:208,h:74,title:'ib_network',sub:'IPoIB 静态 IP(nmcli)',tag:'host 参数 ib_interfaces'},
+  {id:'l6',x:1176,y:278,w:208,h:74,title:'lnet',sub:'lnet.conf + ko2iblnd 调优',tag:'o2ib · systemd lnet'},
+  {id:'l7',x:1406,y:278,w:208,h:74,title:'jobstats',sub:'MGS 持久化 jobid_var',tag:'仅 MGS 执行'},
+  // row3: 分流 + 升级
+  {id:'q',x:26,y:430,w:330,h:84,title:'分流判断',sub:'*_prebuilt_rpm_url 有值?',tag:'defaults 已指 Katello 预编译仓'},
+  {id:'pre',x:440,y:412,w:430,h:84,title:'预编译路径(Rocky server)',sub:'kmod RPM(28+25 .ko)→ rpm -ivh → depmod',tag:'dkms status 空 = 零编译 · job#81 实证'},
+  {id:'dk',x:440,y:546,w:430,h:84,title:'DKMS 路径(URL 为空时)',sub:'kernel-devel + debuginfo(仓 id73 钉 9.7)',tag:'dkms build ~20min · Ubuntu client 走这条'},
+  {id:'kat',x:956,y:412,w:300,h:84,title:'Katello 预编译仓',sub:'Rocky9.7_lustre_server(id74)',tag:'NVIDIA_DOCA/Rocky9.7_doca(id79)'},
+  {id:'ver',x:956,y:546,w:300,h:84,title:'versionlock',sub:'钉 kernel 5.14.0-611.55.1.el9_7',tag:'内核与模块 vermagic 成对'},
+  {id:'bm',x:1330,y:412,w:286,h:84,title:'build 机重编(CVE 时)',sub:'新内核 → 重编 28+25 .ko',tag:'重打两个 kmod RPM'},
+  {id:'rr',x:1330,y:546,w:286,h:84,title:'滚动重启',sub:'内核 + 模块成对受控升级',tag:'client 侧 DKMS 自动跟'},
+];
+
+const EDGES=[
+  {id:'s1',f:'r1',t:'r2'},{id:'s2',f:'r2',t:'r3'},{id:'s3',f:'r3',t:'r4'},{id:'s4',f:'r4',t:'r5'},
+  {id:'z',f:'r4',t:'l1',lbl:'展开',curve:40},
+  {id:'k1',f:'l1',t:'l2'},{id:'k2',f:'l2',t:'l3'},{id:'k3',f:'l3',t:'l4'},
+  {id:'k4',f:'l4',t:'l5'},{id:'k5',f:'l5',t:'l6'},{id:'k6',f:'l6',t:'l7'},
+  {id:'q0',f:'l4',t:'q',lbl:'装 kmod 时判断',curve:40},
+  {id:'q1',f:'q',t:'pre',lbl:'有值 → 预编译'},
+  {id:'q2',f:'q',t:'dk',lbl:'空 → DKMS 现编',curve:40},
+  {id:'q3',f:'kat',t:'pre',lbl:'下发 kmod RPM'},
+  {id:'q4',f:'pre',t:'ver',v:1,lbl:'vermagic 匹配'},
+  {id:'u1',f:'bm',t:'kat',lbl:'传新 RPM'},
+  {id:'u2',f:'kat',t:'q',lbl:'改 role 两 URL',curve:-60},
+  {id:'u3',f:'q',t:'ver',lbl:'更新锁',curve:80},
+  {id:'u4',f:'ver',t:'rr',lbl:'滚动重启'},
+];
+
+const FLOWS=[
+  {name:'① 5 Role 顺序流',color:C.cyan,
+   edges:['s1','s2','s3','s4'],
+   nodes:['rgrp','r1','r2','r3','r4','r5'],
+   steps:['kernel_tuning: sysctl/hugepage/THP','doca: 预编译 OFED → dracut → 唯一一次 reboot','mlx5_ib: 在线命名 ib0/ib1 + IRQ 绑定','lustre_server: 7 阶段','zabbix_client: 监控接入']},
+  {name:'② 预编译 vs DKMS 分流',color:C.amber,
+   edges:['q0','q1','q2','q3','q4'],
+   nodes:['l4','q','pre','dk','kat','ver','lgrp'],
+   steps:['装 kmod 时检查 *_prebuilt_rpm_url','有值:从 Katello 拉 kmod RPM 直装(零编译)','为空:kernel-devel+debuginfo → dkms build ~20min','预编译以 versionlock 钉内核保 vermagic 匹配']},
+  {name:'③ lustre_server 7 阶段',color:C.vio2,
+   edges:['z','k1','k2','k3','k4','k5','k6'],
+   nodes:['r4','lgrp','l1','l2','l3','l4','l5','l6','l7'],
+   steps:['关 firewalld/SELinux','versionlock 钉 611.55','Whamcloud e2fsprogs','装 lustre kmod(分流见②)','IPoIB 静态 IP(host 参数)','lnet/o2ib + ko2iblnd','MGS 持久化 jobstats']},
+  {name:'④ 换内核(CVE)流程',color:C.pink,
+   edges:['u1','u2','u3','u4'],
+   nodes:['bm','kat','q','ver','rr'],
+   steps:['build 机装新内核重编 28+25 个 .ko','重打两个 kmod RPM 传 Katello(id74/79)','改 role 两个 URL + 更新 versionlock','滚动重启:内核+模块成对升级,client DKMS 自动跟']},
+];
+
+const svg=document.getElementById('svg');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},parent=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);parent.appendChild(e);return e;};
+const byId={};NODES.forEach(n=>byId[n.id]=n);
+
+const edgeEls={},pktEls={},lblEls={};
+function anchors(e){
+  const a=byId[e.f],b=byId[e.t];
+  if(e.v){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
+  }
+  // cross-row: if vertical separation大,用对角
+  const fwd=b.x+b.w/2>a.x+a.w/2;
+  const dy=Math.abs((a.y+a.h/2)-(b.y+b.h/2));
+  if(dy>60&&Math.abs(a.x-b.x)>40){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
+  }
+  return fwd?[a.x+a.w,a.y+a.h/2,b.x,b.y+b.h/2,'h']:[a.x,a.y+a.h/2,b.x+b.w,b.y+b.h/2,'h'];
+}
+EDGES.forEach(e=>{
+  const[x1,y1,x2,y2,dir]=anchors(e);
+  let d;
+  if(dir==='v'){const c=e.curve||0;d=`M${x1},${y1} C${x1+c},${(y1+y2)/2} ${x2+c},${(y1+y2)/2} ${x2},${y2}`;}
+  else{
+    const c=e.curve||0,mx=(x1+x2)/2;
+    d=c?`M${x1},${y1} C${mx},${y1+c} ${mx},${y2+c} ${x2},${y2}`
+       :`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  }
+  edgeEls[e.id]=el('path',{d,class:'edge',id:'p-'+e.id});
+  const pk=el('circle',{r:3.4,class:'pkt'});
+  const mo=el('animateMotion',{dur:'1.5s',repeatCount:'indefinite'},pk);
+  el('mpath',{href:'#p-'+e.id},mo);
+  pktEls[e.id]=pk;
+  if(e.lbl){
+    const midx=(x1+x2)/2,midy=(y1+y2)/2+(dir==='h'&&e.curve?e.curve*0.72:0)-6;
+    const t=el('text',{x:midx,y:midy,class:'elabel','text-anchor':'middle'});
+    t.textContent=e.lbl;lblEls[e.id]=t;
+  }
+});
+
+const nodeEls={};
+NODES.forEach(n=>{
+  const g=el('g',{class:'node'+(n.grp?' grp':'')});
+  el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:10},g);
+  if(n.grp){
+    const t=el('text',{x:n.x+14,y:n.y+24,class:'gt'},g);t.textContent=n.title.toUpperCase();
+    const s=el('text',{x:n.x+14,y:n.y+41,class:'sub'},g);s.textContent=n.sub;
+  }else{
+    const t=el('text',{x:n.x+14,y:n.y+23,class:'ttl'},g);t.textContent=n.title;
+    const s=el('text',{x:n.x+14,y:n.y+40,class:'sub'},g);s.textContent=n.sub;
+    if(n.tag){const k=el('text',{x:n.x+14,y:n.y+56,class:'tag'},g);k.textContent=n.tag;}
+  }
+  nodeEls[n.id]=g;
+});
+
+const tabsBox=document.getElementById('tabs'),stepsBox=document.getElementById('steps');
+FLOWS.forEach((f,i)=>{
+  const b=document.createElement('button');
+  b.className='tab';b.style.setProperty('--fc',f.color);
+  b.innerHTML='<span class="dot"></span>'+f.name;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  const f=FLOWS[i];
+  document.documentElement.style.setProperty('--fc',f.color);
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  EDGES.forEach(e=>{
+    const on=f.edges.includes(e.id);
+    edgeEls[e.id].setAttribute('class','edge'+(on?' lit':' dim'));
+    edgeEls[e.id].style.stroke=on?f.color:'';
+    edgeEls[e.id].style.filter=on?`drop-shadow(0 0 5px ${f.color})`:'';
+    pktEls[e.id].setAttribute('class','pkt'+(on?' lit':''));
+    pktEls[e.id].setAttribute('fill',f.color);
+    if(lblEls[e.id]){lblEls[e.id].setAttribute('class','elabel'+(on?' lit':''));lblEls[e.id].style.fill=on?f.color:'';}
+  });
+  f.edges.forEach((id,k)=>{
+    const mo=pktEls[id].querySelector('animateMotion');
+    mo.setAttribute('begin',(k*0.2)+'s');
+    const node=pktEls[id];node.remove();svg.appendChild(node);
+  });
+  NODES.forEach(n=>{
+    const on=f.nodes.includes(n.id);
+    nodeEls[n.id].setAttribute('class','node'+(n.grp?' grp':'')+(on?' lit':' dim'));
+    nodeEls[n.id].style.setProperty('--fc',f.color);
+  });
+  stepsBox.innerHTML='';
+  stepsBox.style.setProperty('--fc',f.color);
+  f.steps.forEach((s,k)=>{
+    const d=document.createElement('span');
+    d.className='st';d.innerHTML='<i>'+(k+1)+'</i>'+s;
+    stepsBox.appendChild(d);
+    setTimeout(()=>d.classList.add('in'),110*k+60);
+  });
+}
+activate(0);
+</script>
+</body>
+</html>

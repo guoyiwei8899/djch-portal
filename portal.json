@@ -19,6 +19,12 @@
       "path": "viz/foreman-build.html"
     },
     {
+      "domain": "ansible", "icon": "hard-drive",
+      "title": "Lustre Server Role 解剖",
+      "desc": "5-role sequence, lustre_server 7 stages, prebuilt vs DKMS split, kernel CVE upgrade flow",
+      "path": "viz/lustre-server-role.html"
+    },
+    {
       "domain": "network", "icon": "globe",
       "title": "Transparent Proxy Flow",
       "desc": "DNS / direct / proxy / RouterOS split-routing data path",
