@@ -7,79 +7,141 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
   <link rel="stylesheet" href="assets/app.css">
   <style>
-    .layout { display: grid; grid-template-columns: 256px 1fr; min-height: 100dvh; }
+    .layout { display: grid; grid-template-columns: 264px 1fr; min-height: 100dvh; }
 
-    /* sidebar */
+    /* sidebar — floating glass rail */
     .sidebar {
       position: sticky; top: 0; align-self: start; height: 100dvh;
-      display: flex; flex-direction: column; gap: 4px; padding: 18px 14px;
+      display: flex; flex-direction: column; gap: 4px; padding: 20px 14px;
       background: var(--sidebar); border-right: 1px solid var(--sidebar-border);
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
     }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; font-weight: 700; font-size: 17px; }
-    .brand .logo { color: var(--primary); display: inline-flex; }
-    .brand .logo .ic { width: 22px; height: 22px; }
-    .nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); padding: 14px 8px 6px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 6px; }
+    .brand .logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border-radius: 11px; color: #fff;
+      background: var(--grad); box-shadow: 0 4px 18px -4px color-mix(in srgb, var(--primary) 60%, transparent);
+    }
+    .brand .logo .ic { width: 21px; height: 21px; }
+    .brand .bn { display: flex; flex-direction: column; line-height: 1.15; }
+    .brand .bn b { font-family: var(--font-display); font-weight: 700; font-size: 16.5px; letter-spacing: .02em; }
+    .brand .bn span { font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); letter-spacing: .18em; text-transform: uppercase; }
+    .nav-label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--muted-foreground); padding: 18px 8px 7px;
+    }
     .nav-item {
-      display: flex; align-items: center; gap: 11px; padding: 9px 10px; min-height: 40px;
-      border-radius: 9px; color: var(--sidebar-foreground); font-size: 14px; font-weight: 500;
-      cursor: pointer; position: relative; transition: background .14s, color .14s;
+      display: flex; align-items: center; gap: 11px; padding: 9px 11px; min-height: 40px;
+      border-radius: 11px; color: var(--sidebar-foreground); font-size: 13.5px; font-weight: 500;
+      cursor: pointer; position: relative; transition: background .14s, color .14s, box-shadow .2s;
     }
-    .nav-item .ic { width: 18px; height: 18px; color: var(--muted-foreground); transition: color .14s; }
-    .nav-item:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
-    .nav-item.active { background: color-mix(in srgb, var(--primary) 20%, transparent); color: var(--foreground); font-weight: 600; }
-    .nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--primary); }
-    .nav-item.active .ic { color: color-mix(in srgb, var(--primary) 55%, var(--foreground)); }
-    .sb-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--sidebar-border); }
-    .pill { flex: 1; display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-radius: 9px; background: var(--card); border: 1px solid var(--border); font-size: 12.5px; color: var(--muted-foreground); }
-    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--d-k8s); box-shadow: 0 0 7px var(--d-k8s); flex: none; }
+    .nav-item .ic { width: 17px; height: 17px; color: var(--nc, var(--muted-foreground)); transition: filter .2s; }
+    .nav-item .n-count { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted-foreground); }
+    .nav-item:hover { background: color-mix(in srgb, var(--nc, var(--primary)) 11%, transparent); }
+    .nav-item.active {
+      background: color-mix(in srgb, var(--nc, var(--primary)) 15%, transparent);
+      color: var(--foreground); font-weight: 600;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nc, var(--primary)) 28%, transparent);
+    }
+    .nav-item.active::before {
+      content: ""; position: absolute; left: -14px; top: 9px; bottom: 9px; width: 3px; border-radius: 3px;
+      background: var(--nc, var(--primary)); box-shadow: 0 0 10px var(--nc, var(--primary));
+    }
+    .nav-item.active .ic { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--nc, var(--primary)) 70%, transparent)); }
+    .sb-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--sidebar-border); }
+    .pill {
+      flex: 1; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 11px;
+      background: var(--card); border: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--d-virtualization); box-shadow: 0 0 9px var(--d-virtualization); flex: none; animation: pulse 2.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .45; } }
 
     /* main */
     .main { min-width: 0; }
     .topbar {
       position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px;
-      padding: 14px 28px; background: color-mix(in srgb, var(--background) 86%, transparent);
-      backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+      padding: 13px 28px; background: color-mix(in srgb, var(--background) 62%, transparent);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
-    .topbar h1 { margin: 0; font-size: 17px; font-weight: 600; }
+    .topbar .path { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted-foreground); }
+    .topbar .path b { color: var(--foreground); font-weight: 500; }
     .topbar .grow { flex: 1; }
-    .search { position: relative; width: min(360px, 42vw); }
-    .search .ic { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--muted-foreground); pointer-events: none; }
+    .search { position: relative; width: min(380px, 42vw); }
+    .search .ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted-foreground); pointer-events: none; }
     .search input {
-      width: 100%; height: 40px; padding: 0 14px 0 38px; border-radius: 10px; font: inherit; font-size: 14px;
-      background: var(--card); border: 1px solid var(--border); color: var(--foreground); outline: none;
+      width: 100%; height: 40px; padding: 0 14px 0 38px; border-radius: 11px; font: inherit; font-size: 13.5px;
+      background: var(--input); border: 1px solid var(--border); color: var(--foreground); outline: none;
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
       transition: border-color .15s, box-shadow .15s;
     }
-    .search input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent); }
-    .content { padding: 24px 28px 64px; max-width: 1180px; }
-    .lead { margin: 4px 2px 6px; }
-    .lead h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
-    .lead p { margin: 5px 0 0; color: var(--muted-foreground); font-size: 14px; }
-    .empty-note { color: var(--muted-foreground); font-size: 13px; padding: 8px 2px; }
-    footer { margin: 40px 2px 0; color: var(--muted-foreground); font-size: 12px; font-family: var(--font-mono); }
+    .search input::placeholder { color: var(--muted-foreground); }
+    .search input:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary) 22%, transparent), 0 0 18px color-mix(in srgb, var(--secondary) 22%, transparent);
+    }
+    .content { padding: 30px 32px 72px; max-width: 1220px; }
+
+    /* hero */
+    .hero { margin: 6px 2px 10px; }
+    .hero .kicker {
+      font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .3em; text-transform: uppercase;
+      color: var(--secondary); display: flex; align-items: center; gap: 10px;
+    }
+    .hero .kicker::before { content: ""; width: 26px; height: 1px; background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
+    .hero h2 {
+      margin: 10px 0 0; font-family: var(--font-display); font-size: clamp(30px, 4.4vw, 46px);
+      font-weight: 700; letter-spacing: .005em; line-height: 1.06;
+    }
+    .hero h2 .grad {
+      background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 0 22px color-mix(in srgb, var(--primary) 28%, transparent));
+    }
+    .hero p { margin: 10px 0 0; color: var(--muted-foreground); font-size: 14.5px; max-width: 560px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .stat {
+      display: flex; align-items: baseline; gap: 7px; padding: 8px 14px; border-radius: 11px;
+      background: var(--card); border: 1px solid var(--border);
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+    .stat b { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--sc, var(--secondary)); }
+    .stat span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); }
+
+    footer { margin: 48px 2px 0; color: var(--muted-foreground); font-size: 11.5px; font-family: var(--font-mono); opacity: .8; }
 
     /* scrim must be fixed (not a grid item) so it never occupies a column */
-    .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 35; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .scrim { position: fixed; inset: 0; background: rgba(2, 4, 12, .55); z-index: 35; opacity: 0; pointer-events: none; transition: opacity .2s; backdrop-filter: blur(3px); }
     .scrim.show { opacity: 1; pointer-events: auto; }
     /* mobile */
     .menu-btn { display: none; }
     @media (max-width: 880px) {
       .layout { grid-template-columns: 1fr; }
       .sidebar {
-        position: fixed; z-index: 40; width: 256px; left: 0; top: 0;
+        position: fixed; z-index: 40; width: 272px; left: 0; top: 0;
         transform: translateX(-100%); transition: transform .22s ease; box-shadow: var(--shadow-md);
+        background: color-mix(in srgb, var(--card-solid) 92%, transparent);
       }
       .sidebar.open { transform: none; }
       .menu-btn { display: inline-flex; }
+      .content { padding: 22px 18px 64px; }
     }
   </style>
 </head>
 <body>
+  <canvas class="bg-aurora" id="bg"></canvas>
+  <div class="bg-grid"></div>
+  <div class="bg-noise"></div>
+
   <div class="layout">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><span class="logo" id="brand-logo"></span><span id="brand-name">djch portal</span></div>
+      <div class="brand">
+        <span class="logo" id="brand-logo"></span>
+        <span class="bn"><b id="brand-name">djch portal</b><span>ops deck</span></span>
+      </div>
       <div id="nav"></div>
       <div class="sb-foot">
-        <div class="pill"><span class="dot"></span> Internal SSO</div>
+        <div class="pill"><span class="dot"></span> internal sso</div>
         <button class="icon-btn" id="theme-btn" aria-label="Toggle theme"></button>
       </div>
     </aside>
@@ -88,7 +150,7 @@
     <main class="main">
       <div class="topbar">
         <button class="icon-btn menu-btn" id="menu-btn" aria-label="Menu"></button>
-        <h1>Dashboard</h1>
+        <span class="path">~/djch/<b>console</b></span>
         <div class="grow"></div>
         <div class="search">
           <span id="search-ic"></span>
@@ -97,17 +159,19 @@
       </div>
 
       <div class="content">
-        <div class="lead">
-          <h2 id="lead-title">Internal technical portal</h2>
-          <p id="lead-sub">Visualization library + system directory</p>
+        <div class="hero reveal" style="--i:0">
+          <div class="kicker">internal ops deck</div>
+          <h2 id="lead-title"></h2>
+          <p id="lead-sub"></p>
+          <div class="stats" id="stats"></div>
         </div>
 
-        <section class="section" id="sec-viz">
+        <section class="section reveal" id="sec-viz" style="--i:2">
           <div class="sec-title"><h2>Visualizations</h2></div>
           <div id="viz-groups"></div>
         </section>
 
-        <section class="section" id="systems">
+        <section class="section reveal" id="systems" style="--i:3">
           <div class="sec-title"><h2>Systems</h2></div>
           <div class="grid" id="sys-grid"></div>
         </section>
@@ -120,6 +184,51 @@
   <script src="assets/portal.js"></script>
   <script>
     const $ = s => document.querySelector(s);
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ===== aurora background (pure canvas, zero deps) ===== */
+    (() => {
+      const cv = $('#bg'), ctx = cv.getContext('2d');
+      const PAL = ['#ff4d9d', '#21d4fd', '#8b5cf6', '#2fe39a', '#ffb224'];
+      let W, H, blobs = [], raf = 0;
+      const resize = () => {
+        W = cv.width = innerWidth; H = cv.height = innerHeight;
+        blobs = PAL.map((c, i) => ({
+          c, r: Math.min(W, H) * (0.34 + 0.10 * (i % 3)),
+          x: Math.random() * W, y: Math.random() * H * 0.9,
+          vx: (Math.random() - .5) * .26, vy: (Math.random() - .5) * .2
+        }));
+      };
+      const alpha = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--aurora-alpha')) || .15;
+      const dark = () => document.documentElement.classList.contains('dark');
+      const draw = () => {
+        ctx.clearRect(0, 0, W, H);
+        ctx.globalCompositeOperation = dark() ? 'lighter' : 'source-over';
+        const a = alpha();
+        for (const b of blobs) {
+          b.x += b.vx; b.y += b.vy;
+          if (b.x < -b.r * .4 || b.x > W + b.r * .4) b.vx *= -1;
+          if (b.y < -b.r * .4 || b.y > H + b.r * .4) b.vy *= -1;
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          g.addColorStop(0, b.c + Math.round(a * 255).toString(16).padStart(2, '0'));
+          g.addColorStop(1, b.c + '00');
+          ctx.fillStyle = g;
+          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+        }
+      };
+      const loop = () => { draw(); raf = requestAnimationFrame(loop); };
+      resize(); addEventListener('resize', resize);
+      if (reduced) { draw(); }
+      else {
+        loop();
+        document.addEventListener('visibilitychange', () => {
+          cancelAnimationFrame(raf); if (!document.hidden) loop();
+        });
+        document.addEventListener('themechange', draw);
+      }
+    })();
+
+    /* ===== chrome ===== */
     $('#brand-logo').innerHTML = svgIcon('sparkle');
     $('#search-ic').innerHTML = svgIcon('search');
     const themeBtn = $('#theme-btn');
@@ -133,62 +242,100 @@
     $('#menu-btn').onclick = () => { sb.classList.add('open'); scrim.classList.add('show'); };
     scrim.onclick = closeNav;
 
+    /* ===== 3D tilt ===== */
+    const tilt = card => {
+      if (reduced) return;
+      card.addEventListener('pointermove', e => {
+        if (e.pointerType !== 'mouse') return;
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--rx', ((0.5 - y) * 9).toFixed(2) + 'deg');
+        card.style.setProperty('--ry', ((x - 0.5) * 12).toFixed(2) + 'deg');
+        card.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      });
+    };
+
     loadPortal().then(data => {
       $('#brand-name').textContent = data.brand || 'djch portal';
-      $('#lead-title').textContent = data.title || '';
+      const t = data.title || 'Infrastructure, visualized';
+      const cut = t.lastIndexOf(' ');
+      $('#lead-title').innerHTML = cut > 0
+        ? t.slice(0, cut) + ' <span class="grad">' + t.slice(cut + 1) + '</span>'
+        : '<span class="grad">' + t + '</span>';
       $('#lead-sub').textContent = data.subtitle || '';
       document.title = data.brand || 'djch portal';
       const dom = data.domains || {};
+      const viz = data.viz || [], sys = data.system || [];
+      const keys = Object.keys(dom);
 
-      // domains that actually have viz pages, in declared order
-      const order = Object.keys(dom);
-      const used = order.filter(k => (data.viz || []).some(v => v.domain === k));
+      // hero stats
+      $('#stats').innerHTML =
+        '<div class="stat" style="--sc:var(--d-network)"><b>' + viz.length + '</b><span>visualizations</span></div>' +
+        '<div class="stat" style="--sc:var(--d-k8s)"><b>' + sys.length + '</b><span>systems</span></div>' +
+        '<div class="stat" style="--sc:var(--d-monitoring)"><b>' + keys.length + '</b><span>domains</span></div>';
 
-      // sidebar nav
+      // sidebar nav — all declared domains, with counts
       const nav = $('#nav');
-      nav.innerHTML = '<div class="nav-label">Visualizations</div>';
-      used.forEach(k => {
+      nav.innerHTML = '<div class="nav-label">Domains</div>';
+      keys.forEach(k => {
+        const n = viz.filter(v => v.domain === k).length;
         const el = document.createElement('a');
         el.className = 'nav-item'; el.href = '#dom-' + k; el.dataset.spy = 'dom-' + k;
-        el.innerHTML = svgIcon(dom[k].icon) + '<span>' + dom[k].label + '</span>';
+        el.style.setProperty('--nc', 'var(--d-' + k + ')');
+        el.innerHTML = svgIcon(dom[k].icon) + '<span>' + dom[k].label + '</span><span class="n-count">' + (n || '·') + '</span>';
         el.onclick = closeNav; nav.appendChild(el);
       });
       nav.insertAdjacentHTML('beforeend', '<div class="nav-label">Directory</div>');
       const sysNav = document.createElement('a');
       sysNav.className = 'nav-item'; sysNav.href = '#systems'; sysNav.dataset.spy = 'systems';
-      sysNav.innerHTML = svgIcon('grid') + '<span>Systems</span>';
+      sysNav.innerHTML = svgIcon('grid') + '<span>Systems</span><span class="n-count">' + sys.length + '</span>';
       sysNav.onclick = closeNav; nav.appendChild(sysNav);
 
-      // viz groups
+      // viz groups — all domains; empty ones get a placeholder
       const groups = $('#viz-groups');
-      used.forEach(k => {
-        const items = (data.viz || []).filter(v => v.domain === k);
+      let ci = 0;
+      keys.forEach(k => {
+        const items = viz.filter(v => v.domain === k);
         const head = document.createElement('div');
         head.className = 'domain-head'; head.id = 'dom-' + k; head.style.setProperty('--dc', 'var(--d-' + k + ')');
         head.innerHTML = '<span class="di">' + svgIcon(dom[k].icon) + '</span><h3>' + dom[k].label +
           '</h3><span class="count">' + items.length + '</span>';
         groups.appendChild(head);
+        if (!items.length) {
+          const ph = document.createElement('div');
+          ph.className = 'domain-empty';
+          ph.textContent = '// no pages yet — drop html into viz/ + register in portal.json';
+          groups.appendChild(ph);
+          return;
+        }
         const grid = document.createElement('div'); grid.className = 'grid';
         items.forEach(v => {
           const a = document.createElement('a');
-          a.className = 'card'; a.style.setProperty('--dc', 'var(--d-' + v.domain + ')');
+          a.className = 'card reveal'; a.style.setProperty('--dc', 'var(--d-' + v.domain + ')');
+          a.style.setProperty('--i', 3 + (ci++ % 6));
           a.href = 'viewer.html?p=' + encodeURIComponent(v.path) + '&t=' + encodeURIComponent(v.title) + '&d=' + v.domain;
           a.dataset.search = (v.title + ' ' + (v.desc || '') + ' ' + dom[v.domain].label).toLowerCase();
           a.innerHTML = '<span class="tile">' + svgIcon(v.icon) + '</span>' +
             '<span class="body"><span class="title">' + v.title + '</span>' +
             '<span class="desc">' + (v.desc || '') + '</span>' +
             '<span class="meta"><span class="badge">' + dom[v.domain].label + '</span></span></span>';
-          grid.appendChild(a);
+          tilt(a); grid.appendChild(a);
         });
         groups.appendChild(grid);
       });
 
       // systems
       const sg = $('#sys-grid');
-      (data.system || []).forEach(s => {
+      sys.forEach(s => {
         const a = document.createElement('a');
-        a.className = 'card'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+        a.className = 'card reveal'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
         a.style.setProperty('--dc', 'var(--secondary)');
+        a.style.setProperty('--i', 3 + (ci++ % 6));
         a.dataset.search = (s.title + ' ' + (s.desc || '')).toLowerCase();
         a.innerHTML = '<span class="tile">' + svgIcon(s.icon) + '</span>' +
           '<span class="body"><span class="title">' + s.title + ' ' + svgIcon('external', 'ic') + '</span>' +
@@ -196,10 +343,10 @@
           '<span class="meta"><span class="host">' + (s.url || '').replace(/^https?:\/\//, '').replace(/\/$/, '') + '</span></span></span>';
         // shrink the inline external icon
         a.querySelector('.title svg').style.cssText = 'width:13px;height:13px;color:var(--muted-foreground)';
-        sg.appendChild(a);
+        tilt(a); sg.appendChild(a);
       });
 
-      // search filter (hides empty groups)
+      // search filter (hides empty groups + placeholders while searching)
       const q = $('#q');
       q.addEventListener('input', () => {
         const term = q.value.trim().toLowerCase();
@@ -207,9 +354,15 @@
           c.style.display = (!term || (c.dataset.search || '').includes(term)) ? '' : 'none';
         });
         document.querySelectorAll('.domain-head').forEach(h => {
-          const grid = h.nextElementSibling;
-          const any = [...grid.children].some(c => c.style.display !== 'none');
-          h.style.display = any ? '' : 'none'; grid.style.display = any ? '' : 'none';
+          const next = h.nextElementSibling;
+          if (!next) return;
+          if (next.classList.contains('domain-empty')) {
+            const show = !term;
+            h.style.display = show ? '' : 'none'; next.style.display = show ? '' : 'none';
+            return;
+          }
+          const any = [...next.children].some(c => c.style.display !== 'none');
+          h.style.display = any ? '' : 'none'; next.style.display = any ? '' : 'none';
         });
       });
 

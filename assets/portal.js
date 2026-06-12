@@ -16,7 +16,9 @@ window.ICONS = {
   moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   "arrow-left": '<line x1="20" y1="12" x2="4.5" y2="12"/><polyline points="10.5 5.5 4 12 10.5 18.5"/>',
   external: '<path d="M14 4h6v6"/><line x1="20" y1="4" x2="11" y2="13"/><path d="M18 13v5.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H11"/>',
-  sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'
+  sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  layers: '<path d="M12 2.5L2.5 7.5 12 12.5l9.5-5z"/><path d="M2.5 12L12 17l9.5-5"/><path d="M2.5 16.5L12 21.5l9.5-5"/>',
+  box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/>'
 };
 
 window.svgIcon = function (name, cls) {
@@ -28,7 +30,7 @@ window.svgIcon = function (name, cls) {
 /* ---- theme (light/dark) ---- */
 window.initTheme = function () {
   const saved = localStorage.getItem('portal-theme');
-  const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = saved ? saved === 'dark' : true; // dark-first
   document.documentElement.classList.toggle('dark', dark);
 };
 window.toggleTheme = function () {

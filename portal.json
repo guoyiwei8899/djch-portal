@@ -1,14 +1,14 @@
 {
   "brand": "djch portal",
-  "title": "Internal technical portal",
-  "subtitle": "Visualization library + system directory",
+  "title": "Infrastructure, visualized",
+  "subtitle": "Interactive architecture maps & live system directory",
   "domains": {
-    "storage":  { "label": "Storage · Lustre",      "icon": "hard-drive" },
-    "network":  { "label": "Network · Proxy",        "icon": "globe" },
-    "k8s":      { "label": "Platform · K8s",         "icon": "hexagon" },
-    "infra":    { "label": "Infrastructure · IaC",   "icon": "server" },
-    "identity":   { "label": "Identity · DNS",             "icon": "shield" },
-    "monitoring": { "label": "Monitoring · Observability", "icon": "activity" }
+    "storage":        { "label": "Storage",         "icon": "hard-drive" },
+    "k8s":            { "label": "Kubernetes",      "icon": "hexagon" },
+    "network":        { "label": "Network",         "icon": "globe" },
+    "virtualization": { "label": "Virtualization",  "icon": "layers" },
+    "terraform_iac":  { "label": "Terraform · IaC", "icon": "box" },
+    "monitoring":     { "label": "Monitoring",      "icon": "activity" }
   },
   "viz": [
     {
@@ -24,7 +24,7 @@
       "path": "https://money.djch.one/k8s/"
     },
     {
-      "domain": "infra", "icon": "server",
+      "domain": "virtualization", "icon": "server",
       "title": "Infrastructure Architecture",
       "desc": "Network & infrastructure topology",
       "path": "viz/djch-infra.html"
