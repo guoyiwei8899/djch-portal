@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>djch portal</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
-  <link rel="stylesheet" href="assets/app.css?v=6">
+  <link rel="stylesheet" href="assets/app.css?v=7">
   <style>
     .layout { display: grid; grid-template-columns: 264px 1fr; min-height: 100dvh; }
 
@@ -48,6 +48,7 @@
       background: var(--nc, var(--primary)); box-shadow: 0 0 10px var(--nc, var(--primary));
     }
     .nav-item.active .ic { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--nc, var(--primary)) 70%, transparent)); }
+    .nav-item.dim { opacity: .38; }
     .sb-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--sidebar-border); }
     .pill {
       flex: 1; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 11px;
@@ -84,29 +85,30 @@
     }
     .content { padding: 30px 32px 72px; max-width: 1220px; }
 
-    /* hero */
-    .hero { margin: 6px 2px 10px; }
+    /* hero — compact single row: title block left, stat chips right */
+    .hero { margin: 2px 2px 4px; display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+    .hero .lead { min-width: 0; }
     .hero .kicker {
-      font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .3em; text-transform: uppercase;
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: .3em; text-transform: uppercase;
       color: var(--secondary); display: flex; align-items: center; gap: 10px;
     }
     .hero .kicker::before { content: ""; width: 26px; height: 1px; background: var(--secondary); box-shadow: 0 0 8px var(--secondary); }
     .hero h2 {
-      margin: 10px 0 0; font-family: var(--font-sans); font-size: clamp(30px, 4.4vw, 46px);
-      font-weight: 700; letter-spacing: -.01em; line-height: 1.06;
+      margin: 6px 0 0; font-family: var(--font-sans); font-size: 22px;
+      font-weight: 700; letter-spacing: -.01em; line-height: 1.2;
     }
     .hero h2 .grad {
       background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
       filter: drop-shadow(0 0 22px color-mix(in srgb, var(--primary) 28%, transparent));
     }
-    .hero p { margin: 10px 0 0; color: var(--muted-foreground); font-size: 14.5px; max-width: 560px; }
-    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .hero p { margin: 3px 0 0; color: var(--muted-foreground); font-size: 13px; max-width: 560px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 2px auto; }
     .stat {
-      display: flex; align-items: baseline; gap: 7px; padding: 8px 14px; border-radius: 11px;
+      display: flex; align-items: baseline; gap: 7px; padding: 5px 11px; border-radius: 11px;
       background: var(--card); border: 1px solid var(--border);
       backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
     }
-    .stat b { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--sc, var(--secondary)); }
+    .stat b { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--sc, var(--secondary)); }
     .stat span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); }
 
     footer { margin: 48px 2px 0; color: var(--muted-foreground); font-size: 11.5px; font-family: var(--font-mono); opacity: .8; }
@@ -160,15 +162,18 @@
 
       <div class="content">
         <div class="hero reveal" style="--i:0">
-          <div class="kicker">internal ops deck</div>
-          <h2 id="lead-title"></h2>
-          <p id="lead-sub"></p>
+          <div class="lead">
+            <div class="kicker">internal ops deck</div>
+            <h2 id="lead-title"></h2>
+            <p id="lead-sub"></p>
+          </div>
           <div class="stats" id="stats"></div>
         </div>
 
         <section class="section reveal" id="sec-viz" style="--i:2">
           <div class="sec-title"><h2>Visualizations</h2></div>
-          <div id="viz-groups"></div>
+          <div class="grid" id="viz-grid"></div>
+          <div class="domain-empty" id="viz-empty" style="display:none"></div>
         </section>
 
         <section class="section reveal" id="systems" style="--i:3">
@@ -181,7 +186,7 @@
     </main>
   </div>
 
-  <script src="assets/portal.js?v=6"></script>
+  <script src="assets/portal.js?v=7"></script>
   <script>
     const $ = s => document.querySelector(s);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -215,6 +220,7 @@
       if (reduced) return;
       card.addEventListener('pointermove', e => {
         if (e.pointerType !== 'mouse') return;
+        if (!document.documentElement.classList.contains('dark')) return; // light = enterprise mode, no tilt
         const r = card.getBoundingClientRect();
         const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
         card.style.setProperty('--rx', ((0.5 - y) * 9).toFixed(2) + 'deg');
@@ -244,48 +250,51 @@
         '<div class="stat" style="--sc:var(--d-k8s)"><b>' + sys.length + '</b><span>systems</span></div>' +
         '<div class="stat" style="--sc:var(--d-monitoring)"><b>' + keys.length + '</b><span>domains</span></div>';
 
-      // sidebar nav — all declared domains, with counts
+      // sidebar nav — domain FILTERS (All + every declared domain), not anchors
       const nav = $('#nav');
       nav.innerHTML = '<div class="nav-label">Domains</div>';
-      keys.forEach(k => {
-        const n = viz.filter(v => v.domain === k).length;
+      let domFilter = 'all';
+      const mkFilter = (filter, icon, label, count, color) => {
         const el = document.createElement('a');
-        el.className = 'nav-item'; el.href = '#dom-' + k; el.dataset.spy = 'dom-' + k;
-        el.style.setProperty('--nc', 'var(--d-' + k + ')');
-        el.innerHTML = svgIcon(dom[k].icon) + '<span>' + dom[k].label + '</span><span class="n-count">' + (n || '·') + '</span>';
-        el.onclick = closeNav; nav.appendChild(el);
-      });
+        el.className = 'nav-item'; el.href = '#'; el.dataset.filter = filter;
+        if (color) el.style.setProperty('--nc', color);
+        if (!count && filter !== 'all') el.classList.add('dim');
+        el.innerHTML = svgIcon(icon) + '<span>' + label + '</span><span class="n-count">' + (count || '·') + '</span>';
+        el.onclick = e => {
+          e.preventDefault();
+          domFilter = filter;
+          nav.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n === el));
+          applyFilter(); closeNav();
+        };
+        nav.appendChild(el);
+        return el;
+      };
+      mkFilter('all', 'grid', 'All', viz.length).classList.add('active');
+      keys.forEach(k => mkFilter(k, dom[k].icon, dom[k].label,
+        viz.filter(v => v.domain === k).length, 'var(--d-' + k + ')'));
       nav.insertAdjacentHTML('beforeend', '<div class="nav-label">Directory</div>');
       const sysNav = document.createElement('a');
-      sysNav.className = 'nav-item'; sysNav.href = '#systems'; sysNav.dataset.spy = 'systems';
+      sysNav.className = 'nav-item'; sysNav.href = '#systems';
       sysNav.innerHTML = svgIcon('grid') + '<span>Systems</span><span class="n-count">' + sys.length + '</span>';
       sysNav.onclick = closeNav; nav.appendChild(sysNav);
 
-      // viz groups — all domains; empty ones get a placeholder
-      const groups = $('#viz-groups');
+      // visualizations — ONE unified grid, domain encoded as card accent + badge
+      // (render in declared-domain order so same-domain cards cluster)
+      const grid = $('#viz-grid');
+      const ordered = keys.flatMap(k => viz.filter(v => v.domain === k));
       let ci = 0;
-      keys.forEach(k => {
-        const items = viz.filter(v => v.domain === k);
-        if (!items.length) return;   // skip empty domains — no placeholder clutter in the main column
-        const head = document.createElement('div');
-        head.className = 'domain-head'; head.id = 'dom-' + k; head.style.setProperty('--dc', 'var(--d-' + k + ')');
-        head.innerHTML = '<span class="di">' + svgIcon(dom[k].icon) + '</span><h3>' + dom[k].label +
-          '</h3><span class="count">' + items.length + '</span>';
-        groups.appendChild(head);
-        const grid = document.createElement('div'); grid.className = 'grid';
-        items.forEach(v => {
-          const a = document.createElement('a');
-          a.className = 'card reveal'; a.style.setProperty('--dc', 'var(--d-' + v.domain + ')');
-          a.style.setProperty('--i', 3 + (ci++ % 6));
-          a.href = 'viewer.html?p=' + encodeURIComponent(v.path) + '&t=' + encodeURIComponent(v.title) + '&d=' + v.domain;
-          a.dataset.search = (v.title + ' ' + (v.desc || '') + ' ' + dom[v.domain].label).toLowerCase();
-          a.innerHTML = '<span class="tile">' + svgIcon(v.icon) + '</span>' +
-            '<span class="body"><span class="title">' + v.title + '</span>' +
-            '<span class="desc">' + (v.desc || '') + '</span>' +
-            '<span class="meta"><span class="badge">' + dom[v.domain].label + '</span></span></span>';
-          tilt(a); grid.appendChild(a);
-        });
-        groups.appendChild(grid);
+      ordered.forEach(v => {
+        const a = document.createElement('a');
+        a.className = 'card reveal'; a.style.setProperty('--dc', 'var(--d-' + v.domain + ')');
+        a.style.setProperty('--i', 2 + (ci++ % 6));
+        a.dataset.domain = v.domain;
+        a.href = 'viewer.html?p=' + encodeURIComponent(v.path) + '&t=' + encodeURIComponent(v.title) + '&d=' + v.domain;
+        a.dataset.search = (v.title + ' ' + (v.desc || '') + ' ' + dom[v.domain].label).toLowerCase();
+        a.innerHTML = '<span class="tile">' + svgIcon(v.icon) + '</span>' +
+          '<span class="body"><span class="title">' + v.title + '</span>' +
+          '<span class="desc">' + (v.desc || '') + '</span>' +
+          '<span class="meta"><span class="badge">' + dom[v.domain].label + '</span></span></span>';
+        tilt(a); grid.appendChild(a);
       });
 
       // systems
@@ -305,40 +314,27 @@
         tilt(a); sg.appendChild(a);
       });
 
-      // search filter (hides empty groups + placeholders while searching)
+      // domain filter ∩ search — one pass over both grids
       const q = $('#q');
-      q.addEventListener('input', () => {
+      const empty = $('#viz-empty');
+      function applyFilter() {
         const term = q.value.trim().toLowerCase();
-        document.querySelectorAll('.card').forEach(c => {
+        let shown = 0;
+        grid.querySelectorAll('.card').forEach(c => {
+          const ok = (domFilter === 'all' || c.dataset.domain === domFilter) &&
+                     (!term || (c.dataset.search || '').includes(term));
+          c.style.display = ok ? '' : 'none';
+          if (ok) shown++;
+        });
+        empty.textContent = term
+          ? 'no visualizations match "' + term + '"'
+          : 'no visualizations in this domain yet — add one in portal.json';
+        empty.style.display = shown ? 'none' : '';
+        sg.querySelectorAll('.card').forEach(c => {
           c.style.display = (!term || (c.dataset.search || '').includes(term)) ? '' : 'none';
         });
-        document.querySelectorAll('.domain-head').forEach(h => {
-          const next = h.nextElementSibling;
-          if (!next) return;
-          if (next.classList.contains('domain-empty')) {
-            const show = !term;
-            h.style.display = show ? '' : 'none'; next.style.display = show ? '' : 'none';
-            return;
-          }
-          const any = [...next.children].some(c => c.style.display !== 'none');
-          h.style.display = any ? '' : 'none'; next.style.display = any ? '' : 'none';
-        });
-      });
-
-      // scrollspy
-      const spies = [...document.querySelectorAll('.nav-item')];
-      const byId = id => spies.find(s => s.dataset.spy === id);
-      const targets = [...document.querySelectorAll('[id^="dom-"], #systems')];
-      const obs = new IntersectionObserver(ents => {
-        ents.forEach(e => {
-          if (e.isIntersecting) {
-            spies.forEach(s => s.classList.remove('active'));
-            const n = byId(e.target.id); if (n) n.classList.add('active');
-          }
-        });
-      }, { rootMargin: '-20% 0px -70% 0px' });
-      targets.forEach(t => obs.observe(t));
-      if (spies[0]) spies[0].classList.add('active');
+      }
+      q.addEventListener('input', applyFilter);
     });
   </script>
 </body>

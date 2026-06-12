@@ -10,50 +10,54 @@
 @font-face { font-family: "Roboto Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/robotomono-400.woff2") format("woff2"); }
 @font-face { font-family: "Roboto Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/robotomono-500.woff2") format("woff2"); }
 
-/* ---------- light (fallback) ---------- */
+/* ---------- light — enterprise "Apple" mode: flat, calm, zero effects ---------- */
 :root {
-  --font-display: "Chakra Petch", "Poppins", ui-sans-serif, sans-serif;
-  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", sans-serif;
-  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Helvetica Neue", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "Roboto Mono", Menlo, monospace;
   --radius: 14px;
 
-  --background: #eef1f8;
-  --foreground: #1b2030;
-  --muted-foreground: #5d6578;
-  --card: rgba(255, 255, 255, 0.72);
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --muted-foreground: #6e6e73;
+  --card: #ffffff;
   --card-solid: #ffffff;
-  --border: rgba(27, 32, 48, 0.10);
-  --border-strong: rgba(27, 32, 48, 0.18);
-  --input: rgba(255, 255, 255, 0.85);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --input: #ffffff;
 
-  --primary: #e8347f;
-  --secondary: #0aa9d6;
-  --ring: #e8347f;
-  --grad: linear-gradient(100deg, #e8347f 0%, #8b5cf6 52%, #0aa9d6 100%);
+  --primary: #0071e3;
+  --secondary: #0071e3;
+  --ring: #0071e3;
+  --grad: #0071e3;
 
-  --sidebar: rgba(255, 255, 255, 0.62);
-  --sidebar-border: rgba(27, 32, 48, 0.08);
-  --sidebar-foreground: #1b2030;
+  --sidebar: #ffffff;
+  --sidebar-border: rgba(0, 0, 0, 0.07);
+  --sidebar-foreground: #1d1d1f;
 
-  --glass-blur: 18px;
-  --glow-alpha: 26%;
-  --aurora-alpha: 0.10;
-  --shadow-sm: 0 1px 2px rgba(20, 24, 40, .05), 0 2px 8px rgba(20, 24, 40, .05);
-  --shadow-md: 0 10px 30px rgba(20, 24, 40, .12), 0 2px 8px rgba(20, 24, 40, .06);
+  --glass-blur: 0px;
+  --glow-alpha: 0%;
+  --aurora-alpha: 0;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .05);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, .09);
 
-  /* domain neon accents */
-  --d-storage: #0c93d8;
-  --d-k8s: #5b6cf2;
-  --d-network: #e8347f;
-  --d-virtualization: #0fa46f;
-  --d-terraform_iac: #8b4fe8;
-  --d-ansible: #d63a3a;
-  --d-monitoring: #d98b00;
-  --d-aidc: #0d9488;
+  /* domain accents — muted, professional */
+  --d-storage: #0077c8;
+  --d-k8s: #4f63d2;
+  --d-network: #c2185b;
+  --d-virtualization: #0e8a5f;
+  --d-terraform_iac: #7c4dcc;
+  --d-ansible: #c0392b;
+  --d-monitoring: #a96f00;
+  --d-aidc: #0c8577;
 }
 
 /* ---------- dark (default, applied by portal.js before paint) ---------- */
 .dark {
+  --font-display: "Chakra Petch", "Poppins", ui-sans-serif, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
   --background: #060a14;
   --foreground: #e9edf8;
   --muted-foreground: #8d97b4;
@@ -204,7 +208,7 @@ a { color: inherit; text-decoration: none; }
 .host .ic { width: 13px; height: 13px; }
 
 /* ---- section heads ---- */
-.section { margin-top: 38px; }
+.section { margin-top: 24px; }
 .section > .sec-title { display: flex; align-items: center; gap: 12px; margin: 0 2px 16px; }
 .section > .sec-title h2 {
   margin: 0; font-family: var(--font-display); font-size: 13px; font-weight: 600;
@@ -236,3 +240,49 @@ a { color: inherit; text-decoration: none; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .card { transform: none !important; }
 }
+
+/* ===== light theme = enterprise mode: kill every effect =====
+   dark keeps the full neon treatment; html:not(.dark) outranks the
+   per-page inline <style> blocks (extra class+type in the prefix). */
+html:not(.dark) .bg-grid,
+html:not(.dark) .bg-noise,
+html:not(.dark) .bg-btn,
+html:not(.dark) .bg-host { display: none; }
+html:not(.dark) .reveal { animation: none; }
+
+html:not(.dark) .card { transform: none !important; box-shadow: var(--shadow-sm); }
+html:not(.dark) .card::before,
+html:not(.dark) .card::after { display: none; }
+html:not(.dark) .card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+html:not(.dark) .card .tile {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--dc, var(--primary)) 9%, transparent);
+  border-color: color-mix(in srgb, var(--dc, var(--primary)) 22%, transparent);
+}
+html:not(.dark) .icon-btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+
+/* gradient text -> plain foreground (index hero + login h1) */
+html:not(.dark) .hero h2 .grad,
+html:not(.dark) h1 .grad {
+  background: none; -webkit-text-fill-color: var(--foreground); color: var(--foreground); filter: none;
+}
+html:not(.dark) .hero .kicker { color: var(--muted-foreground); }
+html:not(.dark) .hero .kicker::before { background: var(--border-strong); box-shadow: none; }
+html:not(.dark) .stat b { color: var(--foreground); }
+
+html:not(.dark) .nav-item.active::before { box-shadow: none; }
+html:not(.dark) .nav-item.active .ic { filter: none; }
+html:not(.dark) .pill .dot { box-shadow: none; animation: none; }
+html:not(.dark) .search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+html:not(.dark) #logout-btn:hover { box-shadow: none; }
+
+/* login page */
+html:not(.dark) .login-logo { animation: none; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); }
+html:not(.dark) .sso-btn:hover { transform: none; filter: none; box-shadow: var(--shadow-md); }
+
+/* viewer chrome */
+html:not(.dark) .back:hover,
+html:not(.dark) .switch select:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }

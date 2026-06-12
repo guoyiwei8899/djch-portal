@@ -357,6 +357,9 @@ window.loadPortal = function () {
     function apply() {
       if (stop) { stop(); stop = null; }
       host.innerHTML = '';
+      // enterprise light mode = no atmosphere: skip renderer, hide the switcher
+      if (!isDark()) { btn.style.display = 'none'; return; }
+      btn.style.display = '';
       var r = MODES[idx][1]; if (r) stop = r(host);
       localStorage.setItem('portal-bg', MODES[idx][0]);
       btn.textContent = '🎨 ' + MODES[idx][0];
