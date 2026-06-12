@@ -1,6 +1,6 @@
 {
-  "brand": "djch portal",
-  "title": "Infrastructure, visualized",
+  "brand": "Djch Portal",
+  "title": "Infrastructure-Knowledge",
   "subtitle": "Interactive architecture maps & live system directory",
   "domains": {
     "storage":        { "label": "Storage",         "icon": "hard-drive" },

@@ -18,6 +18,7 @@ window.ICONS = {
   external: '<path d="M14 4h6v6"/><line x1="20" y1="4" x2="11" y2="13"/><path d="M18 13v5.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H11"/>',
   sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
   layers: '<path d="M12 2.5L2.5 7.5 12 12.5l9.5-5z"/><path d="M2.5 12L12 17l9.5-5"/><path d="M2.5 16.5L12 21.5l9.5-5"/>',
+  "log-out": '<path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
   box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/>'
 };
 
@@ -46,6 +47,218 @@ window.themeIcon = function () {
 window.loadPortal = function () {
   return fetch('portal.json?_=' + Date.now()).then(r => r.json());
 };
+
+/* ---- animated background engine: Drift / Flow / Lines / Aurora / Off ----
+   zero-dep raw Canvas/WebGL (web-design skill ports), theme-aware, 🎨 cycles,
+   choice persists in localStorage('portal-bg'). */
+(function () {
+  var QUAD = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isDark = () => document.documentElement.classList.contains('dark');
+  function prog(gl, vs, fs) {
+    var p = gl.createProgram();
+    function sh(t, s) {
+      var o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o);
+      if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(o));
+      return o;
+    }
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(p)); return null; }
+    return p;
+  }
+  function quadAttr(gl, p, name) {
+    var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, QUAD, gl.STATIC_DRAW);
+    var lp = gl.getAttribLocation(p, name); gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
+  }
+  function mkCanvas(host) { var c = document.createElement('canvas'); host.appendChild(c); return c; }
+
+  /* — Drift: 2d drifting neon blobs (v2 original look) — */
+  function bgDrift(host) {
+    var c = mkCanvas(host), ctx = c.getContext('2d');
+    var PAL = ['#ff4d9d', '#21d4fd', '#8b5cf6', '#2fe39a', '#ffb224'];
+    var W, H, blobs = [], run = true;
+    function resize() {
+      W = c.width = innerWidth; H = c.height = innerHeight;
+      blobs = PAL.map((col, i) => ({
+        col, r: Math.min(W, H) * (0.34 + 0.10 * (i % 3)),
+        x: Math.random() * W, y: Math.random() * H * 0.9,
+        vx: (Math.random() - .5) * .26, vy: (Math.random() - .5) * .2
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      var dark = isDark();
+      ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+      var a = dark ? 0.17 : 0.10;
+      for (var b of blobs) {
+        b.x += b.vx; b.y += b.vy;
+        if (b.x < -b.r * .4 || b.x > W + b.r * .4) b.vx *= -1;
+        if (b.y < -b.r * .4 || b.y > H + b.r * .4) b.vy *= -1;
+        var g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+        g.addColorStop(0, b.col + Math.round(a * 255).toString(16).padStart(2, '0'));
+        g.addColorStop(1, b.col + '00');
+        ctx.fillStyle = g; ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+      }
+    }
+    function fr() { if (!run) return; draw(); if (!reduced) requestAnimationFrame(fr); }
+    resize(); addEventListener('resize', resize); requestAnimationFrame(fr);
+    return function () { run = false; removeEventListener('resize', resize); };
+  }
+
+  /* — Flow: WebGL1 fbm domain-warp fluid; light theme = inverted pastel — */
+  function bgFlow(host) {
+    var c = mkCanvas(host), gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (!gl) return bgDrift(host);
+    var run = true;
+    function size() { c.width = innerWidth; c.height = innerHeight; gl.viewport(0, 0, c.width, c.height); }
+    addEventListener('resize', size);
+    var fs = ['precision highp float;uniform vec2 r;uniform float t;uniform float uL;',
+      'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
+      'float n(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.-2.*f);',
+      'return mix(mix(h(i),h(i+vec2(1,0)),u.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),u.x),u.y);}',
+      'float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<3;i++){v+=a*n(p);p*=2.;a*=.5;}return v;}',
+      'void main(){vec2 uv=gl_FragCoord.xy/r;vec2 p=uv;p.x*=r.x/r.y;float tt=t*.05;',
+      'vec2 q=vec2(fbm(p+vec2(0.,tt)),fbm(p+vec2(5.2,1.3-tt)));',
+      'vec2 w=vec2(fbm(p+4.*q+vec2(1.7,9.2)+tt),fbm(p+4.*q+vec2(8.3,2.8)-tt));',
+      'float f=fbm(p+4.*w);vec3 col=vec3(.07,.08,.15);',
+      'col=mix(col,vec3(.45,.27,.75),clamp(f*f*1.7,0.,1.));',
+      'col=mix(col,vec3(.16,.45,.85),clamp(length(q)*.9,0.,1.));',
+      'col=mix(col,vec3(.90,.28,.58),clamp(w.x*.6,0.,1.));',
+      'col*=.5+.6*f;col*=1.-.45*length(uv-.5);',
+      'if(uL>.5){col=vec3(.97,.98,1.)-col*.92;}',
+      'gl_FragColor=vec4(col,1.);}'].join('');
+    var p = prog(gl, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}', fs);
+    if (!p) return bgDrift(host);
+    gl.useProgram(p); quadAttr(gl, p, 'p');
+    var ur = gl.getUniformLocation(p, 'r'), ut = gl.getUniformLocation(p, 't'), ul = gl.getUniformLocation(p, 'uL');
+    size();
+    function fr(t) {
+      if (!run) return;
+      gl.uniform2f(ur, c.width, c.height); gl.uniform1f(ut, t * .001); gl.uniform1f(ul, isDark() ? 0 : 1);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (!reduced) requestAnimationFrame(fr);
+    }
+    requestAnimationFrame(fr);
+    return function () { run = false; removeEventListener('resize', size); var e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); };
+  }
+
+  /* — Lines: WebGL1 floating glow waves (reactbits port), cursor bend + parallax — */
+  var FL_FS = [
+    'precision highp float;uniform float iTime;uniform vec3 iResolution;uniform vec2 iMouse;',
+    'uniform float uBend;uniform vec2 uPar;uniform float uL;',
+    'const vec3 PINK=vec3(0.914,0.278,0.961);const vec3 BLUE=vec3(0.184,0.294,0.635);',
+    'mat2 rot(float r){return mat2(cos(r),sin(r),-sin(r),cos(r));}',
+    'vec3 bgc(vec2 uv){vec3 col=vec3(0.);float y=sin(uv.x-.2)*.3-.1;float m=uv.y-y;',
+    'col+=mix(BLUE,vec3(0.),smoothstep(0.,1.,abs(m)));col+=mix(PINK,vec3(0.),smoothstep(0.,1.,abs(m-.8)));return col*.5;}',
+    'float wave(vec2 uv,float off,vec2 suv,vec2 muv){float tm=iTime;float y=sin(uv.x+off+tm*.1)*(sin(off+tm*.2)*.3);',
+    'vec2 d=suv-muv;float inf=exp(-dot(d,d)*5.);y+=(muv.y-suv.y)*inf*-.5*uBend;',
+    'float m=uv.y-y;return .0175/max(abs(m)+.01,1e-3)+.01;}',
+    'void main(){vec2 buv=(2.*gl_FragCoord.xy-iResolution.xy)/iResolution.y;buv.y*=-1.;buv+=uPar;',
+    'vec3 col=vec3(0.);vec3 b=bgc(buv);vec2 muv=(2.*iMouse-iResolution.xy)/iResolution.y;muv.y*=-1.;',
+    'for(int i=0;i<6;++i){float fi=float(i);',
+    'vec2 r1=buv*rot(-1.*log(length(buv)+1.));col+=b*wave(r1+vec2(.001*fi+2.,-.7),1.5+.2*fi,buv,muv)*.2;',
+    'vec2 r2=buv*rot(.2*log(length(buv)+1.));col+=b*wave(r2+vec2(.001*fi+5.,0.),2.+.15*fi,buv,muv);',
+    'vec2 r3=buv*rot(-.4*log(length(buv)+1.));r3.x*=-1.;col+=b*wave(r3+vec2(.05*fi+10.,.5),1.+.2*fi,buv,muv)*.1;}',
+    'vec3 lc=mix(vec3(.955,.965,.995),col*1.15,clamp(length(col)*1.25,0.,1.));',
+    'vec3 oc=mix(col,lc,uL);gl_FragColor=vec4(oc,1.);}'].join('');
+  function bgLines(host) {
+    var c = mkCanvas(host), gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (!gl) return bgFlow(host);
+    var run = true, dpr = Math.min(devicePixelRatio || 1, 1.5);
+    function size() { c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, c.width, c.height); }
+    addEventListener('resize', size);
+    var p = prog(gl, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}', FL_FS);
+    if (!p) return bgFlow(host);
+    gl.useProgram(p); quadAttr(gl, p, 'p');
+    var u = n => gl.getUniformLocation(p, n);
+    var uT = u('iTime'), uR = u('iResolution'), uM = u('iMouse'), uB = u('uBend'), uP = u('uPar'), uL = u('uL');
+    var D = .05, tmx = -1e3, tmy = -1e3, cmx = -1e3, cmy = -1e3, ti = 0, ci = 0, tpx = 0, tpy = 0, cpx = 0, cpy = 0;
+    function move(e) {
+      tmx = e.clientX * dpr; tmy = (innerHeight - e.clientY) * dpr; ti = 1;
+      tpx = ((e.clientX - innerWidth / 2) / innerWidth) * .2; tpy = (-(e.clientY - innerHeight / 2) / innerHeight) * .2;
+    }
+    function leave() { ti = 0; }
+    addEventListener('pointermove', move); addEventListener('pointerleave', leave); size();
+    function fr(t) {
+      if (!run) return;
+      cmx += (tmx - cmx) * D; cmy += (tmy - cmy) * D; ci += (ti - ci) * D; cpx += (tpx - cpx) * D; cpy += (tpy - cpy) * D;
+      gl.uniform1f(uT, t * .001); gl.uniform3f(uR, c.width, c.height, 1); gl.uniform2f(uM, cmx, cmy);
+      gl.uniform1f(uB, ci); gl.uniform2f(uP, cpx, cpy); gl.uniform1f(uL, isDark() ? 0 : 1);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (!reduced) requestAnimationFrame(fr);
+    }
+    requestAnimationFrame(fr);
+    return function () {
+      run = false; removeEventListener('resize', size); removeEventListener('pointermove', move); removeEventListener('pointerleave', leave);
+      var e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext();
+    };
+  }
+
+  /* — Aurora: WebGL2 simplex ribbon (reactbits port), transparent blend — */
+  var AU_V = '#version 300 es\nin vec2 position;void main(){gl_Position=vec4(position,0.,1.);}';
+  var AU_F = ['#version 300 es', 'precision highp float;',
+    'uniform float uTime;uniform vec3 uStops[3];uniform vec2 uRes;',
+    'out vec4 fragColor;',
+    'vec3 permute(vec3 x){return mod(((x*34.)+1.)*x,289.);}',
+    'float snoise(vec2 v){const vec4 C=vec4(.211324865405187,.366025403784439,-.577350269189626,.024390243902439);',
+    'vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);vec2 i1=(x0.x>x0.y)?vec2(1.,0.):vec2(0.,1.);',
+    'vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod(i,289.);',
+    'vec3 p=permute(permute(i.y+vec3(0.,i1.y,1.))+i.x+vec3(0.,i1.x,1.));',
+    'vec3 m=max(.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.);m=m*m;m=m*m;',
+    'vec3 x=2.*fract(p*C.www)-1.;vec3 h=abs(x)-.5;vec3 ox=floor(x+.5);vec3 a0=x-ox;',
+    'm*=1.79284291400159-.85373472095314*(a0*a0+h*h);vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.*dot(m,g);}',
+    'void main(){vec2 uv=gl_FragCoord.xy/uRes;',
+    'vec3 ramp=uv.x<.5?mix(uStops[0],uStops[1],uv.x*2.):mix(uStops[1],uStops[2],uv.x*2.-1.);',
+    'float hgt=snoise(vec2(uv.x*2.+uTime*.1,uTime*.25))*.5;hgt=exp(hgt);hgt=(uv.y*2.-hgt+.2);',
+    'float inten=.6*hgt;float a=smoothstep(-.05,.45,inten);',
+    'fragColor=vec4(inten*ramp*a,a);}'].join('\n');
+  function bgAurora(host) {
+    var c = mkCanvas(host), gl = c.getContext('webgl2', { alpha: true, premultipliedAlpha: true });
+    if (!gl) return bgFlow(host);
+    var run = true, dpr = Math.min(devicePixelRatio || 1, 1.5);
+    gl.clearColor(0, 0, 0, 0); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    var p = prog(gl, AU_V, AU_F);
+    if (!p) return bgFlow(host);
+    gl.useProgram(p); quadAttr(gl, p, 'position');
+    var uT = gl.getUniformLocation(p, 'uTime'), uR = gl.getUniformLocation(p, 'uRes'), uS = gl.getUniformLocation(p, 'uStops');
+    var DARK = new Float32Array([1, .30, .62, .55, .36, .96, .13, .83, .99]);
+    var LIGHT = new Float32Array([.91, .20, .50, .55, .36, .96, .04, .66, .84]);
+    function size() { c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, c.width, c.height); gl.uniform2f(uR, c.width, c.height); }
+    addEventListener('resize', size); size();
+    function fr(t) {
+      if (!run) return;
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform1f(uT, t * .001); gl.uniform3fv(uS, isDark() ? DARK : LIGHT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (!reduced) requestAnimationFrame(fr);
+    }
+    requestAnimationFrame(fr);
+    return function () { run = false; removeEventListener('resize', size); var e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); };
+  }
+
+  var MODES = [['Drift', bgDrift], ['Flow', bgFlow], ['Lines', bgLines], ['Aurora', bgAurora], ['Off', null]];
+  window.initBackground = function () {
+    var host = document.createElement('div'); host.className = 'bg-host'; document.body.prepend(host);
+    var btn = document.createElement('button'); btn.className = 'bg-btn'; btn.type = 'button';
+    btn.setAttribute('aria-label', 'Switch background'); document.body.appendChild(btn);
+    var stop = null, saved = localStorage.getItem('portal-bg'), idx = 0;
+    MODES.forEach((m, i) => { if (m[0] === saved) idx = i; });
+    function apply() {
+      if (stop) { stop(); stop = null; }
+      host.innerHTML = '';
+      var r = MODES[idx][1]; if (r) stop = r(host);
+      localStorage.setItem('portal-bg', MODES[idx][0]);
+      btn.textContent = '🎨 ' + MODES[idx][0];
+    }
+    btn.onclick = () => { idx = (idx + 1) % MODES.length; apply(); };
+    document.addEventListener('themechange', apply);            // re-init with new palette
+    document.addEventListener('visibilitychange', () => {       // save GPU when tab hidden
+      if (document.hidden) { if (stop) { stop(); stop = null; } } else apply();
+    });
+    apply();
+  };
+})();
 
 // apply theme ASAP to avoid flash
 window.initTheme();

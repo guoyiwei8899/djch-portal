@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Djch Portal · Sign in</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
+  <link rel="stylesheet" href="assets/app.css?v=3">
+  <style>
+    html, body { height: 100%; }
+    body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .login-wrap { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 24px; width: min(420px, 92vw); }
+    .login-logo {
+      display: flex; align-items: center; justify-content: center; width: 76px; height: 76px;
+      border-radius: 22px; color: #fff; background: var(--grad);
+      box-shadow: 0 10px 40px -6px color-mix(in srgb, var(--primary) 65%, transparent),
+                  0 0 80px color-mix(in srgb, var(--secondary) 25%, transparent);
+      animation: float 5s ease-in-out infinite;
+    }
+    .login-logo .ic { width: 38px; height: 38px; }
+    @keyframes float { 50% { transform: translateY(-7px); } }
+    h1 { margin: 22px 0 0; font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: .01em; }
+    h1 .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sub { margin: 8px 0 0; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted-foreground); }
+    .login-card {
+      margin-top: 30px; width: 100%; padding: 28px 26px; border-radius: 18px; text-align: center;
+      background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-md);
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+    .login-card h2 { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+    .login-card p { margin: 8px 0 0; color: var(--muted-foreground); font-size: 13px; }
+    .sso-btn {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      margin-top: 22px; width: 100%; height: 46px; border-radius: 12px; cursor: pointer;
+      font-family: var(--font-display); font-size: 14.5px; font-weight: 600; letter-spacing: .02em;
+      color: #fff; background: var(--grad); border: 0;
+      box-shadow: 0 6px 22px -6px color-mix(in srgb, var(--primary) 60%, transparent);
+      transition: transform .15s, box-shadow .2s, filter .2s;
+    }
+    .sso-btn .ic { width: 17px; height: 17px; }
+    .sso-btn:hover {
+      transform: translateY(-1px); filter: saturate(1.15);
+      box-shadow: 0 10px 30px -6px color-mix(in srgb, var(--primary) 70%, transparent),
+                  0 0 24px color-mix(in srgb, var(--secondary) 30%, transparent);
+    }
+    .hint { margin-top: 16px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted-foreground); }
+    .page-foot { margin-top: 28px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted-foreground); opacity: .75; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-noise"></div>
+
+  <main class="login-wrap">
+    <div class="login-logo" id="logo"></div>
+    <h1>Djch <span class="grad">Portal</span></h1>
+    <div class="sub">infrastructure-knowledge</div>
+
+    <div class="login-card">
+      <h2>Sign in</h2>
+      <p>Authentication is handled by Authentik SSO.</p>
+      <a class="sso-btn" href="/" id="sso"></a>
+      <div class="hint">// you will be redirected to auth.djch.one</div>
+    </div>
+
+    <div class="page-foot">portal.djch.one · internal ops deck</div>
+  </main>
+
+  <script src="assets/portal.js?v=3"></script>
+  <script>
+    document.getElementById('logo').innerHTML = svgIcon('sparkle');
+    document.getElementById('sso').innerHTML = svgIcon('shield') + 'Sign in with SSO';
+    initBackground();
+  </script>
+</body>
+</html>

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>djch portal</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>✦</text></svg>">
-  <link rel="stylesheet" href="assets/app.css?v=2">
+  <link rel="stylesheet" href="assets/app.css?v=3">
   <style>
     .layout { display: grid; grid-template-columns: 264px 1fr; min-height: 100dvh; }
 
@@ -129,7 +129,6 @@
   </style>
 </head>
 <body>
-  <canvas class="bg-aurora" id="bg"></canvas>
   <div class="bg-grid"></div>
   <div class="bg-noise"></div>
 
@@ -137,12 +136,13 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <span class="logo" id="brand-logo"></span>
-        <span class="bn"><b id="brand-name">djch portal</b><span>ops deck</span></span>
+        <span class="bn"><b id="brand-name">Djch Portal</b><span>ops deck</span></span>
       </div>
       <div id="nav"></div>
       <div class="sb-foot">
         <div class="pill"><span class="dot"></span> internal sso</div>
         <button class="icon-btn" id="theme-btn" aria-label="Toggle theme"></button>
+        <a class="icon-btn" id="logout-btn" href="/outpost.goauthentik.io/sign_out" aria-label="Sign out" title="Sign out"></a>
       </div>
     </aside>
     <div class="scrim" id="scrim"></div>
@@ -181,55 +181,17 @@
     </main>
   </div>
 
-  <script src="assets/portal.js?v=2"></script>
+  <script src="assets/portal.js?v=3"></script>
   <script>
     const $ = s => document.querySelector(s);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* ===== aurora background (pure canvas, zero deps) ===== */
-    (() => {
-      const cv = $('#bg'), ctx = cv.getContext('2d');
-      const PAL = ['#ff4d9d', '#21d4fd', '#8b5cf6', '#2fe39a', '#ffb224'];
-      let W, H, blobs = [], raf = 0;
-      const resize = () => {
-        W = cv.width = innerWidth; H = cv.height = innerHeight;
-        blobs = PAL.map((c, i) => ({
-          c, r: Math.min(W, H) * (0.34 + 0.10 * (i % 3)),
-          x: Math.random() * W, y: Math.random() * H * 0.9,
-          vx: (Math.random() - .5) * .26, vy: (Math.random() - .5) * .2
-        }));
-      };
-      const alpha = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--aurora-alpha')) || .15;
-      const dark = () => document.documentElement.classList.contains('dark');
-      const draw = () => {
-        ctx.clearRect(0, 0, W, H);
-        ctx.globalCompositeOperation = dark() ? 'lighter' : 'source-over';
-        const a = alpha();
-        for (const b of blobs) {
-          b.x += b.vx; b.y += b.vy;
-          if (b.x < -b.r * .4 || b.x > W + b.r * .4) b.vx *= -1;
-          if (b.y < -b.r * .4 || b.y > H + b.r * .4) b.vy *= -1;
-          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-          g.addColorStop(0, b.c + Math.round(a * 255).toString(16).padStart(2, '0'));
-          g.addColorStop(1, b.c + '00');
-          ctx.fillStyle = g;
-          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
-        }
-      };
-      const loop = () => { draw(); raf = requestAnimationFrame(loop); };
-      resize(); addEventListener('resize', resize);
-      if (reduced) { draw(); }
-      else {
-        loop();
-        document.addEventListener('visibilitychange', () => {
-          cancelAnimationFrame(raf); if (!document.hidden) loop();
-        });
-        document.addEventListener('themechange', draw);
-      }
-    })();
+    /* ===== animated background (multi-mode engine in portal.js) ===== */
+    initBackground();
 
     /* ===== chrome ===== */
     $('#brand-logo').innerHTML = svgIcon('sparkle');
+    $('#logout-btn').innerHTML = svgIcon('log-out');
     $('#search-ic').innerHTML = svgIcon('search');
     const themeBtn = $('#theme-btn');
     const paint = () => themeBtn.innerHTML = themeIcon();
@@ -262,11 +224,8 @@
 
     loadPortal().then(data => {
       $('#brand-name').textContent = data.brand || 'djch portal';
-      const t = data.title || 'Infrastructure, visualized';
-      const cut = t.lastIndexOf(' ');
-      $('#lead-title').innerHTML = cut > 0
-        ? t.slice(0, cut) + ' <span class="grad">' + t.slice(cut + 1) + '</span>'
-        : '<span class="grad">' + t + '</span>';
+      const t = data.title || 'Infrastructure-Knowledge';
+      $('#lead-title').innerHTML = '<span class="grad">' + t + '</span>';
       $('#lead-sub').textContent = data.subtitle || '';
       document.title = data.brand || 'djch portal';
       const dom = data.domains || {};
