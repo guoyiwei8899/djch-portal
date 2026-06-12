@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HPC Ubuntu Client 线</title>
+<style>
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:600;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
+
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --vio2:#b07cff; --cyan:#21d4fd;
+  --blue:#38bdf8; --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b;
+  --grad:linear-gradient(100deg,#ff4d9d,#8b5cf6,#21d4fd);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(255,107,107,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(139,92,246,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(33,212,253,.07),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
+
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--red);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,77,157,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:800px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
+
+.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:18px 16px 70px}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;font-family:'Poppins',sans-serif;
+  display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--cyan));box-shadow:0 0 8px var(--fc,var(--cyan))}
+.tab:hover{border-color:var(--fc,var(--cyan));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--cyan));color:var(--ink);
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 10%,var(--card));
+  box-shadow:0 0 18px color-mix(in srgb,var(--fc,var(--cyan)) 28%,transparent)}
+.steps{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center;min-height:30px;
+  margin:10px auto 4px;max-width:1320px;font-size:12px;color:var(--muted)}
+.steps .st{display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(4px);transition:all .35s}
+.steps .st.in{opacity:1;transform:none}
+.steps .st i{font-style:normal;font-family:var(--mono);font-size:10px;width:17px;height:17px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  background:color-mix(in srgb,var(--fc,var(--cyan)) 22%,transparent);color:var(--fc,var(--cyan));
+  border:1px solid color-mix(in srgb,var(--fc,var(--cyan)) 45%,transparent)}
+
+.dia{position:relative;background:rgba(6,9,20,.7);border:1px solid var(--bd);border-radius:16px;
+  padding:6px;margin-top:10px;overflow:hidden}
+.dia::before{content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pink),var(--violet),var(--cyan),transparent);opacity:.8}
+svg{display:block;width:100%;height:auto}
+.node rect{fill:var(--card);stroke:var(--bd2);stroke-width:1}
+.node.grp>rect{fill:rgba(13,19,36,.5);stroke:var(--bd);stroke-dasharray:4 4}
+.node text{fill:var(--ink);font-family:'Poppins',sans-serif}
+.node .ttl{font-size:12.5px;font-weight:600}
+.node .sub{font-size:9.5px;fill:var(--muted);font-family:var(--mono)}
+.node .tag{font-size:9px;fill:var(--faint);font-family:var(--mono)}
+.node.dim{opacity:.30}
+.node.lit>rect{stroke:var(--fc);filter:drop-shadow(0 0 9px color-mix(in srgb,var(--fc) 55%,transparent))}
+.gt{font-family:var(--disp);font-size:11px;letter-spacing:.18em;fill:var(--faint)}
+.edge{fill:none;stroke:rgba(146,168,255,.18);stroke-width:1.6;transition:opacity .3s}
+.edge.lit{stroke-width:2;stroke-dasharray:7 5;animation:dash 1s linear infinite}
+.edge.dim{opacity:.15}
+@keyframes dash{to{stroke-dashoffset:-12}}
+.elabel{font-family:var(--mono);font-size:9.5px;fill:var(--muted);opacity:0;transition:opacity .3s}
+.elabel.lit{opacity:1}
+.pkt{opacity:0}
+.pkt.lit{opacity:1}
+
+.sec{margin-top:46px}
+.sec h2{font-family:var(--disp);font-size:20px;font-weight:600;text-align:center;
+  background:linear-gradient(100deg,#ff4d9d,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;margin:4px 0 18px;letter-spacing:.08em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:16px 17px;backdrop-filter:blur(10px);
+  position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ac,var(--cyan)),transparent);opacity:.7}
+.card h3{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--ac,var(--cyan));margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--cyan));box-shadow:0 0 8px var(--ac,var(--cyan));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--cyan))}
+.card code,td code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);
+  padding:1px 6px;border-radius:5px;border:1px solid rgba(33,212,253,.18)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--mono);font-size:10.5px;text-align:left;color:var(--faint);letter-spacing:.08em;
+  padding:7px 10px;border-bottom:1px solid var(--bd2);text-transform:uppercase}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--muted);vertical-align:top}
+td b{color:var(--ink);font-weight:500}
+.tcard{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:6px 6px 2px;backdrop-filter:blur(10px);overflow-x:auto}
+footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="hero">
+  <div class="kick">/// ansible role anatomy · hpc ubuntu client</div>
+  <h1>HPC Ubuntu Client 线 · 22.04</h1>
+  <p>hostgroup「HPC_UBUNTU」(research 舰队)的 6 role:与 Rocky 服务端相反,client 走 <b>DKMS 跟内核漂</b>;lustre_client 有 <b>install / build 双模式</b>(builder 机产 .deb 喂 Katello);role 默认只装软件 —— IB IP / 挂载每台机显式开</p>
+  <div class="badges">
+    <span class="bdg">hostgroup <b>HPC_UBUNTU</b>(id 2)</span>
+    <span class="bdg">DOCA <b>3.3 ubuntu22</b>(Katello id35)</span>
+    <span class="bdg">模块 <b>DKMS 自编</b>(跟内核)</span>
+    <span class="bdg">NID 规律 <b>researchN → 1.1.1.(N+1)@o2ib</b></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div class="steps" id="steps"></div>
+  <div class="dia"><svg id="svg" viewBox="0 0 1640 700" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+  <!-- ════ role 速查 ════ -->
+  <section class="sec">
+    <h2>6 Role 速查(HPC_UBUNTU)</h2>
+    <div class="sd">// roles 在 foreman:/opt/ansible · 传输铁律:Ubuntu 必须 SCP_IF_SSH + pipelining(sftp 会挂 8min+)</div>
+    <div class="tcard"><table>
+      <tr><th>#</th><th>Role</th><th>干什么</th><th>关键变量</th></tr>
+      <tr><td>1</td><td><b>hpc_node_ubuntu</b></td><td>CPU isolation(每 socket 留系统核)· earlyoom · 防火墙/安全基线</td><td><code>hpc_cpu_system_cores_per_socket=2</code> <code>earlyoom_memory_threshold=10</code></td></tr>
+      <tr><td>2</td><td><b>kernel_tuning_ubuntu</b></td><td>sysctl · hugepage · 禁 THP · CPU governor=performance · swap · needrestart 静默</td><td><code>hugepages_ratio=0.10</code>(research10: 16384 页=32G)</td></tr>
+      <tr><td>3</td><td><b>doca_ubuntu</b></td><td>Katello 内网 DOCA 仓 → <code>apt install doca-ofed</code> → <b>DKMS 编译</b>驱动</td><td><code>doca_katello_repo_url</code>(id35 镜像自 linux.mellanox.com)</td></tr>
+      <tr><td>4</td><td><b>mlx5_ib_ubuntu</b></td><td>udev 命名 ib0/ib1 · <b>netplan IPoIB</b>(默认关)· NUMA IRQ · IB 工具</td><td><code>mlx5_ib_ipoib.enabled=false</code>(每机显式开)</td></tr>
+      <tr><td>5</td><td><b>lustre_client_ubuntu</b></td><td><b>双模式</b>:install(默认,apt DKMS 包)/ build(builder 机源码产 .deb)</td><td><code>lustre_client_mode=install</code> · <code>lustre_auto_mount=false</code></td></tr>
+      <tr><td>6</td><td><b>zabbix_client</b></td><td>与 Rocky 共用:agent active + aidc.hw.snapshot</td><td>—</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ Rocky vs Ubuntu 对比 ════ -->
+  <section class="sec">
+    <h2>Server(Rocky)vs Client(Ubuntu)架构分流</h2>
+    <div class="sd">// OS 天然分流,不同 hostgroup 不同 role 集</div>
+    <div class="tcard"><table>
+      <tr><th>维度</th><th>Rocky 9.7 Server(lustre0x)</th><th>Ubuntu 22.04 Client(research1-11)</th></tr>
+      <tr><td><b>内核策略</b></td><td>versionlock <b>钉死</b> 611.55(与预编译 vermagic 成对)</td><td><b>可漂</b>:apt 升级内核,DKMS autoinstall 重编跟上</td></tr>
+      <tr><td><b>Lustre 模块</b></td><td>预编译 kmod RPM(28 .ko,零编译)</td><td><code>lustre-client-modules-dkms</code> apt 包,对当前内核自编(~2min)</td></tr>
+      <tr><td><b>DOCA/OFED</b></td><td>预编译 kmod(Provides -dkms 骗过依赖)</td><td>apt doca-ofed → DKMS 现编(~10min)</td></tr>
+      <tr><td><b>debuginfo</b></td><td>仅 DKMS 路径需要(仓 id73)</td><td>不需要(client 无 ldiskfs)</td></tr>
+      <tr><td><b>换内核(CVE)</b></td><td>build 机重编→Katello→改 URL+锁→滚动重启</td><td>apt 升内核重启即可,DKMS 自动</td></tr>
+      <tr><td><b>安全更新</b></td><td colspan="2">REX 定时 job「Daily non-kernel security 04:00」两组通吃(排除内核)</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ════ 接入 checklist ════ -->
+  <section class="sec">
+    <h2>新 client 接入 Lustre 的 checklist</h2>
+    <div class="sd">// role 按设计只装软件 · 网络与挂载每台机显式声明(防误挂生产)</div>
+    <div class="cards">
+      <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>host vars 四件套</h3><ul>
+        <li><code>mlx5_ib_ipoib.enabled=true</code> + interfaces(netplan 65-mlx5-ib.yaml)</li>
+        <li>IB IP 按规律:researchN → <code>1.1.1.(N+1)/24</code>(MTU 2044)</li>
+        <li><code>lustre_mgs_nid</code> 指向目标集群 MGS</li>
+        <li><code>lustre_auto_mount=true</code> 才会写 fstab + 挂载</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>运维铁律(client 侧)</h3><ul>
+        <li><b>LNET/ko2iblnd 保持默认</b>(peer_credits=32)—— 调高会触发 recovery storm 拖崩 client</li>
+        <li>client 重启/关机前必须先 <code>umount -l</code> Lustre,否则 lnet 卡死 systemd 只能 IPMI 救</li>
+        <li>Ansible 传输:<code>ANSIBLE_SCP_IF_SSH=true</code> + pipelining(sftp 子系统会挂)</li>
+      </ul></div>
+      <div class="card" style="--ac:var(--pink)"><h3><span class="ic"></span>已知硬件案例</h3><ul>
+        <li>research11 ConnectX-5 fw 16.21.3002:每次重启 irisc 崩一次 = eviction/写卡死根因,治本=换卡</li>
+        <li>「cannot bind to a free privileged port -99」是连不上 research11 的<b>伪装错误</b>,别冤枉 OSS</li>
+        <li>fsync 卡死 unkillable 进程清理 → sysrq-b(见 memory 手法)</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>portal.djch.one · hpc ubuntu client anatomy · roles 实查 foreman:/opt/ansible · 2026-06-12</footer>
+</main>
+
+<script>
+const C={pink:'#ff4d9d',violet:'#8b5cf6',vio2:'#b07cff',cyan:'#21d4fd',blue:'#38bdf8',green:'#2fe39a',amber:'#ffb224',red:'#ff6b6b'};
+
+const NODES=[
+  // row1: 6 roles
+  {id:'rgrp',x:10,y:40,w:1620,h:150,grp:1,title:'hostgroup「HPC_UBUNTU」· play 顺序',sub:'Ubuntu 22.04 · research 舰队'},
+  {id:'r1',x:26,y:88,w:248,h:82,title:'1 · hpc_node_ubuntu',sub:'CPU isolation · earlyoom',tag:'每 socket 留 2 系统核'},
+  {id:'r2',x:292,y:88,w:248,h:82,title:'2 · kernel_tuning_ub',sub:'sysctl · hugepage · 禁THP',tag:'governor=performance'},
+  {id:'r3',x:558,y:88,w:248,h:82,title:'3 · doca_ubuntu',sub:'apt doca-ofed → DKMS 编译',tag:'Katello id35 内网仓'},
+  {id:'r4',x:824,y:88,w:248,h:82,title:'4 · mlx5_ib_ubuntu',sub:'udev 命名 · netplan IPoIB(默认关)',tag:'NUMA IRQ · IB 工具'},
+  {id:'r5',x:1090,y:88,w:248,h:82,title:'5 · lustre_client_ub',sub:'install / build 双模式',tag:'auto_mount 默认 false'},
+  {id:'r6',x:1356,y:88,w:256,h:82,title:'6 · zabbix_client',sub:'agent + aidc.hw.snapshot',tag:'与 Rocky 共用'},
+  // row2: DKMS 跟内核
+  {id:'dgrp',x:10,y:226,w:790,h:170,grp:1,title:'DKMS 跟内核漂',sub:'client 侧内核可升级'},
+  {id:'kup',x:28,y:280,w:230,h:84,title:'apt 内核升级',sub:'unattended / 手动',tag:'不锁内核'},
+  {id:'dkm',x:296,y:280,w:250,h:84,title:'DKMS autoinstall',sub:'doca + lustre 两套模块重编',tag:'~10min + ~2min'},
+  {id:'rb',x:584,y:280,w:196,h:84,title:'reboot 生效',sub:'新内核+新模块'},
+  // row2 right: 对比注
+  {id:'cmp',x:840,y:280,w:770,h:84,title:'对照:Rocky 服务端反向策略',sub:'versionlock 钉死 611.55 · 预编译 kmod 零编译',tag:'OS 天然分流:server 求稳钉死 / client 求新跟漂'},
+  // row3: builder 链
+  {id:'bgrp',x:10,y:430,w:1620,h:154,grp:1,title:'lustre_client build 模式(builder 链)',sub:'源码 → .deb → Katello → 全队 install'},
+  {id:'bld',x:28,y:482,w:330,h:84,title:'builder 机(跑一次)',sub:'lustre_client_mode=build',tag:'源码编译产 .deb'},
+  {id:'deb',x:430,y:482,w:240,h:84,title:'.deb 产物',sub:'lustre-client-modules-dkms'},
+  {id:'kat',x:742,y:482,w:330,h:84,title:'Katello ubuntu 仓',sub:'doca-3.3-ubuntu22(id35)+ lustre client',tag:'foreman pulp 内网分发'},
+  {id:'ins',x:1144,y:482,w:466,h:84,title:'全队 install 模式(默认)',sub:'apt install lustre-client-modules-dkms',tag:'DKMS 对各自内核自编'},
+  // row4: 接入
+  {id:'hv',x:28,y:616,w:330,h:74,title:'host vars(每机显式)',sub:'ipoib.enabled · ib_interfaces · mgs_nid',tag:'默认只装软件:不配 IP 不挂载'},
+  {id:'np',x:430,y:616,w:240,h:74,title:'netplan IPoIB',sub:'ib0 = 1.1.1.(N+1)/24',tag:'MTU 2044'},
+  {id:'ln',x:742,y:616,w:240,h:74,title:'lnet o2ib',sub:'ko2iblnd 保持默认',tag:'peer_credits=32 铁律'},
+  {id:'mnt',x:1054,y:616,w:556,h:74,title:'mount Lustre',sub:'mgs_nid@o2ib:/fs → 挂载点(auto_mount=true 才写 fstab)',tag:'research1-11 client 舰队'},
+];
+
+const EDGES=[
+  {id:'s1',f:'r1',t:'r2'},{id:'s2',f:'r2',t:'r3'},{id:'s3',f:'r3',t:'r4'},{id:'s4',f:'r4',t:'r5'},{id:'s5',f:'r5',t:'r6'},
+  {id:'m0',f:'r3',t:'dkm',lbl:'注册 DKMS',curve:40},
+  {id:'m1',f:'kup',t:'dkm',lbl:'触发重编'},
+  {id:'m2',f:'dkm',t:'rb'},
+  {id:'b0',f:'r5',t:'bld',lbl:'mode=build(仅 builder)',curve:60},
+  {id:'b1',f:'bld',t:'deb'},
+  {id:'b2',f:'deb',t:'kat',lbl:'上传'},
+  {id:'b3',f:'kat',t:'ins',lbl:'apt 分发'},
+  {id:'a0',f:'hv',t:'np',lbl:'开 IPoIB'},
+  {id:'a1',f:'np',t:'ln'},
+  {id:'a2',f:'ln',t:'mnt',lbl:'NID 可达后挂载'},
+  {id:'a3',f:'ins',t:'mnt',v:1,lbl:'模块就绪'},
+];
+
+const FLOWS=[
+  {name:'① 6 Role 顺序流',color:C.cyan,
+   edges:['s1','s2','s3','s4','s5'],
+   nodes:['rgrp','r1','r2','r3','r4','r5','r6'],
+   steps:['CPU 隔离/earlyoom/安全基线','内核与 hugepage 调优','DOCA OFED(DKMS 编译)','IB 命名 + netplan(默认关)','lustre client 双模式','zabbix 监控接入']},
+  {name:'② DKMS 跟内核漂',color:C.amber,
+   edges:['m0','m1','m2'],
+   nodes:['r3','r5','dgrp','kup','dkm','rb','cmp'],
+   steps:['apt 升级内核(不锁)','DKMS autoinstall 重编 doca+lustre 模块','reboot 即新内核可用','对照:Rocky 钉死内核走预编译']},
+  {name:'③ Builder 产物链',color:C.vio2,
+   edges:['b0','b1','b2','b3'],
+   nodes:['r5','bgrp','bld','deb','kat','ins'],
+   steps:['builder 机 mode=build 源码编译(跑一次)','产 .deb 上传 Katello','全队默认 install 模式 apt 安装','DKMS 对各机内核自编,版本统一']},
+  {name:'④ 接入挂载流',color:C.green,
+   edges:['a0','a1','a2','a3'],
+   nodes:['hv','np','ln','mnt','ins'],
+   steps:['host vars 显式开 IPoIB + 指 MGS NID','netplan 配 ib0(1.1.1.N+1 · MTU 2044)','lnet o2ib 起(ko2iblnd 保持默认!)','auto_mount=true 才写 fstab 挂载']},
+];
+
+const svg=document.getElementById('svg');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},parent=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);parent.appendChild(e);return e;};
+const byId={};NODES.forEach(n=>byId[n.id]=n);
+
+const edgeEls={},pktEls={},lblEls={};
+function anchors(e){
+  const a=byId[e.f],b=byId[e.t];
+  if(e.v){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
+  }
+  const dy=Math.abs((a.y+a.h/2)-(b.y+b.h/2));
+  if(dy>60&&Math.abs(a.x-b.x)>40){
+    const down=b.y>a.y;
+    return down?[a.x+a.w/2,a.y+a.h,b.x+b.w/2,b.y,'v']:[a.x+a.w/2,a.y,b.x+b.w/2,b.y+b.h,'v'];
+  }
+  const fwd=b.x+b.w/2>a.x+a.w/2;
+  return fwd?[a.x+a.w,a.y+a.h/2,b.x,b.y+b.h/2,'h']:[a.x,a.y+a.h/2,b.x+b.w,b.y+b.h/2,'h'];
+}
+EDGES.forEach(e=>{
+  const[x1,y1,x2,y2,dir]=anchors(e);
+  let d;
+  if(dir==='v'){const c=e.curve||0;d=`M${x1},${y1} C${x1+c},${(y1+y2)/2} ${x2+c},${(y1+y2)/2} ${x2},${y2}`;}
+  else{
+    const c=e.curve||0,mx=(x1+x2)/2;
+    d=c?`M${x1},${y1} C${mx},${y1+c} ${mx},${y2+c} ${x2},${y2}`
+       :`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  }
+  edgeEls[e.id]=el('path',{d,class:'edge',id:'p-'+e.id});
+  const pk=el('circle',{r:3.4,class:'pkt'});
+  const mo=el('animateMotion',{dur:'1.5s',repeatCount:'indefinite'},pk);
+  el('mpath',{href:'#p-'+e.id},mo);
+  pktEls[e.id]=pk;
+  if(e.lbl){
+    const midx=(x1+x2)/2,midy=(y1+y2)/2+(dir==='h'&&e.curve?e.curve*0.72:0)-6;
+    const t=el('text',{x:midx,y:midy,class:'elabel','text-anchor':'middle'});
+    t.textContent=e.lbl;lblEls[e.id]=t;
+  }
+});
+
+const nodeEls={};
+NODES.forEach(n=>{
+  const g=el('g',{class:'node'+(n.grp?' grp':'')});
+  el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:10},g);
+  if(n.grp){
+    const t=el('text',{x:n.x+14,y:n.y+24,class:'gt'},g);t.textContent=n.title.toUpperCase();
+    const s=el('text',{x:n.x+14,y:n.y+41,class:'sub'},g);s.textContent=n.sub;
+  }else{
+    const t=el('text',{x:n.x+14,y:n.y+23,class:'ttl'},g);t.textContent=n.title;
+    const s=el('text',{x:n.x+14,y:n.y+40,class:'sub'},g);s.textContent=n.sub;
+    if(n.tag){const k=el('text',{x:n.x+14,y:n.y+56,class:'tag'},g);k.textContent=n.tag;}
+  }
+  nodeEls[n.id]=g;
+});
+
+const tabsBox=document.getElementById('tabs'),stepsBox=document.getElementById('steps');
+FLOWS.forEach((f,i)=>{
+  const b=document.createElement('button');
+  b.className='tab';b.style.setProperty('--fc',f.color);
+  b.innerHTML='<span class="dot"></span>'+f.name;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  const f=FLOWS[i];
+  document.documentElement.style.setProperty('--fc',f.color);
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  EDGES.forEach(e=>{
+    const on=f.edges.includes(e.id);
+    edgeEls[e.id].setAttribute('class','edge'+(on?' lit':' dim'));
+    edgeEls[e.id].style.stroke=on?f.color:'';
+    edgeEls[e.id].style.filter=on?`drop-shadow(0 0 5px ${f.color})`:'';
+    pktEls[e.id].setAttribute('class','pkt'+(on?' lit':''));
+    pktEls[e.id].setAttribute('fill',f.color);
+    if(lblEls[e.id]){lblEls[e.id].setAttribute('class','elabel'+(on?' lit':''));lblEls[e.id].style.fill=on?f.color:'';}
+  });
+  f.edges.forEach((id,k)=>{
+    const mo=pktEls[id].querySelector('animateMotion');
+    mo.setAttribute('begin',(k*0.2)+'s');
+    const node=pktEls[id];node.remove();svg.appendChild(node);
+  });
+  NODES.forEach(n=>{
+    const on=f.nodes.includes(n.id);
+    nodeEls[n.id].setAttribute('class','node'+(n.grp?' grp':'')+(on?' lit':' dim'));
+    nodeEls[n.id].style.setProperty('--fc',f.color);
+  });
+  stepsBox.innerHTML='';
+  stepsBox.style.setProperty('--fc',f.color);
+  f.steps.forEach((s,k)=>{
+    const d=document.createElement('span');
+    d.className='st';d.innerHTML='<i>'+(k+1)+'</i>'+s;
+    stepsBox.appendChild(d);
+    setTimeout(()=>d.classList.add('in'),110*k+60);
+  });
+}
+activate(0);
+</script>
+</body>
+</html>

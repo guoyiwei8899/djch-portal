@@ -25,6 +25,12 @@
       "path": "viz/lustre-server-role.html"
     },
     {
+      "domain": "ansible", "icon": "monitor",
+      "title": "HPC Ubuntu Client 线",
+      "desc": "HPC_UBUNTU 6 roles: DKMS-follows-kernel, builder .deb chain, IPoIB/mount checklist",
+      "path": "viz/hpc-ubuntu-client.html"
+    },
+    {
       "domain": "network", "icon": "globe",
       "title": "Transparent Proxy Flow",
       "desc": "DNS / direct / proxy / RouterOS split-routing data path",
