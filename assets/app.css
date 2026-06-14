@@ -50,6 +50,7 @@
   --d-ansible: #c0392b;
   --d-monitoring: #a96f00;
   --d-aidc: #0c8577;
+  --d-ci_cd: #d6580a;
 }
 
 /* ---------- dark (default, applied by portal.js before paint) ---------- */
@@ -89,6 +90,7 @@
   --d-ansible: #ff6b6b;
   --d-monitoring: #ffb224;
   --d-aidc: #2dd4bf;
+  --d-ci_cd: #ff7a3c;
 }
 
 * { box-sizing: border-box; }
