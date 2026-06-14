@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIDC 部署 / 备份恢复手册</title>
+<style>
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --cyan:#21d4fd; --blue:#38bdf8;
+  --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b; --teal:#2dd4bf;
+  --grad:linear-gradient(100deg,#2dd4bf,#21d4fd,#8b5cf6);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(45,212,191,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(33,212,253,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(139,92,246,.07),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--teal);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(45,212,191,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:780px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:18px 16px 70px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:22px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--teal));box-shadow:0 0 8px var(--fc,var(--teal))}
+.tab:hover{border-color:var(--fc,var(--teal));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--teal));color:var(--ink);background:color-mix(in srgb,var(--fc,var(--teal)) 12%,var(--card))}
+.pane{display:none}.pane.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sec{margin-top:30px}
+.sec h2{font-family:var(--disp);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sec h2 .n{font-family:var(--mono);font-size:12px;color:var(--bg);background:var(--fc,var(--teal));border-radius:7px;padding:2px 8px;font-weight:700}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);margin:0 0 14px 2px;letter-spacing:.05em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:13px}
+.card{position:relative;background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:15px 16px;backdrop-filter:blur(10px);overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--ac,var(--teal)),transparent);opacity:.6}
+.card h3{font-family:var(--disp);font-size:13.5px;font-weight:600;color:var(--ac,var(--teal));margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--teal));box-shadow:0 0 8px var(--ac,var(--teal));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none;margin-top:4px}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--teal))}
+.card b{color:var(--ink);font-weight:600}
+code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);border:1px solid rgba(33,212,253,.16);border-radius:5px;padding:1px 5px}
+pre.cmd{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:#cfe3ff;background:#0a0f1e;border:1px solid var(--bd);border-left:3px solid var(--fc,var(--teal));
+  border-radius:10px;padding:13px 15px;margin:12px 0;overflow-x:auto;white-space:pre}
+pre.cmd .c{color:var(--faint)}pre.cmd .k{color:var(--teal)}pre.cmd .s{color:var(--amber)}
+.note{border-radius:12px;padding:11px 14px;font-size:12.5px;margin:12px 0;border:1px solid}
+.note.warn{border-color:rgba(255,178,36,.4);background:rgba(255,178,36,.08);color:#ffd98a}
+.note.tip{border-color:rgba(45,212,191,.35);background:rgba(45,212,191,.07);color:#9eeede}
+.note b{color:var(--ink)}
+footer{text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px;margin-top:46px;padding-top:18px;border-top:1px solid var(--bd)}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="hero">
+  <div class="kick">/// aidc ops runbook</div>
+  <h1>AIDC 部署 · 备份恢复手册</h1>
+  <p>aidc.djch.one 门户的重新部署、备份恢复全流程,以及当前部署方式的优化建议。源码 GitHub <code>guoyiwei8899/aidc</code> → buildah 构建 → <code>registry.djch.one</code> → RKE2;清单 <code>k8s-gitops</code> 经 ArgoCD 同步(automated + selfHeal)。</p>
+  <div class="badges">
+    <span class="bdg">构建 <b>buildah</b></span>
+    <span class="bdg">编排 <b>RKE2 + ArgoCD</b></span>
+    <span class="bdg">存储 <b>Longhorn PVC</b></span>
+    <span class="bdg">DB <b>PG-HA (home-media)</b></span>
+    <span class="bdg">备份 <b>nfs01 :135</b></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+
+  <!-- ════════ 架构 ════════ -->
+  <section class="pane on" data-fc="var(--teal)">
+    <div class="sec">
+      <h2><span class="n">0</span> 部署架构速览</h2>
+      <div class="sd">// 改代码走镜像;改 pod 规格走 k8s-gitops git + ArgoCD</div>
+      <div class="cards">
+        <div class="card" style="--ac:var(--teal)"><h3><span class="ic"></span>代码 → 镜像</h3><ul>
+          <li>源码 GitHub <code>guoyiwei8899/aidc</code>(本地 <code>~/git-ops/aidc-portal</code>)</li>
+          <li>构建节点 <b>192.168.6.131</b>:<code>buildah bud</code> → push <code>registry.djch.one</code></li>
+          <li>镜像 <code>aidc-backend:latest</code> / <code>aidc-frontend:latest</code></li>
+          <li>gbtipmitool 内置镜像 <code>/app/tools/gbt/</code></li>
+        </ul></div>
+        <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>清单 → 集群</h3><ul>
+          <li>清单仓 GitHub <code>k8s-gitops/manifests/aidc/</code></li>
+          <li>ArgoCD app <code>aidc-manifests</code> · <b>automated + selfHeal</b></li>
+          <li>backend <code>replicas:1 + Recreate</code>(固件状态机 + RWO PVC,不能 HA)</li>
+          <li>secrets 走 <b>sealed-secrets</b>(<code>secrets.sealed.yaml</code>)</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>状态 · 数据</h3><ul>
+          <li>DB:<b>home-media</b> 的 <code>my-pg-ha-postgresql</code>(3 节点 PG-HA + pgpool)</li>
+          <li>固件库:Longhorn PVC <code>aidc-backend-data</code> 10Gi → <code>/data/firmware</code></li>
+          <li>备份目标:<b>nfs01</b> <code>nfs://192.168.6.135:/data/k8s-backup</code></li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 重新部署 ════════ -->
+  <section class="pane" data-fc="var(--cyan)">
+    <div class="sec">
+      <h2><span class="n">1</span> 重新部署</h2>
+      <div class="sd">// 只改了 Python/前端代码 → 重建镜像;改了卷/env/replicas → 走 k8s-gitops</div>
+
+      <div class="card" style="--ac:var(--cyan);margin-bottom:13px"><h3><span class="ic"></span>A · 后端代码改动(最常见)</h3>
+<pre class="cmd"><span class="c"># 本地从 aidc-portal/backend 打包 → 构建节点构建推送 → 滚动重启</span>
+<span class="k">cd</span> ~/git-ops/aidc-portal
+<span class="k">tar</span> -czf /tmp/be.tar.gz -C backend --exclude=__pycache__ --exclude='*.pyc' .
+<span class="k">scp</span> /tmp/be.tar.gz yiwei@192.168.6.131:/tmp/
+<span class="k">ssh</span> yiwei@192.168.6.131 <span class="s">'</span>
+  rm -rf /tmp/be && mkdir /tmp/be && tar -xzf /tmp/be.tar.gz -C /tmp/be
+  cd /tmp/be && sudo -n buildah bud --layers -t aidc-backend:latest .
+  sudo -n buildah push aidc-backend:latest docker://registry.djch.one/aidc-backend:latest
+  KC=<span class="s">"sudo -n /usr/local/bin/kubectl --kubeconfig=/etc/rancher/rke2/rke2.yaml"</span>
+  $KC -n aidc rollout restart deploy/aidc-backend
+  $KC -n aidc rollout status deploy/aidc-backend --timeout=180s
+<span class="s">'</span></pre>
+      <p style="font-size:12px;color:var(--muted)">前端同理:把 <code>backend</code> 换 <code>frontend</code>、镜像换 <code>aidc-frontend</code>、tar 排除 <code>node_modules .next</code>。</p>
+      </div>
+
+      <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>B · pod 规格改动(卷 / env / replicas / 镜像引用)</h3>
+<pre class="cmd"><span class="c"># 改 k8s-gitops/manifests/aidc/*.yaml → push → 强制 ArgoCD 同步</span>
+<span class="k">cd</span> ~/git-ops/k8s-gitops
+<span class="c"># 编辑 manifests/aidc/backend.yaml ...</span>
+<span class="k">git</span> add . && git commit -m "aidc: ..." && git push
+<span class="k">ssh</span> yiwei@192.168.6.131 <span class="s">"</span>sudo -n /usr/local/bin/kubectl --kubeconfig=/etc/rancher/rke2/rke2.yaml \
+  -n argocd annotate applications.argoproj.io aidc-manifests \
+  argocd.argoproj.io/refresh=hard --overwrite<span class="s">"</span></pre>
+      <div class="note warn">⚠️ <b>ArgoCD selfHeal 坑(踩过两次)</b>:直接 <code>kubectl apply</code> 改 spec 会被 selfHeal <b>回滚</b>。必须先 <code>git push</code> 到 k8s-gitops,再 <b>hard refresh</b> 触发同步;否则 ArgoCD 用旧 commit 把你的改动打回去。删 secret 前务必先让 manifest 真去掉对它的引用,否则 pod 卡 ContainerCreating。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 备份 ════════ -->
+  <section class="pane" data-fc="var(--green)">
+    <div class="sec">
+      <h2><span class="n">2</span> 备份</h2>
+      <div class="sd">// 三样:数据库 · 固件库 PVC · secrets。都已自动化,可手动触发</div>
+      <div class="cards">
+        <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>数据库(自动日备)</h3>
+          <ul><li>CronJob <code>home-media/pg-dumpall-nfs</code> 每日 <b>02:00</b>(Asia/Shanghai)<code>pg_dumpall</code> 全库 → nfs01,含 aidc 库</li></ul>
+<pre class="cmd"><span class="c"># 手动立刻备一次</span>
+$KC -n home-media create job --from=cronjob/pg-dumpall-nfs aidc-manual-dump
+$KC -n home-media logs job/aidc-manual-dump -f</pre>
+        </div>
+        <div class="card" style="--ac:var(--teal)"><h3><span class="ic"></span>固件库 PVC(Longhorn)</h3>
+          <ul>
+            <li>Longhorn 卷 <code>aidc-backend-data</code> 自动备份 → <code>nfs://192.168.6.135:/data/k8s-backup</code></li>
+            <li>另有 CronJob <code>longhorn-system/pg-backup</code> 每日 19:00</li>
+            <li>手动:Longhorn UI → Volume → <b>Create Backup</b></li>
+          </ul>
+        </div>
+        <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>Secrets / 配置</h3>
+          <ul>
+            <li><code>aidc-secrets</code> 以 <b>sealed-secret</b> 存在 <code>k8s-gitops/manifests/aidc/secrets.sealed.yaml</code> —— git 即备份</li>
+            <li><b>⚠️ 关键</b>:sealed-secrets controller 的<b>私钥</b>要单独备(<code>kubectl -n kube-system get secret -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml</code>),丢了所有 sealed secret 都解不开</li>
+            <li>TLS 证书 <code>aidc-djch-one-tls</code> 由 cert-manager 自动签发,无需备</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 恢复 ════════ -->
+  <section class="pane" data-fc="var(--amber)">
+    <div class="sec">
+      <h2><span class="n">3</span> 恢复</h2>
+      <div class="sd">// 顺序:secrets/清单 → DB → PVC → 部署</div>
+      <div class="card" style="--ac:var(--amber);margin-bottom:13px"><h3><span class="ic"></span>整栈恢复(新集群 / 灾后)</h3>
+<pre class="cmd"><span class="c"># 1. sealed-secrets controller 私钥先恢复(否则 sealed secret 解不开)</span>
+$KC apply -f <从备份导出的 sealed-secrets-key.yaml>
+<span class="c"># 2. ArgoCD 重新指向 k8s-gitops → 自动拉起 namespace/secret/ingress/deploy</span>
+$KC -n argocd app sync aidc-manifests   <span class="c"># 或在 ArgoCD UI Sync</span>
+<span class="c"># 3. 镜像若 registry 还在,直接拉;否则按「重新部署」重建推送</span></pre>
+      </div>
+      <div class="cards">
+        <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>数据库恢复</h3>
+<pre class="cmd"><span class="c"># 从 nfs01 取 dump,灌回 PG-HA 主库(写经 pgpool postgres 超管)</span>
+gunzip -c /nfs/k8s-backup/pg-dumpall-YYYYMMDD.sql.gz \
+  | $KC -n home-media exec -i my-pg-ha-postgresql-ha-postgresql-0 -- \
+    psql -U postgres</pre>
+          <p style="font-size:11.5px;color:var(--faint)">只恢复 aidc 库:从 dumpall 里截 aidc 段,或单独 pg_dump aidc 再 psql。</p>
+        </div>
+        <div class="card" style="--ac:var(--teal)"><h3><span class="ic"></span>固件库 PVC 恢复</h3>
+          <ul>
+            <li>Longhorn UI → Backup → 选 <code>aidc-backend-data</code> 备份 → <b>Restore</b> 成新卷</li>
+            <li>建对应 PVC 绑定该卷(或改 <code>aidc-backend-data</code> PVC 指向恢复卷)</li>
+            <li>backend <code>Recreate</code> 重启后即挂载 <code>/data/firmware</code></li>
+          </ul>
+        </div>
+      </div>
+      <div class="note tip">💡 日常只是<b>误删/回退</b>:DB 用 dump 单库恢复;固件库用 Longhorn 快照回滚;manifest 用 <code>git revert</code> + ArgoCD sync。整栈灾备才走上面全流程。</div>
+    </div>
+  </section>
+
+  <!-- ════════ 优化建议 ════════ -->
+  <section class="pane" data-fc="var(--pink)">
+    <div class="sec">
+      <h2><span class="n">4</span> 部署优化建议</h2>
+      <div class="sd">// 现状能用但有改进空间,按收益排序</div>
+      <div class="cards">
+        <div class="card" style="--ac:var(--pink)"><h3><span class="ic"></span>① 镜像按 git SHA 打标签(最高收益)</h3><ul>
+          <li>现状 <code>:latest</code> 无法回滚,且 ArgoCD 感知不到镜像变化(踩过「陈旧镜像不回滚」坑)</li>
+          <li>改 <code>aidc-backend:&lt;gitsha&gt;</code>,k8s-gitops manifest 写死该 tag → <b>ArgoCD 跟踪 + 一键回滚</b></li>
+          <li>配 <b>ArgoCD Image Updater</b> 可自动 bump tag</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>② 修 build-and-deploy.sh</h3><ul>
+          <li>现脚本硬编 <code>/root/aidc-portal</code>,与实际 checkout 路径不符 → <b>不可直接用</b>(本会话一直手动 tar+scp+buildah)</li>
+          <li>改成从仓库目录相对打包、参数化镜像 tag</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>③ CI 化</h3><ul>
+          <li>GitHub/Gitea Actions:push → 构建 SHA 镜像 → 自动 bump k8s-gitops tag → ArgoCD 同步</li>
+          <li>免手工 tar+scp+buildah,部署可追溯、可回滚</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>④ 流程纪律(已成文)</h3><ul>
+          <li>spec 改动只能走 k8s-gitops git + ArgoCD;<code>kubectl apply</code> 会被 selfHeal 回滚</li>
+          <li>SHA 化后镜像改动也走 git,彻底统一到 GitOps,不再 <code>rollout restart</code></li>
+          <li><b>replicas=1 是硬约束</b>(进程内固件状态机 + RWO PVC),backend 不能 HA —— 保留</li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>aidc-portal · deploy &amp; backup runbook · buildah → registry.djch.one → RKE2 / ArgoCD · 备份 nfs01</footer>
+</main>
+
+<script>
+const TABS=[
+  {label:'架构速览',fc:'var(--teal)'},
+  {label:'重新部署',fc:'var(--cyan)'},
+  {label:'备份',fc:'var(--green)'},
+  {label:'恢复',fc:'var(--amber)'},
+  {label:'优化建议',fc:'var(--pink)'},
+];
+const panes=[...document.querySelectorAll('.pane')];
+const tabsBox=document.getElementById('tabs');
+TABS.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.className='tab'+(i===0?' on':'');b.style.setProperty('--fc',t.fc);
+  b.innerHTML='<span class="dot"></span>'+t.label;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  panes.forEach((p,j)=>{p.classList.toggle('on',j===i);});
+  document.documentElement.style.setProperty('--fc',TABS[i].fc);
+}
+activate(0);
+</script>
+</body>
+</html>

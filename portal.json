@@ -3,76 +3,141 @@
   "title": "Infrastructure-Knowledge",
   "subtitle": "Interactive architecture maps & live system directory",
   "domains": {
-    "storage":        { "label": "Storage",         "icon": "hard-drive" },
-    "k8s":            { "label": "Kubernetes",      "icon": "hexagon" },
-    "network":        { "label": "Network",         "icon": "globe" },
-    "virtualization": { "label": "Virtualization",  "icon": "layers" },
-    "terraform_iac":  { "label": "Terraform · IaC", "icon": "box" },
-    "ansible":        { "label": "Ansible · Roles", "icon": "terminal" },
-    "monitoring":     { "label": "Monitoring",      "icon": "activity" },
-    "aidc":           { "label": "AIDC",            "icon": "cpu" }
+    "storage": {
+      "label": "Storage",
+      "icon": "hard-drive"
+    },
+    "k8s": {
+      "label": "Kubernetes",
+      "icon": "hexagon"
+    },
+    "network": {
+      "label": "Network",
+      "icon": "globe"
+    },
+    "virtualization": {
+      "label": "Virtualization",
+      "icon": "layers"
+    },
+    "terraform_iac": {
+      "label": "Terraform · IaC",
+      "icon": "box"
+    },
+    "ansible": {
+      "label": "Ansible · Roles",
+      "icon": "terminal"
+    },
+    "monitoring": {
+      "label": "Monitoring",
+      "icon": "activity"
+    },
+    "aidc": {
+      "label": "AIDC",
+      "icon": "cpu"
+    }
   },
   "viz": [
     {
-      "domain": "ansible", "icon": "terminal",
+      "domain": "ansible",
+      "icon": "terminal",
       "title": "Foreman Build Pipeline · Rocky 9.7",
       "desc": "Build → PXE GRUB2 → Kickstart → Ansible roles: native auto-play vs REX, variable precedence",
       "path": "viz/foreman-build.html"
     },
     {
-      "domain": "ansible", "icon": "hard-drive",
+      "domain": "ansible",
+      "icon": "hard-drive",
       "title": "Lustre Server Role 解剖",
       "desc": "5-role sequence, lustre_server 7 stages, prebuilt vs DKMS split, kernel CVE upgrade flow",
       "path": "viz/lustre-server-role.html"
     },
     {
-      "domain": "ansible", "icon": "monitor",
+      "domain": "ansible",
+      "icon": "monitor",
       "title": "HPC Ubuntu Client 线",
       "desc": "HPC_UBUNTU 6 roles: DKMS-follows-kernel, builder .deb chain, IPoIB/mount checklist",
       "path": "viz/hpc-ubuntu-client.html"
     },
     {
-      "domain": "network", "icon": "globe",
+      "domain": "network",
+      "icon": "globe",
       "title": "Transparent Proxy Flow",
       "desc": "DNS / direct / proxy / RouterOS split-routing data path",
       "path": "viz/proxy-flow-diagram.html"
     },
     {
-      "domain": "k8s", "icon": "hexagon",
+      "domain": "k8s",
+      "icon": "hexagon",
       "title": "Kubernetes Architecture",
       "desc": "RKE2 cluster components and traffic topology",
       "path": "viz/k8s-arch.html"
     },
     {
-      "domain": "virtualization", "icon": "server",
+      "domain": "virtualization",
+      "icon": "server",
       "title": "Infrastructure Architecture",
       "desc": "Network & infrastructure topology",
       "path": "viz/djch-infra.html"
     },
     {
-      "domain": "monitoring", "icon": "bar-chart",
+      "domain": "monitoring",
+      "icon": "bar-chart",
       "title": "Zabbix × AIDC Hardware Pipeline",
       "desc": "Custom agent → Zabbix → AIDC rack: snapshot, temps/power, locate LED flows",
       "path": "viz/zabbix-arch.html"
     },
     {
-      "domain": "aidc", "icon": "cpu",
+      "domain": "aidc",
+      "icon": "cpu",
       "title": "BMC / BIOS Firmware Pipeline",
       "desc": "Redfish firmware inventory, PVC library and vendor-dispatched BMC/BIOS upgrade state machine",
       "path": "viz/bmc-firmware-arch.html"
     },
     {
-      "domain": "aidc", "icon": "layers",
+      "domain": "aidc",
+      "icon": "rocket",
+      "title": "AIDC 部署 / 备份恢复手册",
+      "desc": "重新部署(代码→镜像 / pod 规格→k8s-gitops+ArgoCD)、备份(PG-HA 日备+Longhorn PVC→nfs01+sealed-secrets)、恢复全流程,含 SHA 镜像/CI 等优化建议",
+      "path": "viz/aidc-deploy-runbook.html"
+    },
+    {
+      "domain": "aidc",
+      "icon": "layers",
       "title": "AIDC Rack 机柜视图",
       "desc": "/racks/{id}/detail aggregates occupants + PDU + health into SVG 28px/U front/rear elevation, status lamps, hover metrics, APC outlet power control",
       "path": "viz/aidc-rack-arch.html"
     }
   ],
   "system": [
-    { "icon": "book",      "title": "Wiki",          "desc": "wiki.js knowledge base",        "url": "https://wiki.djch.one" },
-    { "icon": "activity",  "title": "Proxy Monitor", "desc": "sing-box node latency topology", "url": "https://proxy-mon.djch.one" },
-    { "icon": "monitor",   "title": "AIDC Portal",   "desc": "Datacenter asset portal",        "url": "https://aidc.djch.one" },
-    { "icon": "sliders",   "title": "Semaphore",     "desc": "Terraform automation GUI",       "url": "https://semaphore.djch.one" },
-    { "icon": "bar-chart", "title": "Zabbix",        "desc": "Infrastructure monitoring",      "url": "http://192.168.6.13/zabbix/" }
+    {
+      "icon": "book",
+      "title": "Wiki",
+      "desc": "wiki.js knowledge base",
+      "url": "https://wiki.djch.one"
+    },
+    {
+      "icon": "activity",
+      "title": "Proxy Monitor",
+      "desc": "sing-box node latency topology",
+      "url": "https://proxy-mon.djch.one"
+    },
+    {
+      "icon": "monitor",
+      "title": "AIDC Portal",
+      "desc": "Datacenter asset portal",
+      "url": "https://aidc.djch.one"
+    },
+    {
+      "icon": "sliders",
+      "title": "Semaphore",
+      "desc": "Terraform automation GUI",
+      "url": "https://semaphore.djch.one"
+    },
+    {
+      "icon": "bar-chart",
+      "title": "Zabbix",
+      "desc": "Infrastructure monitoring",
+      "url": "http://192.168.6.13/zabbix/"
+    }
   ]
 }
