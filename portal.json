@@ -34,9 +34,20 @@
     "aidc": {
       "label": "AIDC",
       "icon": "cpu"
+    },
+    "ci_cd": {
+      "label": "CI · CD",
+      "icon": "infinity"
     }
   },
   "viz": [
+    {
+      "domain": "ci_cd",
+      "icon": "infinity",
+      "title": "aidc CI/CD 流水线架构",
+      "desc": "git push → 双push(GitLab先/GitHub后)→ 自托管runner → GitLab内网镜像checkout(1.5s,绕开GFW慢路)→ buildah构建SHA镜像→registry→bump k8s-gitops→ArgoCD上线;含设计理由/关键组件/备份与回滚",
+      "path": "viz/cicd-architecture.html"
+    },
     {
       "domain": "ansible",
       "icon": "terminal",
