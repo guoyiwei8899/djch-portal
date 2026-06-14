@@ -126,10 +126,10 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
 <header class="hero">
   <div class="kick">/// out-of-band firmware lifecycle</div>
   <h1>BMC / BIOS 固件升级管线</h1>
-  <p>AIDC 门户「BMC/BIOS」模块:<b>读</b>始终走 Redfish 采集版本快照;<b>写</b>按厂商分发:技嘉(AMI MegaRAC MZ72-HB2)改走<b>带内</b>路径——后端 pod 以 FreeIPA 服务账号 <code>svc_aidc</code>(nopasswd sudo,SSH 私钥挂自 k8s secret <code>aidc-inband-ssh</code>)SSH 进主机 OS,BMC 固件经 KCS(<code>/dev/ipmi0</code>)运行 <code>gigaflash</code> 彻底绕开 AMI Redfish 的 <code>Security.1.0.FWUpdateInProgress</code> 全局写锁,BIOS 固件用 <code>afulnx_64</code> 直写 SPI 不经 BMC;Dell 仍走 Redfish;曙光/联想/其他只读 inventory 不支持写入。状态机 staged 后独立重启生效,BIOS 默认只 stage。</p>
+  <p>AIDC 门户「BMC/BIOS」模块:<b>读</b>始终走 Redfish 采集版本快照(<code>Managers.FirmwareVersion</code> / <code>Systems.BiosVersion</code>);<b>写</b>按厂商分发:技嘉(AMI MegaRAC MZ72-HB2)走 <b>gbtipmitool</b>(GSM CLI)——pod 直连 BMC IPMI/LAN,BMC 固件用 <code>gbtipmitool update MAIN_BMC &lt;rom.ima_enc&gt; --boot_check</code>,BIOS 固件用 <code>gbtipmitool update MAIN_BIOS &lt;image.rbu&gt;</code>,<b>均保留配置</b>(不加 <code>--overwrite_cfg/--overwrite_setting</code>),既绕开 AMI Redfish <code>Security.1.0.FWUpdateInProgress</code> 全局写锁,也避免 gigaflash <code>-a</code> 曾擦掉 BMC IP/密码的问题(res4 教训);BIOS 设置读写也经 <code>gbtipmitool bmcutil export/import setup</code>(Redfish <code>/Systems/Self/Bios</code> 在 BMC 重刷后直到主机 POST 才恢复);Dell 仍走 Redfish;曙光/联想/其他只读 inventory 不支持写入。gbtipmitool-linux v1.1.8 二进制内置于镜像 <code>/app/tools/gbt/</code>,无需 SSH/Java/TFTP。</p>
   <div class="badges">
-    <span class="bdg">读 <b>Redfish</b> · 写 <b>厂商分发(技嘉带内)</b></span>
-    <span class="bdg">技嘉写 <b>带内 gigaflash/afulnx</b></span>
+    <span class="bdg">读 <b>Redfish</b> · 写 <b>gbtipmitool(技嘉) / Redfish(Dell)</b></span>
+    <span class="bdg">技嘉写 <b>gbtipmitool · IPMI/LAN · 保留配置</b></span>
     <span class="bdg">固件库 <b>Longhorn PVC</b></span>
     <span class="bdg">任务 <b>单实例状态机</b></span>
     <span class="bdg">厂商 <b>技嘉/Dell/超微/曙光/联想</b></span>
@@ -154,8 +154,8 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
       <tr><td><code>/servers/{id}/firmware-update</code></td><td>POST <b>admin</b></td><td>校验 vendor 匹配 + 无 active 任务 → 建 task 行 + <code>asyncio.create_task</code> 启动执行器</td></tr>
       <tr><td><code>/firmware/tasks</code> · <code>/{id}</code></td><td>GET user · cancel <b>admin</b></td><td>任务列表/详情(前端 3s 轮询);仅 pending/uploading 可取消(flashing 中断有变砖风险)</td></tr>
       <tr><td><code>/servers/{id}/bmc-reset</code><br><code>/servers/{id}/power-cycle</code></td><td>POST <b>admin</b> · <code>confirm=true</code></td><td>独立重启:BMC GracefulRestart / 主机 Reset;不确认 400;BIOS staged 后靠 power-cycle 生效</td></tr>
-      <tr><td><code>/servers/{id}/firmware/capabilities</code></td><td>GET user</td><td>返回各组件刷写方式描述:{ vendor, bmc:{supported,method,transport,note}, bios:{...} };技嘉 bmc.method=<code>inband-gigaflash</code>,bios.method=<code>inband-afulnx</code></td></tr>
-      <tr><td><code>/servers/{id}/firmware/preflight</code></td><td>POST <b>admin</b></td><td>零写入带内就绪探针:SSH 进主机检查 <code>/dev/ipmi0</code> 是否存在,不执行任何写操作;返回 { ready, detail };research4 验证用</td></tr>
+      <tr><td><code>/servers/{id}/firmware/capabilities</code></td><td>GET user</td><td>返回各组件刷写方式描述:{ vendor, bmc:{supported,method,transport,note}, bios:{...} };技嘉 bmc.method=<code>gbtipmitool</code>,bios.method=<code>gbtipmitool</code>,transport=<code>ipmi:&lt;bmcIP&gt;</code></td></tr>
+      <tr><td><code>/servers/{id}/firmware/preflight</code></td><td>POST <b>admin</b></td><td>零写入 BMC 可达性探针:经 BMC IPMI 运行 <code>gbtipmitool fw get list</code> 检测可达,无任何写操作;返回 { ready, detail }</td></tr>
     </table></div>
   </section>
 
@@ -164,20 +164,20 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
     <h2>厂商 driver 分发</h2>
     <div class="sd">// integrations/firmware/ · get_driver(server) 按 servers.manufacturer 子串归一化 · 资源路径经 collection Members 发现(不硬编码 Self/Embedded.1)</div>
     <div class="cards">
-      <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>GigabyteInbandDriver</h3><ul>
+      <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>GigabyteInbandDriver(gbtipmitool)</h3><ul>
         <li><b>读</b>:Redfish(<code>Systems.BiosVersion</code> + <code>Managers.FirmwareVersion</code>),复用 GenericRedfishDriver</li>
-        <li><b>写 BMC</b>:带内 — SSH 进主机 OS,运行 <code>gigaflash</code> / <code>ami_bmc_fw_update_linux.sh cs 0 flashall</code> 经 KCS 接口(<code>/dev/ipmi0</code>);彻底绕开 AMI Redfish <code>FWUpdateInProgress</code> 全局写锁</li>
-        <li><b>写 BIOS</b>:<code>afulnx_64</code> 直写 SPI,不经 BMC(BMC 被锁时仍可用)</li>
-        <li>SSH 服务账号 <code>svc_aidc</code>(FreeIPA,nopasswd sudo);私钥挂自 k8s secret <code>aidc-inband-ssh</code> → <code>/etc/aidc/ssh/svc_aidc</code></li>
-        <li>工具预置于镜像 <code>/app/tools/gigabyte/</code>,scp 到主机 <code>/tmp/aidc-fw-&lt;uuid&gt;/</code>,执行后立即清理</li>
-        <li>镜像文件名经 <code>shlex.quote</code> 转义,防 sudo 命令注入</li>
-        <li>统一接口:<code>flash(file, component, on_progress) → FlashOutcome</code>;流式读 stdout 解析进度</li>
+        <li><b>写 BMC</b>:<code>gbtipmitool -H &lt;bmcIP&gt; -U -P update MAIN_BMC &lt;rom.ima_enc&gt; --boot_check</code>;默认保留配置(不加 <code>--overwrite_cfg</code>),BMC 自重启后 Redfish 恢复验证(grace 600s)</li>
+        <li><b>写 BIOS</b>:<code>gbtipmitool ... update MAIN_BIOS &lt;image.rbu&gt;</code>;staged,不加 <code>--overwrite_setting</code> 保留 BIOS 设置,power-cycle 生效</li>
+        <li><b>BIOS 设置</b>:读 = <code>gbtipmitool bmcutil export setup</code>(返回 Redfish AttributeRegistry JSON,541 attrs,含 CurrentValue,过滤平台白名单);写 = <code>gbtipmitool bmcutil import setup</code>(staged,power-cycle 生效);Redfish <code>/Systems/Self/Bios</code> 在 BMC 重刷后直到主机 POST 才恢复,故改此路径</li>
+        <li><b>transport</b>:pod → BMC IPMI/LAN;工具 <code>gbtipmitool-linux</code> v1.1.8 内置于镜像 <code>/app/tools/gbt/</code>;无 SSH/KCS/Java/TFTP</li>
+        <li><b>保留配置的意义</b>:避开 AMI Redfish <code>Security.1.0.FWUpdateInProgress</code> 全局写锁;同时避免 gigaflash <code>-a</code> 曾将 res4 BMC IP 重置为 DHCP + 默认密码的问题</li>
+        <li>统一接口:<code>flash(file, component, on_progress) → FlashOutcome</code>;流式读 stdout 解析 <code>[BMC IP] | Update Status: NN%</code> 进度</li>
       </ul></div>
       <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>GenericRedfishDriver(Redfish 默认实现,Dell 继承)</h3><ul>
         <li>曙光 / 联想 / 默认(<code>normalize_vendor</code> 含中英文别名):仅支持<b>读 inventory</b>,写=<code>DriverUnsupportedError</code>(不支持)</li>
         <li>读版本:<code>Systems.BiosVersion</code> + <code>Managers.FirmwareVersion</code></li>
         <li>Redfish 刷写路径:<code>MultipartHttpPushUri</code> 三段体 UpdateParameters + OemParameters + UpdateFile(Dell 继承此路径)</li>
-        <li><b>技嘉带内改写原因</b>:AMI Multipart 同版本重刷/失败后 BMC 陷入 <code>Security.1.0.FWUpdateInProgress</code> 全局写锁,仅 AC 断电恢复;OemParameters 还须带大写 <code>ImageType</code> 且禁 <code>@Redfish.OperationApplyTime</code></li>
+        <li><b>技嘉改用 gbtipmitool 原因</b>:AMI Multipart 同版本重刷/失败后 BMC 陷入 <code>Security.1.0.FWUpdateInProgress</code> 全局写锁,仅 AC 断电恢复;OemParameters 还须带大写 <code>ImageType</code> 且禁 <code>@Redfish.OperationApplyTime</code>;另 gigaflash <code>-a</code> 会擦掉 BMC 静态 IP/密码(res4 曾中招)——gbtipmitool 保留配置彻底规避两者</li>
         <li>httpx 流式分块推送,不整包进内存</li>
       </ul></div>
       <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>DellRedfishDriver</h3><ul>
@@ -201,9 +201,9 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
     <div class="cards">
       <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>状态流转</h3><ul>
         <li><code>pending → uploading</code>:记 previous_version,流式推镜像到执行层</li>
-        <li><code>→ flashing</code>:<code>driver.flash()</code> 统一入口 — <b>Redfish 路径</b>拿 task URL 每 5s 轮询 <code>PercentComplete</code>;<b>带内路径(技嘉)</b>流式读 <code>gigaflash</code>/<code>afulnx</code> stdout 解析进度;失败靠退出码/异常上报</li>
-        <li><code>→ staged</code>(终态):BIOS 待重启 / BMC <code>FlashOutcome.bmc_rebooted</code> 触发等待重连+版本比对</li>
-        <li><code>→ failed</code>:超时 1800s / driver 不支持 / Redfish/SSH 异常</li>
+        <li><code>→ flashing</code>:<code>driver.flash()</code> 统一入口 — <b>Redfish 路径(Dell)</b>拿 task URL 每 5s 轮询 <code>PercentComplete</code>;<b>gbtipmitool 路径(技嘉)</b>流式读 stdout 解析 <code>[BMC IP] | Update Status: NN%</code> 进度;失败靠退出码/异常上报</li>
+        <li><code>→ staged/applied</code>(终态):BIOS staged 待重启 / BMC <code>FlashOutcome.bmc_rebooted</code> 触发等待重连+版本比对(grace 600s,BMC 完整重刷 Redfish 恢复需 >5min)</li>
+        <li><code>→ failed</code>:超时 1800s / driver 不支持 / Redfish 或 gbtipmitool 异常</li>
       </ul></div>
       <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>BMC 自重启竞态</h3><ul>
         <li>flashing 中连续 30s 连不上 + component=bmc</li>
@@ -228,11 +228,11 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
       <tr><td><b>固件库存储</b></td><td>Longhorn PVC <code>aidc-backend-data</code> 10Gi RWO → <code>/data/firmware</code></td><td>上传的固件持久化,pod 重启不丢</td></tr>
       <tr><td><b>新表(自动建)</b></td><td><code>firmware_packages</code> · <code>firmware_update_tasks</code> · <code>server_firmware_snapshots</code></td><td>启动 <code>create_all</code> 建表,无 Alembic</td></tr>
       <tr><td><b>固件采集 loop</b></td><td><code>firmware_inventory_loop</code> 6h · Semaphore(8)</td><td>低频后台刷版本;按需 force_refresh 实时拉</td></tr>
-      <tr><td><b>带内 SSH 密钥</b></td><td>secret <code>aidc-inband-ssh</code> 挂 <code>/etc/aidc/ssh</code>(readOnly)</td><td>svc_aidc FreeIPA 服务账号私钥;镜像含 <code>openssh-client</code> + <code>asyncssh</code> + <code>/app/tools/gigabyte/</code> 工具集</td></tr>
+      <tr><td><b>gbtipmitool 工具</b></td><td><code>/app/tools/gbt/gbtipmitool-linux</code> v1.1.8 内置于镜像</td><td>pod → BMC IPMI/LAN 直连,无需 SSH 或 k8s secret;无 Java/TFTP/asyncssh/openssh-client</td></tr>
     </table></div>
   </section>
 
-  <footer>aidc-portal · BMC/BIOS firmware module · 读 Redfish · 写厂商分发(技嘉带内 gigaflash/afulnx) · 单实例状态机</footer>
+  <footer>aidc-portal · BMC/BIOS firmware module · 读 Redfish · 写 gbtipmitool(技嘉,IPMI) / Redfish(Dell) · 单实例状态机</footer>
 </main>
 
 <script>
@@ -258,14 +258,14 @@ const NODES=[
   {id:'exgrp',x:900,y:46,w:340,h:540,grp:1,title:'执行层 · driver',sub:'integrations/firmware/'},
   {id:'tasks',x:922,y:100,w:296,h:80,title:'firmware_tasks.py',sub:'状态机 pending→uploading→flashing→staged',tag:'_RUNNING · Semaphore(2) · recover'},
   {id:'disp',x:922,y:198,w:296,h:54,title:'get_driver(server)',sub:'manufacturer 归一化分发',tag:'normalize_vendor(中英文别名)'},
-  {id:'rfd',x:922,y:270,w:296,h:56,title:'GigabyteInbandDriver',sub:'写=带内 gigaflash(KCS)/afulnx(SPI) · 读=Redfish',tag:'ssh svc_aidc → 主机 OS'},
+  {id:'rfd',x:922,y:270,w:296,h:56,title:'GigabyteInbandDriver(gbtipmitool)',sub:'写=gbtipmitool MAIN_BMC/MAIN_BIOS(IPMI) · 读=Redfish',tag:'pod → BMC IPMI(保留配置)'},
   {id:'dell',x:922,y:344,w:296,h:50,title:'DellRedfishDriver',sub:'HttpPushUri + SimpleUpdate · racadm stub'},
   {id:'smc',x:922,y:412,w:296,h:50,title:'SupermicroDriver',sub:'读复用 · 写需 sum CLI(stub)'},
   {id:'mon',x:922,y:480,w:296,h:88,title:'monitoring loop',sub:'firmware_inventory_loop 6h',tag:'recover_stale_tasks 启动回收'},
 
   {id:'hwgrp',x:1360,y:46,w:280,h:540,grp:1,title:'硬件 · 存储',sub:'BMC Redfish · Longhorn · PG'},
-  {id:'bmc',x:1380,y:100,w:242,h:92,title:'BMC Redfish(读/Dell写) · 主机 OS(技嘉写)',sub:'UpdateService · Managers · Systems',tag:'主机 OS · /dev/ipmi0 KCS'},
-  {id:'ts',x:1380,y:208,w:242,h:54,title:'TaskService(Redfish 路径)',sub:'TaskState · PercentComplete',tag:'带内=stdout 流解析进度'},
+  {id:'bmc',x:1380,y:100,w:242,h:92,title:'BMC Redfish + IPMI',sub:'UpdateService · Managers · Systems',tag:'UpdateService · Managers · gbtipmitool'},
+  {id:'ts',x:1380,y:208,w:242,h:54,title:'TaskService(Redfish 路径)',sub:'TaskState · PercentComplete',tag:'gbtipmitool=stdout NN%'},
   {id:'pvc',x:1380,y:280,w:242,h:64,title:'固件库 PVC',sub:'Longhorn RWO 10Gi',tag:'/data/firmware · replicas=1'},
   {id:'db1',x:1380,y:362,w:242,h:52,title:'firmware_packages',sub:'vendor/model/component/version · sha256'},
   {id:'db2',x:1380,y:430,w:242,h:50,title:'firmware_update_tasks',sub:'状态机持久化 · 任务历史'},
@@ -290,7 +290,7 @@ const EDGES=[
   {id:'g2',f:'updep',t:'tasks',lbl:'建 task'},
   {id:'g3',f:'tasks',t:'disp',v:1,lbl:'execute'},
   {id:'g4',f:'pvc',t:'tasks',lbl:'读固件',curve:-120},
-  {id:'g5',f:'rfd',t:'bmc',lbl:'技嘉 SSH 带内 / Dell Redfish'},
+  {id:'g5',f:'rfd',t:'bmc',lbl:'gbtipmitool IPMI / Dell Redfish'},
   {id:'g6',f:'bmc',t:'ts',v:1},
   {id:'g7',f:'ts',t:'tasks',lbl:'轮询进度',curve:120},
   {id:'g8',f:'tasks',t:'db2',lbl:'状态持久化'},
@@ -315,7 +315,7 @@ const FLOWS=[
   {name:'③ 升级任务流',color:C.violet,
    edges:['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10'],
    nodes:['fegrp','ftab','ttab','begrp','updep','tskep','exgrp','tasks','disp','rfd','hwgrp','bmc','ts','pvc','db2'],
-   steps:['校验 vendor+capabilities → 建 task','asyncio 执行器读 PVC 固件','技嘉:SSH 进主机跑 gigaflash/afulnx(Dell:Redfish multipart push)','带内路径流式读 stdout 解析进度 / Redfish 轮询 PercentComplete','状态机推进并持久化 → staged','Tasks Tab 3s 轮询展示进度']},
+   steps:['校验 vendor+capabilities → 建 task','asyncio 执行器读 PVC 固件','技嘉:gbtipmitool update MAIN_BMC/MAIN_BIOS 经 BMC IPMI(Dell:Redfish multipart push)','gbtipmitool 流式 stdout [BMC IP] | Update Status: NN% / Redfish 轮询 PercentComplete','状态机推进并持久化 → staged/applied;BMC 自重启 Redfish 验证(grace 600s)','Tasks Tab 3s 轮询展示进度']},
   {name:'④ 重启生效流',color:C.pink,
    edges:['r1','r2','r3','r4','i4','i5'],
    nodes:['fegrp','ftab','begrp','pwrep','exgrp','disp','dell','smc','rfd','hwgrp','bmc','db3'],
