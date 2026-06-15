@@ -285,15 +285,18 @@
       let ci = 0;
       ordered.forEach(v => {
         const a = document.createElement('a');
-        a.className = 'card reveal'; a.style.setProperty('--dc', 'var(--d-' + v.domain + ')');
+        a.className = 'card reveal' + (v.thumb ? ' has-cover' : '');
+        a.style.setProperty('--dc', 'var(--d-' + v.domain + ')');
         a.style.setProperty('--i', 2 + (ci++ % 6));
         a.dataset.domain = v.domain;
         a.href = 'viewer.html?p=' + encodeURIComponent(v.path) + '&t=' + encodeURIComponent(v.title) + '&d=' + v.domain;
         a.dataset.search = (v.title + ' ' + (v.desc || '') + ' ' + dom[v.domain].label).toLowerCase();
-        a.innerHTML = '<span class="tile">' + svgIcon(v.icon) + '</span>' +
+        const cover = v.thumb ? '<span class="cover" style="background-image:url(' + v.thumb + ')"></span>' : '';
+        const inner = '<span class="tile">' + svgIcon(v.icon) + '</span>' +
           '<span class="body"><span class="title">' + v.title + '</span>' +
           '<span class="desc">' + (v.desc || '') + '</span>' +
           '<span class="meta"><span class="badge">' + dom[v.domain].label + '</span></span></span>';
+        a.innerHTML = cover + (v.thumb ? '<span class="card-main">' + inner + '</span>' : inner);
         tilt(a); grid.appendChild(a);
       });
 
