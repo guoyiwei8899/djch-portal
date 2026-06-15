@@ -111,10 +111,10 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
 <header class="hero">
   <div class="kick">/// aidc · continuous delivery</div>
   <h1>CI / CD 流水线架构</h1>
-  <p>一次 <b>git push</b> 到代码上线的全自动闭环。核心:<b>GitHub 触发 · GitLab 内网镜像喂源码(绕开 GFW)· buildah 出 SHA 镜像 · ArgoCD GitOps 部署</b>。点下面的标签看每条子流程怎么流动。</p>
+  <p>一次 <b>git push</b> 到代码上线的全自动闭环。核心:<b>GitLab 触发 + 喂源码(全内网,绕开 GFW)· buildah 出 SHA 镜像 · ArgoCD GitOps 部署</b>。点下面的标签看每条子流程怎么流动。</p>
   <div class="badges">
-    <span class="bdg">GitHub <b>Actions</b> 触发</span>
-    <span class="bdg">GitLab <b>内网镜像</b></span>
+    <span class="bdg">GitLab <b>CI</b> 触发</span>
+    <span class="bdg">GitLab <b>主仓(内网)</b></span>
     <span class="bdg"><b>buildah</b> · SHA 钉版本</span>
     <span class="bdg"><b>registry.djch.one</b></span>
     <span class="bdg"><b>ArgoCD</b> GitOps</span>
@@ -133,17 +133,17 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
     <div class="sd">// 每个"绕一下"都对应一个真实的坑</div>
     <div class="cards">
       <div class="card" style="--ac:var(--red)"><h3><span class="ic"></span>病根:GitHub 穿墙慢</h3>
-        <p>构建机直连 github.com HTTPS 实测 <b>~15–66 KB/s</b>(GFW 限速),一次源码 checkout 要 <b>6+ 分钟还常超时</b>。所有"绕路"都为避开这条慢链。</p></div>
-      <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>解法:GitLab 内网镜像</h3>
-        <p>集群自建 GitLab 当 aidc 源码镜像,runner 从内网 <code>192.168.6.243</code> 走 SSH 拉,<b>1.5 秒</b>。CI 的 checkout 从此跟 GitHub 无关。</p></div>
-      <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>双 push 顺序有讲究</h3>
-        <p>工作站 <code>origin</code> 同时推两端,<b>GitLab 排第一</b>。否则 GitHub 先触发 CI、runner 去拉时镜像还没更新 → checkout 扑空。</p></div>
+        <p>构建机直连 github.com HTTPS 实测 <b>~15–66 KB/s</b>(GFW 限速),一次源码 checkout 要 <b>6+ 分钟还常超时</b>。所以整条链不依赖 GitHub 可达性。</p></div>
+      <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>解法:GitLab 当主仓 + CI</h3>
+        <p>集群自建 GitLab 既是 aidc 主仓、又是 CI 触发源。push 到内网 <code>192.168.6.243</code> 即触发流水线,runner 直接 checkout <b>~1.5 秒</b>,全程不出网。</p></div>
+      <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>曾经的 GitHub Actions(已退役)</h3>
+        <p>旧架构用 GitHub 当"墙外扳机"、再回头从 GitLab 镜像拉源码,绕且脆(撞过并发部署失败)。<b>2026-06-15 迁成 GitLab 原生 CI</b>,这一圈没了。</p></div>
       <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>SHA 钉版本(GitOps)</h3>
         <p>镜像不用 <code>:latest</code>,用 git commit <b>短 SHA</b>。线上跑什么版本 k8s-gitops 写得清清楚楚,回滚就是 <code>git revert</code>。</p></div>
-      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>自托管 runner 在内网</h3>
-        <p>registry、k8s API、k8s-gitops 全在内网。runner 放进来,构建/推镜像/部署都不出网,只有"触发"用 GitHub。</p></div>
+      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>自托管 runner 全内网</h3>
+        <p>GitLab、registry、k8s API、k8s-gitops 全在内网。GitLab Runner 放进来,触发/构建/推镜像/部署<b>全程不出网</b>。</p></div>
       <div class="card" style="--ac:var(--orange)"><h3><span class="ic"></span>GitHub 还留着干嘛</h3>
-        <p>① 触发 CI ② 存 k8s-gitops(ArgoCD 从这读)③ 双 push 让它当<b>异地备份</b>。源码两边都有,不裸奔。</p></div>
+        <p>① 存 k8s-gitops(ArgoCD 从这读)② 一条 <code>git push</code> 双推让它当<b>异地备份</b>。<b>不再触发 CI</b>,源码两边都有不裸奔。</p></div>
     </div>
   </section>
 
@@ -152,15 +152,15 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
     <h2>关键组件 · 备份 · 回滚</h2>
     <div class="sd">// 这条流水线靠哪些东西撑着 + 出事怎么退</div>
     <div class="cards">
-      <div class="card" style="--ac:var(--orange)"><h3><span class="ic"></span>GitLab(镜像 + 备份)</h3><ul>
+      <div class="card" style="--ac:var(--orange)"><h3><span class="ic"></span>GitLab(主仓 + CI + 备份)</h3><ul>
         <li><code>gitlab.djch.one</code>,Omnibus CE 单 pod @ k8snode02</li>
-        <li>存储 Longhorn <b>3 副本</b>(节点挂了数据不丢)</li>
-        <li>每天 02:00 <b>自动备份 → nfs01</b>(repo+DB+secrets,留 7 份)</li>
+        <li>aidc 主仓 + CI 触发源(<code>.gitlab-ci.yml</code>)</li>
+        <li>Longhorn <b>3 副本</b> + 每天 02:00 备份 → nfs01(留 7 份)</li>
       </ul></div>
-      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>自托管 Runner</h3><ul>
-        <li><code>djch-build-131</code> @ k8snode01,标签 <code>self-hosted,djch</code></li>
-        <li>systemd 常驻,装 <code>/opt</code>(避开 SELinux 拦 home 执行)</li>
-        <li>deploy key:拉 GitLab 源码 + 推 k8s-gitops</li>
+      <div class="card" style="--ac:var(--blue)"><h3><span class="ic"></span>GitLab Runner</h3><ul>
+        <li><code>djch-build-131</code> @ k8snode01,标签 <code>djch-build</code></li>
+        <li><b>shell executor,以 yiwei 跑</b>(继承 sudo + SSH key)</li>
+        <li>CI 直接 checkout GitLab 源码 + deploy key 推 k8s-gitops</li>
       </ul></div>
       <div class="card" style="--ac:var(--green)"><h3><span class="ic"></span>回滚一次部署</h3>
         <p>在 <b>k8s-gitops</b> 里 <code>git revert</code> 那次镜像 bump → push → ArgoCD 自动把 pod 滚回上一个 SHA。镜像还在 registry,秒退。</p></div>
@@ -170,7 +170,7 @@ footer{margin-top:54px;text-align:center;font-family:var(--mono);font-size:11px;
     <div class="note warn"><b>注意:</b> GitLab 是单 pod(非 HA),Omnibus 本身不支持多副本。对"内网 CI 源 + 镜像"这用途,<b>3 副本存储 + 每日备份</b>足够;节点故障靠 pod 重调度恢复(几分钟)。</div>
   </section>
 
-  <footer>portal.djch.one · aidc CI/CD · git push → GitLab mirror → buildah → registry → ArgoCD</footer>
+  <footer>portal.djch.one · aidc CI/CD · git push → GitLab CI → buildah → registry → ArgoCD</footer>
 </main>
 
 <script>
@@ -178,9 +178,9 @@ const C={orange:'#ff7a3c',cyan:'#21d4fd',violet:'#8b5cf6',vio2:'#b07cff',green:'
 
 const NODES=[
   {id:'dev',  x:24,  y:108, w:210, h:86, title:'开发机 · git push', sub:'~/git-ops/aidc-portal', tag:'git push origin main'},
-  {id:'gitlab',x:288,y:28,  w:256, h:84, title:'GitLab 内网镜像', sub:'yiwei/aidc · gitlab-ssh→.243', tag:'源码加速 · ~1.5s'},
-  {id:'github',x:288,y:192, w:256, h:84, title:'GitHub · 触发 CI', sub:'guoyiwei8899/aidc', tag:'GitHub Actions'},
-  {id:'runner',x:602,y:192, w:256, h:84, title:'自托管 Runner', sub:'djch-build-131 @ k8snode01', tag:'self-hosted,djch'},
+  {id:'gitlab',x:288,y:28,  w:256, h:84, title:'GitLab · 主仓 + CI', sub:'yiwei/aidc · gitlab-ssh→.243', tag:'push 即触发 · ~1.5s'},
+  {id:'github',x:288,y:192, w:256, h:84, title:'GitHub · 异地备份', sub:'guoyiwei8899/aidc', tag:'双 push 备份(不触发)'},
+  {id:'runner',x:602,y:192, w:256, h:84, title:'GitLab Runner', sub:'djch-build-131 @ k8snode01', tag:'shell · 以 yiwei 跑'},
   {id:'build', x:916,y:192, w:256, h:84, title:'buildah 构建镜像', sub:'aidc-backend/frontend : <sha>', tag:'打 SHA tag'},
   {id:'reg',   x:1206,y:28, w:250, h:84, title:'registry.djch.one', sub:'内网镜像仓', tag:'推镜像'},
   {id:'gitops',x:916,y:342, w:256, h:84, title:'k8s-gitops · bump', sub:'manifests/aidc → :<sha>', tag:'GitOps 真相源'},
@@ -191,10 +191,10 @@ const NODES=[
 ];
 
 const EDGES=[
-  {id:'e1',f:'dev',t:'gitlab',lbl:'① 推镜像(先)'},
-  {id:'e2',f:'dev',t:'github',lbl:'② 触发(后)'},
-  {id:'e3',f:'github',t:'runner',lbl:'分发 job'},
-  {id:'e4',f:'gitlab',t:'runner',lbl:'clone 源码 1.5s',curve:46},
+  {id:'e1',f:'dev',t:'gitlab',lbl:'git push · 触发 CI'},
+  {id:'e2',f:'dev',t:'github',lbl:'双 push 备份'},
+  {id:'e3',f:'gitlab',t:'runner',lbl:'CI 派活'},
+  {id:'e4',f:'gitlab',t:'runner',lbl:'checkout 源码 1.5s',curve:46},
   {id:'e5',f:'runner',t:'build'},
   {id:'e6',f:'build',t:'reg',lbl:'推镜像'},
   {id:'e7',f:'build',t:'gitops',v:1,lbl:'bump SHA'},
@@ -208,11 +208,11 @@ const FLOWS=[
   {name:'① 完整流水线',color:C.cyan,
    edges:['e1','e2','e3','e4','e5','e6','e7','e8','e9'],
    nodes:['dev','gitlab','github','runner','build','reg','gitops','argocd','pods'],
-   steps:['git push:GitLab 先 / GitHub 后','GitHub Actions 分发给自托管 runner','runner 从 GitLab 镜像秒拉源码 + buildah 构建','SHA 镜像推 registry.djch.one','bump k8s-gitops 镜像 tag','ArgoCD 同步 → pods 跑新 SHA']},
-  {name:'② 绕开 GFW(为什么用 GitLab)',color:C.orange,
+   steps:['git push → GitLab(触发 CI)+ GitHub(备份)','GitLab CI 派活给自托管 runner','runner 内网 checkout 源码 + buildah 构建','SHA 镜像推 registry.djch.one','bump k8s-gitops 镜像 tag','ArgoCD 同步 → pods 跑新 SHA']},
+  {name:'② 绕开 GFW(为什么全走 GitLab)',color:C.orange,
    edges:['e1','e2','e3','e4'],
    nodes:['dev','gitlab','github','runner'],
-   steps:['GitHub 直连穿墙 ~50KB/s,checkout 6min+ 常超时','双 push:GitLab 先收到(同一 commit/SHA)','GitHub 触发 CI,但源码不从它拉','runner 从内网 GitLab 拉源码 ~1.5s']},
+   steps:['GitHub 直连穿墙 ~50KB/s,checkout 6min+ 常超时','所以 GitLab 当主仓 + CI,全内网','push GitLab 即触发,runner 内网 checkout ~1.5s','GitHub 仅一条 git push 双推当异地备份']},
   {name:'③ GitOps 部署 + 回滚',color:C.green,
    edges:['e6','e7','e8','e9'],
    nodes:['build','reg','gitops','argocd','pods'],
