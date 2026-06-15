@@ -38,9 +38,20 @@
     "ci_cd": {
       "label": "CI · CD",
       "icon": "infinity"
+    },
+    "idc": {
+      "label": "IDC · 机房",
+      "icon": "server"
     }
   },
   "viz": [
+    {
+      "domain": "idc",
+      "icon": "server",
+      "title": "农村房改造小机房 · 3D + 施工图",
+      "desc": "54㎡ 高密度小机房设计可视化:Three.js 3D 效果图(APC 机柜/列头柜/InRow 行级空调/UPS/FM200 气消)+ 平面/剖面/配电单线/气流施工图;6×10kW IT、热通道封闭、屋顶冷凝、15cm 高架地板;可开关灯/旋转",
+      "path": "viz/server-room/index.html"
+    },
     {
       "domain": "ci_cd",
       "icon": "infinity",

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DJCH · 农村房改造小机房 — 设计可视化</title>
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three.module.min.js"
+}}
+</script>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <a class="back-portal" href="/" target="_top" title="返回 Portal"><span class="ar">←</span> Portal</a>
+    <div class="brand">
+      <div class="logo"><b>DJCH</b> MICRO&nbsp;DATACENTER</div>
+      <div class="sub">农村自建房 · 改造小机房 · 设计可视化</div>
+    </div>
+    <div class="spec-pills">
+      <span class="pill">6.0×9.0m · <b>54㎡</b></span>
+      <span class="pill">机柜 <b>6×10kW</b></span>
+      <span class="pill cy">制冷 <b>InRow ×3 N+1</b></span>
+      <span class="pill am">UPS <b>80kVA</b></span>
+      <span class="pill">PDU <b>Panduit</b></span>
+    </div>
+  </header>
+
+  <nav>
+    <button data-t="view-3d"      class="on"><span class="n">00</span>效果图 · 3D</button>
+    <button data-t="view-plan"><span class="n">01</span>平面布置图</button>
+    <button data-t="view-section"><span class="n">02</span>剖面图</button>
+    <button data-t="view-power"><span class="n">03</span>配电系统图</button>
+    <button data-t="view-airflow"><span class="n">04</span>气流 / 散热</button>
+    <button data-t="view-bom"><span class="n">05</span>清单 · 设计依据</button>
+  </nav>
+
+  <main>
+    <!-- 00 3D 效果图 -->
+    <section id="view-3d" class="view on">
+      <div id="stage">
+        <canvas id="c3d"></canvas>
+        <div id="loadmsg">⟳ 初始化 3D 引擎…</div>
+        <div class="hud tl">
+          <div class="t"><b>最终效果</b> · 去杂物渲染</div>
+          <p>6 台 APC 机柜 + 列头柜(行头)单行 + 封闭热通道;3 台 InRow DX(N+1)冷媒管上屋顶;
+             进线/UPS/电池(APC)贴进门左墙;FM200 控制盘进门右墙 + 顶部气体喷头 / 烟感;运维工作台双屏。
+             <b>冷凝器置屋面</b>。150mm 高架地板 + 吊顶,墙体隔音、窗全封堵。拖动旋转 · 滚轮缩放 · 可开关灯。</p>
+        </div>
+        <div class="ctrls">
+          <button id="b-light">💡 关灯</button>
+          <button id="b-spin">⏸ 暂停旋转</button>
+          <button id="b-label">🏷 隐藏标签</button>
+          <button id="b-top">⬓ 顶视</button>
+          <button id="b-reset">⟲ 复位</button>
+        </div>
+        <div class="legend">
+          <div class="row"><span class="sw" style="background:#141d24;border-color:#76b900"></span>IT 机柜 (绿)</div>
+          <div class="row"><span class="sw" style="background:#0c2826;border-color:#2fe0d6"></span>行级空调 (青)</div>
+          <div class="row"><span class="sw" style="background:#161d23;border-color:#ffb020"></span>强电 APC (进门左墙)</div>
+          <div class="row"><span class="sw" style="background:#3a0c0e;border-color:#ff4d57"></span>FM200 / 喷头 / 烟感</div>
+          <div class="row"><span class="sw" style="background:#ff4d57;opacity:.5"></span>封闭热通道</div>
+        </div>
+        <div class="hud br">DJCH-MDC-001 · 概念效果 · 仅示意</div>
+      </div>
+    </section>
+
+    <!-- 01 平面 -->
+    <section id="view-plan" class="view pad">
+      <div class="sheet-wrap">
+        <div class="sheet-title"><b>01</b> 机房平面布置图</div>
+        <div class="sheet-desc">俯视。机柜行背靠后墙(封闭热通道),正面朝冷通道,列头柜置行头(与 APC 机柜同尺寸);进线/UPS/电池贴入口端墙门左侧;FM200 控制盘进门右墙,吊顶布气体喷头 + 烟感;工作台顶 z=0 墙横放;冷凝器置屋顶。轴线、设备定位与检修间距见标注。</div>
+        <div class="sheet" id="sheet-plan"></div>
+        <div class="notes">
+          <div class="note"><h4>机柜行</h4><p>6×42U + 3×InRow + 列头柜(行头,APC 同尺寸),行长 6500mm,C-R-R-R-C-R-R-R-C 间隔取热。</p></div>
+          <div class="note cy"><h4>冷/热通道</h4><p>热通道(贴后墙)封闭,冷通道≥1200mm 兼检修,送风经冷通道入柜。</p></div>
+          <div class="note am"><h4>强电(进门左墙)</h4><p>进线柜 / UPS / 电池柜贴入口端墙门左侧,同高 2000,正面朝室内;列头柜已移入机柜行头。</p></div>
+          <div class="note rd"><h4>气体灭火 FM200</h4><p>控制盘 + 钢瓶贴进门右墙;吊顶布气体喷头 ×5 + 烟感 ×4,探测联动释放七氟丙烷。</p></div>
+          <div class="note"><h4>出入口 / 屋顶 / 工作台</h4><p>右端墙甲级隔音防火门 + 门禁;冷凝器上屋面(承重 + 防水);工作台顶 z=0 墙横放,双显示器支架。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 剖面 -->
+    <section id="view-section" class="view pad">
+      <div class="sheet-wrap">
+        <div class="sheet-title"><b>02</b> 机房剖面图</div>
+        <div class="sheet-desc">横剖。自下而上:结构地坪 ±0.000 → 架空地板 +0.150 → 42U 机柜(顶 +2.163)→ 吊顶 +2.850;原木屋架封于吊顶之上。</div>
+        <div class="sheet" id="sheet-section"></div>
+        <div class="notes">
+          <div class="note"><h4>高架地板 150mm</h4><p>防静电架空,下走强/弱电桥架(分离),并作下送风补充通路。</p></div>
+          <div class="note cy"><h4>净高 2700</h4><p>柜顶至吊顶约 500,走桥架与气体灭火管网。</p></div>
+          <div class="note am"><h4>吊顶 / 屋架</h4><p>矿棉吊顶 @2.85m 作回风腔;原挑高木屋架保留并封闭隔音。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 配电 -->
+    <section id="view-power" class="view pad">
+      <div class="sheet-wrap">
+        <div class="sheet-title"><b>03</b> 配电系统图(单线)</div>
+        <div class="sheet-desc">三相市电进线 → 主开关 200A → 分两路:UPS(带电池)→ 强电列头柜 → 6× Panduit 机架 PDU;制冷/照明市电直供不上 UPS。</div>
+        <div class="sheet" id="sheet-power"></div>
+        <div class="callout">
+          <h4>⚠ 供电前置条件与已知限制</h4>
+          <ul>
+            <li>整机房含制冷 ≈88kW,需约 200A 三相;<b>农村房须向供电申请增容 / 专变</b>,否则无法满载。</li>
+            <li>UPS 为 <b>单组(1 套)</b>,无 UPS 级 N+1 冗余 —— 建议选模块化 UPS 内置 N+1 以提升可用性。</li>
+            <li>机架 PDU 当前单路供电;如需 2N,可增市电旁路第二路 PDU。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 气流 -->
+    <section id="view-airflow" class="view pad">
+      <div class="sheet-wrap">
+        <div class="sheet-title"><b>04</b> 气流组织 / 散热示意</div>
+        <div class="sheet-desc">close-coupled 近端制冷:行级空调从封闭热通道取热风,经内部 DX 盘管换热后向冷通道送 22–24℃ 冷风,冷媒管上屋面经屋顶冷凝器排热。</div>
+        <div class="sheet" id="sheet-air"></div>
+        <div class="notes">
+          <div class="note cy"><h4>风冷 DX · N+1</h4><p>3 台 InRow RD(2 工作 + 1 备),实负载 60kW,单台标称 ~30kW;无水系统,免冷冻水管路。</p></div>
+          <div class="note rd"><h4>热通道封闭</h4><p>杜绝冷热气流掺混,提高回风温度与换热效率,PUE 更优。</p></div>
+          <div class="note"><h4>屋顶冷凝器</h4><p>屋面 3 台(钢支架架空),冷媒管穿屋面防水套管;需承重核算,冬季可配低温组件。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 清单 -->
+    <section id="view-bom" class="view pad">
+      <div class="sheet-wrap">
+        <div class="sheet-title"><b>05</b> 设计依据 · 设备清单</div>
+        <div class="sheet-desc">关键参数总览与主要设备 BOM。所有数据在效果图与施工图间共享一致。</div>
+        <div class="kpi" id="kpi"></div>
+        <table>
+          <caption><b>BOM</b> 主要设备清单</caption>
+          <thead><tr><th>#</th><th>类别</th><th>规格 / 型号</th><th>数量</th><th>备注</th></tr></thead>
+          <tbody id="bom-body"></tbody>
+        </table>
+        <table>
+          <caption><b>计算</b> 负载与容量校核</caption>
+          <thead><tr><th>项</th><th>取值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>IT 总负载</td><td class="q">60 kW</td><td>6 柜 × 10kW</td></tr>
+            <tr><td>功率密度</td><td class="q">≈1.11 kW/㎡</td><td>60kW / 54㎡,属高密度,故采用近端行级制冷 + 热通道封闭</td></tr>
+            <tr><td>制冷需求</td><td class="q">60 kW</td><td>配 3×30kW InRow(N+1,冗余 90kW)</td></tr>
+            <tr><td>UPS 容量</td><td class="q">80 kVA / 80kW</td><td>带 IT 60kW,负载率 75%,后备 10–15min</td></tr>
+            <tr><td>整机房功率</td><td class="q">≈88 kW</td><td>IT 60 + 制冷 ~20 + UPS/照明损耗</td></tr>
+            <tr><td>进线电流</td><td class="q">≈152 A/相</td><td>88kW ÷ (1.732×380×0.9) → 主开关取 200A</td></tr>
+          </tbody>
+        </table>
+        <div class="foot">
+          项目编号 DJCH-MDC-001 · 比例 1:50 · 2026-06-15 · 设计 Infra Agent<br>
+          说明:本套图纸为示意级设计可视化(方案 / 概念深化),房间尺寸按现场照片家具比例估算,
+          设备容量为合理工程估算。正式落地须由结构 / 电气 / 暖通持证设计院按现场实测复核出施工蓝图,
+          并满足消防、供电增容、防雷接地等报建要求。
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
