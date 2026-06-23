@@ -46,6 +46,13 @@
   },
   "viz": [
     {
+      "domain": "storage",
+      "icon": "hard-drive",
+      "title": "Lustre LNet 韧性调优 · ko2iblnd 死锁防治",
+      "desc": "research2 重启后挂不上/丢 OST 的根因复盘:ko2iblnd 特权端口耗尽(-99)致服务端连不上重启过的 client + 服务端 discovery=0 让双口冗余作废。修法 use_privileged_port=0 + 多轨 peer/discovery 一致 + LNet Health 快速失败转移;含参数现状vs建议表、Ansible 落地、零干扰应急手册(lnetctl ping --source / peer add)",
+      "path": "viz/lustre_tune.html"
+    },
+    {
       "domain": "idc",
       "icon": "server",
       "title": "农村房改造小机房 · 3D + 施工图",
