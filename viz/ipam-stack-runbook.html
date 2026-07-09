@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPAM 全栈部署手册 · phpIPAM × Foreman × LibreNMS × PowerDNS</title>
+<style>
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url('../assets/fonts/poppins-400.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:500;font-display:swap;src:url('../assets/fonts/poppins-500.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url('../assets/fonts/poppins-600.woff2') format('woff2');}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url('../assets/fonts/poppins-700.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-weight:700;font-display:swap;src:url('../assets/fonts/chakra-petch-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto Mono';font-weight:400;font-display:swap;src:url('../assets/fonts/robotomono-400.woff2') format('woff2');}
+:root{
+  --bg:#060a14; --card:#11182c; --panel:rgba(17,24,44,.62);
+  --bd:rgba(146,168,255,.14); --bd2:rgba(146,168,255,.3);
+  --ink:#e9edf8; --muted:#8d97b4; --faint:#69749b;
+  --pink:#ff4d9d; --violet:#8b5cf6; --cyan:#21d4fd; --blue:#38bdf8;
+  --green:#2fe39a; --amber:#ffb224; --red:#ff6b6b; --teal:#2dd4bf;
+  --grad:linear-gradient(100deg,#2dd4bf,#21d4fd,#8b5cf6);
+  --mono:'Roboto Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch','Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6;
+  background-image:radial-gradient(900px 460px at 12% -6%,rgba(45,212,191,.10),transparent 60%),
+    radial-gradient(820px 480px at 92% 4%,rgba(33,212,253,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 112%,rgba(139,92,246,.07),transparent 60%);}
+/* 动态流光层 */
+.aurora{position:fixed;inset:-30%;z-index:0;pointer-events:none;filter:blur(60px);opacity:.5;
+  background:
+    radial-gradient(38% 30% at 20% 30%,rgba(45,212,191,.22),transparent 60%),
+    radial-gradient(34% 28% at 80% 25%,rgba(56,189,248,.20),transparent 60%),
+    radial-gradient(40% 34% at 60% 80%,rgba(139,92,246,.18),transparent 60%);
+  animation:drift 26s ease-in-out infinite alternate;}
+@keyframes drift{0%{transform:translate3d(-4%,-2%,0) scale(1)}50%{transform:translate3d(3%,2%,0) scale(1.08)}100%{transform:translate3d(-2%,3%,0) scale(1.03)}}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(233,237,248,.04) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(233,237,248,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 90% 65% at 50% 0%,#000,transparent 80%);}
+.hero{position:relative;z-index:1;text-align:center;padding:40px 20px 8px}
+.hero .kick{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--teal);text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-size:clamp(24px,3.6vw,38px);font-weight:700;margin:10px 0 8px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(45,212,191,.25))}
+.hero p{color:var(--muted);font-size:13.5px;max-width:820px;margin:0 auto}
+.badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.bdg{font-family:var(--mono);font-size:11px;padding:3px 12px;border-radius:999px;border:1px solid var(--bd2);color:var(--muted)}
+.bdg b{color:var(--ink);font-weight:500}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:18px 16px 70px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:22px 0 6px}
+.tab{cursor:pointer;border:1px solid var(--bd);background:var(--panel);color:var(--muted);
+  padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;transition:all .2s;backdrop-filter:blur(10px)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--teal));box-shadow:0 0 8px var(--fc,var(--teal))}
+.tab:hover{border-color:var(--fc,var(--teal));color:var(--ink)}
+.tab.on{border-color:var(--fc,var(--teal));color:var(--ink);background:color-mix(in srgb,var(--fc,var(--teal)) 12%,var(--card))}
+.pane{display:none}.pane.on{display:block;animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sec{margin-top:30px}
+.sec h2{font-family:var(--disp);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sec h2 .n{font-family:var(--mono);font-size:12px;color:var(--bg);background:var(--fc,var(--teal));border-radius:7px;padding:2px 8px;font-weight:700}
+.sec .sd{font-family:var(--mono);font-size:11px;color:var(--faint);margin:0 0 14px 2px;letter-spacing:.05em}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:13px}
+.card{position:relative;background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:15px 16px;backdrop-filter:blur(10px);overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--ac,var(--teal)),transparent);opacity:.6}
+.card h3{font-family:var(--disp);font-size:13.5px;font-weight:600;color:var(--ac,var(--teal));margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.card h3 .ic{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--teal));box-shadow:0 0 8px var(--ac,var(--teal));flex:none}
+.card p,.card li{font-size:12.5px;color:var(--muted)}
+.card ul{list-style:none;margin-top:4px}
+.card li{padding:3px 0 3px 14px;position:relative}
+.card li::before{content:'›';position:absolute;left:0;color:var(--ac,var(--teal))}
+.card b{color:var(--ink);font-weight:600}
+.full{margin-top:14px}
+code{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(33,212,253,.09);border:1px solid rgba(33,212,253,.16);border-radius:5px;padding:1px 5px}
+pre.cmd{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:#cfe3ff;background:#0a0f1e;border:1px solid var(--bd);border-left:3px solid var(--fc,var(--teal));
+  border-radius:10px;padding:13px 15px;margin:12px 0;overflow-x:auto;white-space:pre}
+pre.cmd .c{color:var(--faint)}pre.cmd .k{color:var(--teal)}pre.cmd .s{color:var(--amber)}pre.cmd .r{color:var(--pink)}
+.note{border-radius:12px;padding:11px 14px;font-size:12.5px;margin:12px 0;border:1px solid}
+.note.warn{border-color:rgba(255,178,36,.4);background:rgba(255,178,36,.08);color:#ffd98a}
+.note.tip{border-color:rgba(45,212,191,.35);background:rgba(45,212,191,.07);color:#9eeede}
+.note.bug{border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.08);color:#ffb3b3}
+.note b{color:var(--ink)}
+table.t{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+table.t th,table.t td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--bd)}
+table.t th{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);text-transform:uppercase;font-weight:400}
+table.t td{color:var(--muted)}table.t td b{color:var(--ink)}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0;font-size:12px}
+.node{border:1px solid var(--bd2);background:var(--panel);border-radius:10px;padding:8px 13px;font-family:var(--mono);font-size:11.5px;color:var(--ink);backdrop-filter:blur(8px)}
+.node .s{display:block;font-size:9.5px;color:var(--faint);letter-spacing:.05em}
+.arr{color:var(--teal);font-size:16px}
+footer{text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px;margin-top:46px;padding-top:18px;border-top:1px solid var(--bd)}
+h4.step{font-family:var(--disp);font-size:14px;color:var(--ink);margin:20px 0 2px;display:flex;gap:9px;align-items:center}
+h4.step span{font-family:var(--mono);font-size:11px;color:var(--fc,var(--teal));border:1px solid var(--bd2);border-radius:6px;padding:1px 7px}
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="grid-bg"></div>
+
+<header class="hero">
+  <div class="kick">/// infra runbook · ip address management</div>
+  <h1>IPAM 全栈部署手册</h1>
+  <p>phpIPAM(IP 台账 + SAML SSO)为核心,南向对接 <b>Foreman</b> 做 provisioning 自动取 IP(External IPAM),旁挂 <b>LibreNMS</b> SNMP 监控/自动发现,北向接 <b>PowerDNS</b> 自动建 A/PTR。全部 k8s + ArgoCD GitOps,照本手册可从零复现。</p>
+  <div class="badges">
+    <span class="bdg">phpIPAM <b>v1.8.1</b></span>
+    <span class="bdg">Foreman <b>3.18 · smart_proxy_ipam</b></span>
+    <span class="bdg">LibreNMS <b>latest</b></span>
+    <span class="bdg">PowerDNS <b>待接</b></span>
+    <span class="bdg">RKE2 <b>+ ArgoCD</b></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs"></div>
+
+  <!-- ════════ 0 架构 ════════ -->
+  <section class="pane on" data-fc="var(--teal)">
+    <div class="sec">
+      <h2><span class="n">0</span> 全栈架构 · 数据流</h2>
+      <div class="sd">// IP 分配单一真相源 = phpIPAM;Foreman 取 IP、LibreNMS 发现设备、PowerDNS 落 DNS 全部回指它</div>
+      <div class="flow">
+        <span class="node">Foreman<span class="s">provisioning</span></span>
+        <span class="arr">→</span>
+        <span class="node">smart_proxy_ipam<span class="s">:9090/ipam</span></span>
+        <span class="arr">→</span>
+        <span class="node" style="border-color:var(--teal)">phpIPAM API<span class="s">next_ip / 登记</span></span>
+        <span class="arr">↔</span>
+        <span class="node">PowerDNS<span class="s">A / PTR</span></span>
+      </div>
+      <div class="flow">
+        <span class="node">RouterOS ARP</span><span class="arr">→</span><span class="node" style="border-color:var(--teal)">phpIPAM 台账</span>
+        <span class="arr">·</span>
+        <span class="node">LibreNMS</span><span class="arr">→</span><span class="node">SNMP 扫 192.168.6.0/24</span>
+      </div>
+      <div class="cards">
+        <div class="card" style="--ac:var(--teal)"><h3><span class="ic"></span>phpIPAM · 核心</h3><ul>
+          <li>ns <code>infra-nt</code>,自包含 <b>MariaDB</b>(phpIPAM 只吃 MySQL/MariaDB)</li>
+          <li>入口 <code>https://phpipam.djch.one</code></li>
+          <li>登录 SAML SSO(Authentik)+ 本地 <code>Admin</code> 兜底</li>
+          <li>子网 <code>192.168.6.0/24</code> = IP 真相源</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--cyan)"><h3><span class="ic"></span>Foreman · External IPAM</h3><ul>
+          <li>Foreman 3.18 @ <code>192.168.6.15</code></li>
+          <li>插件 <code>smart_proxy_ipam</code>(gem)→ feature <b>External IPAM</b></li>
+          <li>建主机自动 <code>next_ip</code> ← phpIPAM</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--violet)"><h3><span class="ic"></span>LibreNMS · 监控</h3><ul>
+          <li>ns <code>librenms</code>,MariaDB+Redis+dispatcher</li>
+          <li>入口 <code>https://librenms.djch.one</code></li>
+          <li>SNMP 自动发现子网(community <code>public</code>)</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>PowerDNS · DNS(待接)</h3><ul>
+          <li>另一 agent 部署,phpIPAM 原生对接</li>
+          <li>phpIPAM 分配 IP → 自动推 A/PTR 记录</li>
+          <li>需 PowerDNS <b>API 地址 + Key</b></li>
+        </ul></div>
+      </div>
+      <div class="note tip"><b>GitOps 约定</b>:清单在 <code>k8s-gitops/manifests/&lt;ns&gt;/</code>,密码走 <b>SealedSecret</b>,ArgoCD app <code>*-manifests</code>(automated + selfHeal + prune)。<code>kubectl apply</code> 手改会被回滚,改动一律走 git push。运行时配置(phpIPAM 认证方法 / LibreNMS config)存各自 DB,<b>不进 GitOps</b>,靠本手册重建。</div>
+    </div>
+  </section>
+
+  <!-- ════════ 1 phpIPAM ════════ -->
+  <section class="pane" data-fc="var(--cyan)">
+    <div class="sec">
+      <h2><span class="n">1</span> phpIPAM 部署</h2>
+      <div class="sd">// 自包含 MariaDB · Longhorn · Traefik ingress · SealedSecret</div>
+
+      <h4 class="step"><span>1.1</span>DB 密码 secret(随机,不落明文)</h4>
+      <pre class="cmd"><span class="c"># 在 k8s 节点(sudo kubectl,KUBECONFIG=/etc/rancher/rke2/rke2.yaml)</span>
+<span class="k">kubectl</span> -n infra-nt create secret generic phpipam-db \
+  --from-literal=mysql-root-password=<span class="s">$(openssl rand -hex 16)</span> \
+  --from-literal=mysql-password=<span class="s">$(openssl rand -hex 16)</span></pre>
+
+      <h4 class="step"><span>1.2</span>清单:MariaDB(StatefulSet)+ phpipam-www + Service + Ingress</h4>
+      <div class="note warn"><b>坑</b>:集群有 <b>两个 default StorageClass</b>(<code>local-netbox</code> + <code>longhorn</code>),PVC 必须<b>显式</b> <code>storageClassName: longhorn</code>,否则可能错绑 local。</div>
+      <pre class="cmd"><span class="c"># 关键 env(phpipam-www Deployment)</span>
+IPAM_DATABASE_HOST=phpipam-mariadb   IPAM_DATABASE_NAME=phpipam
+IPAM_DATABASE_USER=phpipam           IPAM_DATABASE_PASS=&lt;secret&gt;
+<span class="r">IPAM_TRUST_X_FORWARDED=true</span>   <span class="c"># 认 Traefik X-Forwarded-Proto=https,否则 302 发 http</span>
+<span class="r">IPAM_DISABLE_INSTALLER=true</span>  <span class="c"># schema 手动导入后关向导</span>
+<span class="c"># 镜像钉死 phpipam/phpipam-www:v1.8.1(nullconfig helm chart 的 gh-pages 已 404,弃用)</span>
+<span class="k">kubectl</span> apply -f manifests/infra-nt/phpipam.yaml</pre>
+
+      <h4 class="step"><span>1.3</span>导入 SCHEMA(首启若因 DNS 未就绪跳过了自动导)</h4>
+      <div class="note bug"><b>症状</b>:web 报 <code>theme on null</code> 或 <code>Could not connect to database</code>=空库。www 首启早于 mariadb ready 时会漏导 schema。</div>
+      <pre class="cmd"><span class="k">kubectl</span> -n infra-nt exec deploy/phpipam-www -- cat /phpipam/db/SCHEMA.sql \
+ | <span class="k">kubectl</span> -n infra-nt exec -i phpipam-mariadb-0 -- mariadb -uphpipam -p&lt;pw&gt; phpipam
+<span class="c"># 验证:48 张表 + 默认 Admin 用户;默认口令 Admin/ipamadmin(首登强制改)</span></pre>
+
+      <h4 class="step"><span>1.4</span>DNS + Ingress + SealedSecret</h4>
+      <pre class="cmd"><span class="c"># FreeIPA A 记录</span>
+<span class="k">kinit</span> yiwei &amp;&amp; <span class="k">ipa</span> dnsrecord-add djch.one phpipam --a-rec=192.168.6.240
+<span class="c"># ingress 复用 *.djch.one 通配证书 wildcard-djch-one-tls(class: traefik / websecure)</span>
+<span class="c"># 封 secret 进 git(kubeseal 版本对齐控制器 0.37.0)</span>
+<span class="k">kubectl</span> -n infra-nt get secret phpipam-db -o yaml \
+ | <span class="k">kubeseal</span> --controller-namespace sealed-secrets --format yaml \
+ &gt; manifests/infra-nt/phpipam-db.sealed.yaml
+<span class="k">kubectl</span> -n infra-nt delete secret phpipam-db   <span class="c"># 删明文,让控制器重建为它所有</span></pre>
+      <div class="note tip"><b>SealedSecret 接管坑</b>:控制器不覆盖非它创建的明文 secret(报 <code>already exists and is not managed</code>)。删明文 secret 后,<b>删掉再重建</b> SealedSecret 触发 reconcile,pod 不重启(env 已注入,值一致)。</div>
+    </div>
+  </section>
+
+  <!-- ════════ 2 SSO ════════ -->
+  <section class="pane" data-fc="var(--violet)">
+    <div class="sec">
+      <h2><span class="n">2</span> phpIPAM SSO · Authentik SAML2</h2>
+      <div class="sd">// IdP=Authentik(auth.djch.one)· SP=phpIPAM · JIT 自动建号</div>
+
+      <h4 class="step"><span>2.1</span>Authentik 侧:Provider + Application + JIT 属性(ak shell,幂等)</h4>
+      <pre class="cmd"><span class="k">kubectl</span> -n authentik exec -i deploy/authentik-server -- ak shell &lt; authentik-setup.py
+<span class="c"># 建 SAML Provider phpipam:</span>
+<span class="c">#   ACS = https://phpipam.djch.one/index.php?page=saml2   (未开 prettyLinks,非 /saml2/)</span>
+<span class="c">#   issuer/audience = https://phpipam.djch.one · sp_binding=post · 签名走 self-signed</span>
+<span class="c">#   NameID = Username(email 当 NameID 时无邮箱账号会空 → getNameId() 失败)</span>
+<span class="c"># 建 3 个自定义 SAMLPropertyMapping(裸名,Authentik 默认是 URI 名不匹配):</span>
+<span class="c">#   display_name / email(必填,加兜底 user.username+@djch.one)/ is_admin(=user.is_superuser)</span></pre>
+      <div class="note bug"><b>三连坑</b>:①ACS 不匹配 Authentik 报 <code>ACS URL ... doesn't match</code>;②NameID 空 → <code>Could not extract valid username</code>;③JIT 缺属性 → <code>Mandatory SAML JIT attribute missing: display_name</code>。契约在容器 <code>app/saml2/index.php</code>:必填 <code>display_name</code>+<code>email</code>,选填 <code>is_admin</code>/<code>groups</code>/<code>modules</code>。</div>
+
+      <h4 class="step"><span>2.2</span>phpIPAM 侧:插 SAML2 认证方法(存 usersAuthMethod 表)</h4>
+      <pre class="cmd"><span class="c"># 从 Authentik provider 拉 IdP 证书,写 usersAuthMethod(见 phpipam-authmethod.sh,幂等)</span>
+INSERT INTO usersAuthMethod (type,params,protected,description)
+VALUES ('SAML2', '{...idpissuer/idplogin/idpx509cert/jit:1/strict:0...}', 'No', 'Authentik SAML SSO');
+<span class="c"># idplogin = https://auth.djch.one/application/saml/phpipam/sso/binding/redirect/</span></pre>
+      <div class="note tip">验证:<code>/index.php?page=saml2</code> 出现 SAML 入口 → 跳 Authentik → 回跳 JIT 建号。<code>is_admin</code> 随 Authentik 超管态定 phpIPAM 角色。管理仍有本地 <code>Admin/ipamadmin</code> 兜底。</div>
+    </div>
+  </section>
+
+  <!-- ════════ 3 Foreman IPAM ════════ -->
+  <section class="pane" data-fc="var(--blue)">
+    <div class="sec">
+      <h2><span class="n">3</span> Foreman External IPAM</h2>
+      <div class="sd">// provisioning 建主机自动从 phpIPAM 取空闲 IP 并登记</div>
+      <div class="note warn"><b>坑</b>:<code>smart_proxy_ipam</code> 官方 RPM 在 Foreman 3.18/Katello 4.20/Rocky9 仓里<b>没有</b>,foreman-installer 也不认 → 只能手动装 gem(非 RPM 管理,Foreman 升级后可能要重装)。dry-run 确认零依赖冲突后再装。</div>
+
+      <h4 class="step"><span>3.1</span>Foreman 装插件</h4>
+      <pre class="cmd"><span class="c"># 先 dry-run 确认只装叶子 gem(不动 foreman-proxy 核心 gem)</span>
+<span class="k">gem</span> install smart_proxy_ipam --explain
+<span class="k">gem</span> install smart_proxy_ipam --no-document
+<span class="k">echo</span> "gem 'smart_proxy_ipam'" &gt; /usr/share/foreman-proxy/bundler.d/smart_proxy_ipam.rb
+<span class="k">systemctl</span> restart foreman-proxy   <span class="c"># 起不来就删上面那行回滚</span></pre>
+
+      <h4 class="step"><span>3.2</span>phpIPAM 侧:服务账号 + API app(认证机制关键)</h4>
+      <div class="note bug"><b>认证机制</b>:smart_proxy_ipam 走 <code>POST url/api/{user}/user/</code> + basic auth 取 token → phpIPAM <b>app_id 必须 = 配置里的 user</b>,且要有<b>同名 phpIPAM 用户</b>。<code>app_security</code> 必须 <code>ssl_token</code>(enum 里的 <code>user</code> 会报 <code>Invalid app security</code>,API 只认 ssl_token/ssl_code/crypt/none)。</div>
+      <pre class="cmd"><span class="c"># phpIPAM DB:开 API + 建 local 用户 foreman(Administrator)+ API app foreman(ssl_token,rw)</span>
+UPDATE settings SET api=1;
+INSERT INTO users (username,authMethod,password,role,...) VALUES ('foreman',1,'&lt;bcrypt&gt;','Administrator',...);
+INSERT INTO api (app_id,app_permissions,app_security,app_comment)
+VALUES ('foreman',2,'ssl_token','Foreman smart_proxy_ipam');
+<span class="c"># 建子网(经 API,顺带验证认证):POST /api/foreman/subnets/ subnet=192.168.6.0 mask=24 sectionId=1</span></pre>
+
+      <h4 class="step"><span>3.3</span>Foreman 侧:proxy 配置 + 挂子网</h4>
+      <pre class="cmd"><span class="c"># /etc/foreman-proxy/settings.d/externalipam.yml</span>
+:enabled: true
+:use_provider: externalipam_phpipam
+<span class="c"># /etc/foreman-proxy/settings.d/externalipam_phpipam.yml (640 root:foreman-proxy)</span>
+:url: 'https://phpipam.djch.one'
+:user: 'foreman'
+:password: '&lt;foreman 用户密码&gt;'
+<span class="c"># restart 后刷新 feature + 挂子网</span>
+<span class="k">hammer</span> proxy refresh-features --id 1        <span class="c"># 出现 External IPAM</span>
+<span class="k">hammer</span> subnet update --id 1 --ipam "External IPAM" --externalipam-id 1</pre>
+
+      <h4 class="step"><span>3.4</span>端到端验证</h4>
+      <pre class="cmd"><span class="c"># 用 Foreman 服务器的 client_cert 调 proxy(proxy 自己的 ssl_cert 当客户端证书会被拒)</span>
+<span class="k">curl</span> --cert /etc/foreman/client_cert.pem --key /etc/foreman/client_key.pem \
+  --cacert /etc/foreman/proxy_ca.pem \
+  https://foreman.djch.one:9090/ipam/subnet/192.168.6.0/24/next_ip
+<span class="c"># → {"data":"192.168.6.1"}  ✅</span></pre>
+    </div>
+  </section>
+
+  <!-- ════════ 4 LibreNMS ════════ -->
+  <section class="pane" data-fc="var(--green)">
+    <div class="sec">
+      <h2><span class="n">4</span> LibreNMS 部署</h2>
+      <div class="sd">// 自包含 MariaDB + Redis + dispatcher(poller)· SNMP 自动发现</div>
+
+      <h4 class="step"><span>4.1</span>清单要点</h4>
+      <table class="t"><tr><th>组件</th><th>说明</th></tr>
+        <tr><td><b>redis</b></td><td>redis:7.2-alpine,缓存/会话/dispatcher 锁</td></tr>
+        <tr><td><b>mariadb:10</b></td><td>带 <code>--character-set-server=utf8mb4 --lower-case-table-names=0</code>,Longhorn 10Gi</td></tr>
+        <tr><td><b>librenms(双容器)</b></td><td>web:8000 + dispatcher(<code>SIDECAR_DISPATCHER=1</code>),<b>共享 /data PVC</b>,strategy Recreate</td></tr>
+      </table>
+      <pre class="cmd"><span class="k">kubectl</span> create namespace librenms
+<span class="k">kubectl</span> -n librenms create secret generic librenms-db \
+  --from-literal=mysql-root-password=<span class="s">$(openssl rand -hex 16)</span> \
+  --from-literal=mysql-password=<span class="s">$(openssl rand -hex 16)</span>
+<span class="k">kubectl</span> apply -f manifests/librenms/librenms.yaml</pre>
+
+      <div class="note bug"><b>两个必修坑</b>:①containerd 下 web 容器 <code>nginx/php-fpm: /proc/self/fd/2 Permission denied</code>(FPM init failed)→ web 容器加 <code>tty: true</code>;②反代下 302 发 http → configmap 设 <code>APP_TRUSTED_PROXIES: "*"</code>(trustedproxy.php 默认只信 127.0.0.1)。</div>
+
+      <h4 class="step"><span>4.2</span>建 admin + 自动发现</h4>
+      <pre class="cmd"><span class="k">lnms</span> user:add -r admin -p '&lt;pw&gt;' -e you@djch.one -l Admin admin
+<span class="k">lnms</span> config:set nets.0 192.168.6.0/24
+<span class="k">lnms</span> config:set snmp.community '["public"]'
+<span class="k">lnms</span> config:set discovery_by_ip true</pre>
+      <div class="note tip">snmp-scan 定时扫子网,<b>设备侧要开 SNMP 且 community=public</b> 才会被纳入。入口 <code>https://librenms.djch.one</code>。</div>
+    </div>
+  </section>
+
+  <!-- ════════ 5 IP 导入 ════════ -->
+  <section class="pane" data-fc="var(--pink)">
+    <div class="sec">
+      <h2><span class="n">5</span> IP 台账导入 · RouterOS ARP → phpIPAM</h2>
+      <div class="sd">// 让 phpIPAM 知道现网已用 IP,Foreman 才不会分配撞车</div>
+      <div class="note warn">ping 扫会漏掉防火墙挡 ICMP 的主机。用<b>网关 RouterOS 的 ARP 表</b>(L2,含所有活动设备+MAC)最准,再 FreeIPA 反向 DNS 补主机名。</div>
+      <pre class="cmd"><span class="c"># 1. 拉网关 ARP(完整条目)</span>
+<span class="k">ssh</span> kissu8@192.168.6.254 '/ip arp print' | grep complete
+<span class="c"># 2. 逐 IP 反向解析(FreeIPA .181)</span>
+<span class="k">dig</span> +short -x 192.168.6.X @192.168.6.181
+<span class="c"># 3. 拼 INSERT 灌 phpIPAM(ip_addr = ip2long,192.168.6.0=3232237056)</span>
+INSERT INTO ipaddresses (subnetId,ip_addr,is_gateway,description,hostname,mac,state)
+VALUES (7, 3232237056+&lt;octet&gt;, 0, '&lt;short&gt;', '&lt;fqdn&gt;', '&lt;mac&gt;', 2);
+<span class="c"># .254 标 is_gateway=1</span></pre>
+      <div class="note tip">本次导入 <b>69 个在用 IP</b>(68 ARP 活动 + 网关),26 个带反向 DNS 主机名,全部含 MAC。之后 <code>next_ip</code> 自动跳过它们。</div>
+    </div>
+  </section>
+
+  <!-- ════════ 6 PowerDNS ════════ -->
+  <section class="pane" data-fc="var(--amber)">
+    <div class="sec">
+      <h2><span class="n">6</span> PowerDNS 对接 <span style="font-size:12px;color:var(--amber);font-family:var(--mono)">待接</span></h2>
+      <div class="sd">// phpIPAM 分配/改 IP → 自动在 PowerDNS 建 A/PTR 记录</div>
+      <div class="note warn">PowerDNS 由另一个 agent 部署中。就绪后需其 <b>API 地址(如 http://pdns:8081)+ API Key + 服务器 id</b>。phpIPAM 原生支持,配置存 DB(Administration → PowerDNS),不进 GitOps。</div>
+      <div class="cards">
+        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>phpIPAM 侧配置</h3><ul>
+          <li>Administration → <b>PowerDNS</b>:填 API URL / API Key / server(默认 <code>localhost</code>)</li>
+          <li>或 DB 直连模式(pdns MySQL 后端库)</li>
+          <li>开 <b>Reverse DNS</b>:子网勾 "Create PTR"</li>
+        </ul></div>
+        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>联动效果</h3><ul>
+          <li>phpIPAM 给主机分配 IP + hostname → 推 <b>A 记录</b>到正向区</li>
+          <li>自动建 <b>PTR</b> 到 <code>6.168.192.in-addr.arpa</code></li>
+          <li>Foreman 经 phpIPAM 取 IP 时,DNS 同步落地</li>
+        </ul></div>
+      </div>
+      <pre class="cmd"><span class="c"># 需从 PowerDNS agent 拿到:</span>
+PDNS_API_URL=http://&lt;pdns-host&gt;:8081/api/v1
+PDNS_API_KEY=&lt;key&gt;
+<span class="c"># zones:djch.one(正向)· 6.168.192.in-addr.arpa(反向)</span></pre>
+    </div>
+  </section>
+
+  <footer>djch.one infra · IPAM stack runbook · phpIPAM v1.8.1 × Foreman smart_proxy_ipam × LibreNMS × PowerDNS · GitOps k8s-gitops / ArgoCD</footer>
+</main>
+
+<script>
+const TABS=[
+  {label:'架构 · 数据流',fc:'var(--teal)'},
+  {label:'phpIPAM 部署',fc:'var(--cyan)'},
+  {label:'SSO · SAML',fc:'var(--violet)'},
+  {label:'Foreman IPAM',fc:'var(--blue)'},
+  {label:'LibreNMS',fc:'var(--green)'},
+  {label:'IP 台账导入',fc:'var(--pink)'},
+  {label:'PowerDNS 待接',fc:'var(--amber)'},
+];
+const panes=[...document.querySelectorAll('.pane')];
+const tabsBox=document.getElementById('tabs');
+TABS.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.className='tab'+(i===0?' on':'');b.style.setProperty('--fc',t.fc);
+  b.innerHTML='<span class="dot"></span>'+t.label;
+  b.onclick=()=>activate(i);
+  tabsBox.appendChild(b);
+});
+function activate(i){
+  [...tabsBox.children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  panes.forEach((p,j)=>p.classList.toggle('on',j===i));
+  document.documentElement.style.setProperty('--fc',TABS[i].fc);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+activate(0);
+</script>
+</body>
+</html>

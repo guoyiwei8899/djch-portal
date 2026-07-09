@@ -42,9 +42,20 @@
     "idc": {
       "label": "IDC · 机房",
       "icon": "server"
+    },
+    "ipam": {
+      "label": "IPAM · DNS",
+      "icon": "network"
     }
   },
   "viz": [
+    {
+      "domain": "ipam",
+      "icon": "network",
+      "title": "IPAM 全栈部署手册 · phpIPAM × Foreman × LibreNMS × PowerDNS",
+      "desc": "从零复现的 IP 地址管理全栈:phpIPAM(v1.8.1 自包含 MariaDB + Authentik SAML SSO)为 IP 真相源,南向 Foreman smart_proxy_ipam 做 provisioning 自动取 IP(External IPAM),旁挂 LibreNMS SNMP 自动发现,北向对接 PowerDNS 自动建 A/PTR;全 k8s+ArgoCD GitOps。含每步命令、SealedSecret 流程、RouterOS ARP 台账导入、以及 tty:true/APP_TRUSTED_PROXIES/ssl_token/ACS index.php 等全部踩坑修法",
+      "path": "viz/ipam-stack-runbook.html"
+    },
     {
       "domain": "storage",
       "icon": "hard-drive",
