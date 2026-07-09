@@ -108,7 +108,7 @@ h4.step span{font-family:var(--mono);font-size:11px;color:var(--fc,var(--teal));
     <span class="bdg">phpIPAM <b>v1.8.1</b></span>
     <span class="bdg">Foreman <b>3.18 · smart_proxy_ipam</b></span>
     <span class="bdg">LibreNMS <b>latest</b></span>
-    <span class="bdg">PowerDNS <b>待接</b></span>
+    <span class="bdg">PowerDNS <b>auth 5.0.5 · dnsdist</b></span>
     <span class="bdg">RKE2 <b>+ ArgoCD</b></span>
   </div>
 </header>
@@ -152,10 +152,10 @@ h4.step span{font-family:var(--mono);font-size:11px;color:var(--fc,var(--teal));
           <li>入口 <code>https://librenms.djch.one</code></li>
           <li>SNMP 自动发现子网(community <code>public</code>)</li>
         </ul></div>
-        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>PowerDNS · DNS(待接)</h3><ul>
-          <li>另一 agent 部署,phpIPAM 原生对接</li>
-          <li>phpIPAM 分配 IP → 自动推 A/PTR 记录</li>
-          <li>需 PowerDNS <b>API 地址 + Key</b></li>
+        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>PowerDNS · DNS ✅</h3><ul>
+          <li><code>mana-dns</code> @ <code>192.168.6.207</code>(dnsdist+auth+recursor)</li>
+          <li>phpIPAM <b>直连 DB</b> 已启用;Foreman <b>REST</b> 已验证</li>
+          <li>API <code>:8081</code> + gmysql <code>:3306</code></li>
         </ul></div>
       </div>
       <div class="note tip"><b>GitOps 约定</b>:清单在 <code>k8s-gitops/manifests/&lt;ns&gt;/</code>,密码走 <b>SealedSecret</b>,ArgoCD app <code>*-manifests</code>(automated + selfHeal + prune)。<code>kubectl apply</code> 手改会被回滚,改动一律走 git push。运行时配置(phpIPAM 认证方法 / LibreNMS config)存各自 DB,<b>不进 GitOps</b>,靠本手册重建。</div>
@@ -322,25 +322,110 @@ VALUES (7, 3232237056+&lt;octet&gt;, 0, '&lt;short&gt;', '&lt;fqdn&gt;', '&lt;ma
   <!-- ════════ 6 PowerDNS ════════ -->
   <section class="pane" data-fc="var(--amber)">
     <div class="sec">
-      <h2><span class="n">6</span> PowerDNS 对接 <span style="font-size:12px;color:var(--amber);font-family:var(--mono)">待接</span></h2>
-      <div class="sd">// phpIPAM 分配/改 IP → 自动在 PowerDNS 建 A/PTR 记录</div>
-      <div class="note warn">PowerDNS 由另一个 agent 部署中。就绪后需其 <b>API 地址(如 http://pdns:8081)+ API Key + 服务器 id</b>。phpIPAM 原生支持,配置存 DB(Administration → PowerDNS),不进 GitOps。</div>
-      <div class="cards">
-        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>phpIPAM 侧配置</h3><ul>
-          <li>Administration → <b>PowerDNS</b>:填 API URL / API Key / server(默认 <code>localhost</code>)</li>
-          <li>或 DB 直连模式(pdns MySQL 后端库)</li>
-          <li>开 <b>Reverse DNS</b>:子网勾 "Create PTR"</li>
-        </ul></div>
-        <div class="card" style="--ac:var(--amber)"><h3><span class="ic"></span>联动效果</h3><ul>
-          <li>phpIPAM 给主机分配 IP + hostname → 推 <b>A 记录</b>到正向区</li>
-          <li>自动建 <b>PTR</b> 到 <code>6.168.192.in-addr.arpa</code></li>
-          <li>Foreman 经 phpIPAM 取 IP 时,DNS 同步落地</li>
-        </ul></div>
+      <h2><span class="n">6</span> PowerDNS 对接 <span style="font-size:12px;color:var(--green);font-family:var(--mono)">✅ 已接</span></h2>
+      <div class="sd">// phpIPAM 直连 DB 已启用并验证 · Foreman smart-proxy 已装插件并验证(provider 未持久切,风险见下)</div>
+
+      <h4 class="step"><span>6.0</span>PowerDNS 环境架构(另一 agent 部署 · 测试/裸装)</h4>
+      <div class="sd" style="margin:8px 0 4px">// VM <code>mana-dns</code> / <b>192.168.6.207</b> / Rocky9.7 · dnsdist 单入口按域分流</div>
+      <div class="flow">
+        <span class="node" style="border-color:var(--amber)">client :53<span class="s">查询入口</span></span>
+        <span class="arr">→</span>
+        <span class="node" style="border-color:var(--amber)">dnsdist 1.9.15<span class="s">:53 唯一入口</span></span>
       </div>
-      <pre class="cmd"><span class="c"># 需从 PowerDNS agent 拿到:</span>
-PDNS_API_URL=http://&lt;pdns-host&gt;:8081/api/v1
-PDNS_API_KEY=&lt;key&gt;
-<span class="c"># zones:djch.one(正向)· 6.168.192.in-addr.arpa(反向)</span></pre>
+      <div class="flow">
+        <span class="node">dnsdist</span>
+        <span class="arr">┬ mana.com →</span>
+        <span class="node" style="border-color:var(--teal)">pdns-auth 5.0.5<span class="s">127.0.0.1:5300 · gmysql</span></span>
+      </div>
+      <div class="flow" style="margin-top:-6px">
+        <span class="node" style="visibility:hidden">dnsdist</span>
+        <span class="arr">└ 其余 →</span>
+        <span class="node">pdns-recursor 4.8.9<span class="s">127.0.0.1:5301</span></span>
+        <span class="arr">→</span>
+        <span class="node">mosdns .206<span class="s">抗污染分流</span></span>
+      </div>
+      <table class="t"><tr><th>组件</th><th>版本</th><th>监听</th><th>角色</th></tr>
+        <tr><td><b>dnsdist</b></td><td>1.9.15</td><td><code>:53</code></td><td>唯一入口,<code>mana.com</code>→auth,其余→recursor</td></tr>
+        <tr><td><b>pdns-auth</b></td><td>5.0.5</td><td><code>127.0.0.1:5300</code></td><td>权威 <code>mana.com</code> + 反向区(gmysql 后端)</td></tr>
+        <tr><td><b>pdns-recursor</b></td><td>4.8.9</td><td><code>127.0.0.1:5301</code></td><td>递归 → mosdns .206</td></tr>
+        <tr><td><b>MariaDB</b></td><td>10.5</td><td><code>:3306</code></td><td>库 <code>pdns</code> + <code>powerdnsadmin</code></td></tr>
+      </table>
+      <div class="note bug"><b>反向区风险</b>:测试域 <code>mana.com</code>(ns1/www/test A)+ 反向 <code>6.168.192.in-addr.arpa</code> —— <b>这正是生产子网 192.168.6.0/24 的反向区</b>。zone kind=<code>Native</code>(改 DB 即时生效)。把 Foreman 反向 DNS 切到这台<b>测试</b> pdns = 新装机 PTR 落到测试环境,见 6.4。</div>
+
+      <h4 class="step"><span>6.1</span>PowerDNS REST API(zones / 记录 CRUD)</h4>
+      <pre class="cmd"><span class="c"># 认证走 X-API-Key 头;所有路径挂在 server=localhost 下</span>
+H=<span class="s">'X-API-Key: d3f9a1c7b5e28460f1a2c3d4e5b6a7c8'</span>
+B=http://192.168.6.207:8081/api/v1/servers/localhost
+<span class="c"># 列所有 zone</span>
+<span class="k">curl</span> -s -H "$H" $B/zones | jq -r '.[].name'
+<span class="c"># 看某 zone 的 rrset(注意 zone 名带结尾点)</span>
+<span class="k">curl</span> -s -H "$H" $B/zones/mana.com. | jq '.rrsets[]'
+<span class="c"># 建/改 A 记录:PATCH + changetype REPLACE</span>
+<span class="k">curl</span> -s -X PATCH -H "$H" -H 'Content-Type: application/json' $B/zones/mana.com. -d '{
+  "rrsets":[{"name":"test.mana.com.","type":"A","ttl":300,"changetype":"REPLACE",
+    "records":[{"content":"192.168.6.222","disabled":false}]}]}'
+<span class="c"># 删记录:同 PATCH,changetype 改 DELETE</span>
+  <span class="r">"changetype":"DELETE"</span>
+<span class="c"># 建 PTR:打到反向 zone(name/content 都带结尾点)</span>
+<span class="k">curl</span> -s -X PATCH -H "$H" -H 'Content-Type: application/json' \
+  $B/zones/6.168.192.in-addr.arpa. -d '{
+  "rrsets":[{"name":"222.6.168.192.in-addr.arpa.","type":"PTR","ttl":300,"changetype":"REPLACE",
+    "records":[{"content":"test.mana.com.","disabled":false}]}]}'</pre>
+
+      <h4 class="step"><span>6.2</span>PowerDNS 数据库(gmysql 后端 · 直连)</h4>
+      <pre class="cmd"><span class="c"># 已 bind 0.0.0.0 + pdns@'%' 远程授权,可从任意内网机直连</span>
+<span class="k">mysql</span> -h192.168.6.207 -updns -p<span class="s">'pdnsMana2026'</span> pdns
+<span class="c"># 关键两张表:domains(区)+ records(记录)</span>
+SELECT id,name,type FROM domains;               <span class="c"># type=NATIVE</span>
+SELECT name,type,content,ttl FROM records
+  WHERE domain_id=(SELECT id FROM domains WHERE name='mana.com');</pre>
+      <table class="t"><tr><th>参数</th><th>值</th></tr>
+        <tr><td>host : port</td><td><code>192.168.6.207 : 3306</code></td></tr>
+        <tr><td>db</td><td><code>pdns</code>(权威后端)· <code>powerdnsadmin</code>(Web UI)</td></tr>
+        <tr><td>user / pass</td><td><code>pdns</code> / <code>pdnsMana2026</code></td></tr>
+      </table>
+
+      <h4 class="step"><span>6.3</span>phpIPAM → PowerDNS(直连 DB · ✅ 已启用)</h4>
+      <div class="note bug"><b>配置存哪</b>:phpIPAM 的 pdns 连接<b>不在 config.php</b>(镜像 config 由 ENV 驱动,无 pdns 透传),而在 <b>DB <code>settings</code> 表</b>(id=1)的 <code>powerDNS</code> JSON 字段 + <code>enablePowerDNS=1</code>。天然<b>持久</b>(Longhorn PVC),读取处 <code>app/classes/class.PowerDNS.php:184</code>。</div>
+      <pre class="cmd"><span class="c"># JSON:{"db_host":"192.168.6.207","db_user":"pdns","db_pass":"pdnsMana2026","db_name":"pdns","db_port":"3306"}</span>
+<span class="c"># 坑:JSON 里的双引号会让 mariadb -e 崩 → 先把 JSON 转 hex,DB 侧 UNHEX 还原</span>
+J='{"db_host":"192.168.6.207","db_user":"pdns","db_pass":"pdnsMana2026","db_name":"pdns","db_port":"3306"}'
+HEX=$(printf '%s' "$J" | od -An -tx1 | tr -d ' \n')
+<span class="k">kubectl</span> -n infra-nt exec -i phpipam-mariadb-0 -- mariadb -uphpipam -p&lt;pw&gt; phpipam \
+  -e "UPDATE settings SET enablePowerDNS=1, powerDNS=CONVERT(UNHEX('$HEX') USING utf8) WHERE id=1;"</pre>
+      <pre class="cmd"><span class="c"># 验证:phpipam-www pod 直连 pdns DB 插一条 A → dig 确认 → 删</span>
+<span class="k">dig</span> @192.168.6.207 phpipam-test.mana.com +short     <span class="c"># → 192.168.6.222 ✅</span></pre>
+      <div class="note tip">Web 里 <b>Administration → PowerDNS</b> 可视化管 domain/record。要让 phpIPAM 建 IP 时<b>自动写 PTR</b>:在子网属性上开 <b>"Check hostnames / PTR"</b>(可选)。</div>
+
+      <h4 class="step"><span>6.4</span>Foreman → PowerDNS(smart-proxy REST · ✅ 已验证,未持久切)</h4>
+      <div class="note warn"><b>插件</b>:<code>smart_proxy_dns_powerdns</code> <b>1.0.0</b> 用 <code>gem install</code>(~3min,别超时打断;非 RPM,Foreman 升级后可能要重装)。1.0.0 <b>只有 REST 后端</b> —— 无需 <code>:powerdns_backend</code> 键。</div>
+      <pre class="cmd"><span class="k">gem</span> install smart_proxy_dns_powerdns --no-document
+<span class="k">echo</span> "gem 'smart_proxy_dns_powerdns'" &gt; /usr/share/foreman-proxy/bundler.d/smart_proxy_dns_powerdns.rb
+<span class="c"># /etc/foreman-proxy/settings.d/dns_powerdns.yml (640 root:foreman-proxy)</span>
+:powerdns_rest_url: 'http://192.168.6.207:8081/api/v1/servers/localhost'
+:powerdns_rest_api_key: 'd3f9a1c7b5e28460f1a2c3d4e5b6a7c8'</pre>
+      <div class="note bug"><b>影响半径(切换前必读)</b>:Foreman <b>只有一个 smart-proxy</b>,DNS provider 是 <b>proxy 全局</b>的。现状:仅子网 <code>192.168.6.0/24</code> 的<b>反向 PTR</b> 绑在此 proxy(现走 <code>dns_nsupdate</code> → 本机 <code>named</code> @.15:53);<b>正向 <code>djch.one</code> 的 DNS Id 为空</b>,本就不经 smart-proxy(走 FreeIPA .181/.182)。所以切 PowerDNS 的<b>唯一实际后果</b> = 新装机 PTR 写进这台<b>测试</b> pdns。<b>故验证完已还原 nsupdate,未持久切</b>(备份 <code>dns.yml.bak-prepdns</code>)。</div>
+      <pre class="cmd"><span class="c"># 持久切(需拍板):把 provider 从 nsupdate 换成 powerdns</span>
+<span class="k">sed</span> -i 's/dns_nsupdate/dns_powerdns/' /etc/foreman-proxy/settings.d/dns.yml
+<span class="k">systemctl</span> restart foreman-proxy   <span class="c"># 日志出现 Successfully initialized 'dns_powerdns'</span>
+<span class="c"># 回滚:把 dns_powerdns 换回 dns_nsupdate 再 restart</span></pre>
+      <pre class="cmd"><span class="c"># 直接打 proxy DNS API(用 Foreman 服务器 client cert;proxy 自身 cert 当客户端会被拒)</span>
+CERT='--cert /etc/foreman/client_cert.pem --key /etc/foreman/client_key.pem --cacert /etc/foreman/proxy_ca.pem'
+<span class="c"># 建 A</span>
+<span class="k">curl</span> $CERT -X POST https://foreman.djch.one:9090/dns/ \
+  -d fqdn=ftest.mana.com -d value=192.168.6.233 -d type=A
+<span class="c"># 建 PTR —— fqdn=主机名,value=反向名(</span><span class="r">反了报 "Invalid reverse DNS"</span><span class="c">)</span>
+<span class="k">curl</span> $CERT -X POST https://foreman.djch.one:9090/dns/ \
+  -d fqdn=ftest.mana.com -d value=233.6.168.192.in-addr.arpa -d type=PTR
+<span class="c"># 删</span>
+<span class="k">curl</span> $CERT -X DELETE https://foreman.djch.one:9090/dns/ftest.mana.com/A</pre>
+
+      <h4 class="step"><span>6.5</span>验证(dig 正 / 反)</h4>
+      <pre class="cmd"><span class="c"># 正向 A</span>
+<span class="k">dig</span> @192.168.6.207 ftest.mana.com +short           <span class="c"># → 192.168.6.233</span>
+<span class="c"># 反向 PTR</span>
+<span class="k">dig</span> @192.168.6.207 -x 192.168.6.233 +short         <span class="c"># → ftest.mana.com.</span></pre>
+      <div class="note tip"><b>结论</b>:phpIPAM↔PowerDNS 全 CRUD 通(直连 DB,已持久启用);Foreman↔PowerDNS 全 CRUD 验证通过,插件+配置常驻,<b>只差把 provider 持久切成 powerdns</b> —— 因影响半径(测试 pdns vs 生产 named)留给运维拍板。若 pdns 转正,建议把正向 <code>djch.one</code> 也迁入并让 Foreman domain 绑 proxy。</div>
     </div>
   </section>
 
@@ -355,7 +440,7 @@ const TABS=[
   {label:'Foreman IPAM',fc:'var(--blue)'},
   {label:'LibreNMS',fc:'var(--green)'},
   {label:'IP 台账导入',fc:'var(--pink)'},
-  {label:'PowerDNS 待接',fc:'var(--amber)'},
+  {label:'PowerDNS 对接',fc:'var(--amber)'},
 ];
 const panes=[...document.querySelectorAll('.pane')];
 const tabsBox=document.getElementById('tabs');
